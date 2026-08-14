@@ -1,30 +1,29 @@
+import logging
 import os
 import re
 from typing import BinaryIO
 
 import requests
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+CACHE_DIR = os.environ.get("CACHE_FOLDER", ".cache")
+
 
 class CachedRequester:
     """
     A helper class to manage HTTP requests and local file caching.
-    Streams downloads to disk and returns a file-like buffer to save memory.
     """
-
-    def __init__(self):
-        self.cache_dir = os.environ.get("CACHE_FOLDER", "cache")
-        os.makedirs(self.cache_dir, exist_ok=True)
-
-    def get(self, url: str, filepath: str) -> BinaryIO:
+    @classmethod
+    def get(cls, url: str, cache_path: str, **kwargs) -> None:
         """
-        Returns an open, readable file buffer.
         Downloads and streams the file to disk in chunks if it isn't cached.
         """
-        cache_path = os.path.join(self.cache_dir, filepath)
-
         # If it's already cached, just return a read-only file stream
         if os.path.exists(cache_path):
-            return open(cache_path, "rb")
+            logger.debug(f"Using cached file for {url} at {cache_path}")
+            return
 
         # Create the folder if it doesn't exist
         os.makedirs(os.path.dirname(cache_path), exist_ok=True)
@@ -33,21 +32,28 @@ class CachedRequester:
         headers = {"User-Agent": "ListaCandidatosElectorales/1.0"}
 
         # Using a context manager ensures the network connection is closed properly
-        with requests.get(url, headers=headers, stream=True) as response:
+        logger.debug(f"Downloading file for {url} to {cache_path}")
+        with requests.get(url, headers=headers, stream=True, **kwargs) as response:
             if response.status_code == 200:
                 # Write to disk in 8KB chunks to reduce memory usage
                 with open(cache_path, "wb") as f:
                     f.writelines(response.iter_content(chunk_size=8192))
+                return
 
-                # Now that it is safely on disk, return a read-only stream
-                return open(cache_path, "rb")
-
-        raise FileNotFoundError(f"Failed to download file from {url}. Status code: {response.status_code}")
+        raise FileNotFoundError(
+            f"Failed to download file from {url}. Status code: {response.status_code}"
+        )
 
 
 def prettify_name(name: str) -> str | None:
     """
     Cleans and formats a candidate's full name.
+
+    Adapted from "infoelectoral" project by Jaime Gómez-Obregón (AGPL-3.0 license).
+
+    @copyright     Copyright (c) Jaime Gómez-Obregón
+    @link          https://github.com/JaimeObregon/infoelectoral
+    @license       https://www.gnu.org/licenses/agpl-3.0.en.html
     """
     if not name or not name.strip():
         return None
@@ -74,10 +80,28 @@ def prettify_name(name: str) -> str | None:
 
     return name if name else None
 
+def build_full_name(first_name: str, last_name1: str | None, last_name2: str | None) -> str:
+    """
+    Constructs a full name from first name and last names.
+    Handles cases where last names may be None or empty.
+    """
+    parts = [first_name]
+    if last_name1:
+        parts.append(last_name1)
+        if last_name2:
+            parts.append(last_name2)
+
+    return " ".join(parts).strip()
+
 
 def prettify_municipality(name: str) -> str:
     """
     Beautifies municipality names, handling double spaces and suffixes.
+    Adapted from "infoelectoral" project by Jaime Gómez-Obregón (AGPL-3.0 license).
+
+    @copyright     Copyright (c) Jaime Gómez-Obregón
+    @link          https://github.com/JaimeObregon/infoelectoral
+    @license       https://www.gnu.org/licenses/agpl-3.0.en.html
     """
     name = re.sub(r" {2,}", " ", name).strip()
 

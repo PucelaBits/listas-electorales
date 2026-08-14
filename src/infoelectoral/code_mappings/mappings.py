@@ -6,29 +6,9 @@ Mapping file extracted from to the "infoelectoral" project by Jaime Gómez-Obreg
 @license       https://www.gnu.org/licenses/agpl-3.0.en.html
 """
 
-AUTONOMIAS = {
-    "01": "Andalucía",
-    "02": "Aragón",
-    "03": "Asturias",
-    "04": "Baleares",
-    "05": "Canarias",
-    "06": "Cantabria",
-    "07": "Castilla La Mancha",
-    "08": "Castilla y León",
-    "09": "Cataluña",
-    "10": "Extremadura",
-    "11": "Galicia",
-    "12": "Madrid",
-    "13": "Navarra",
-    "14": "País Vasco",
-    "15": "Murcia",
-    "16": "La Rioja",
-    "17": "Comunidad Valenciana",
-    "18": "Ceuta",
-    "19": "Melilla",
-}
+from common.models import ElectionType
 
-PROVINCIAS = {
+PROVINCES = {
     "01": "Álava",
     "02": "Albacete",
     "03": "Alicante",
@@ -83,113 +63,14 @@ PROVINCIAS = {
     "52": "Melilla",
 }
 
-FICHEROS = {
-    "01": "Control",
-    "02": "Identificación del proceso electoral",
-    "03": "Candidaturas",
-    "04": "Candidatos",
-    "05": "Datos globales de ámbito municipal",
-    "06": "Datos de candidaturas de ámbito municipal",
-    "07": "Datos globales de ámbito superior al municipio",
-    "08": "Datos de candidaturas de ámbito superior al municipio",
-    "09": "Datos globales de mesas",
-    "10": "Datos de candidaturas de mesas",
-    "11": "Datos globales de municipios menores de 250 habitantes (en elecciones municipales)",
-    "12": "Datos de candidaturas de municipios menores de 250 habitantes (en elecciones municipales)",
-}
-
-PROCESOS = {
-    "01": "Referéndum",
-    "02": "Congreso",
-    "03": "Senado",
-    "04": "Municipales",
-    "05": "Autonómicas",
-    "06": "Cabildos",
-    "07": "Parlamento Europeo",
-    "10": "Partidos judiciales y diputaciones provinciales",
-    "15": "Juntas Generales",
-}
-
-DISTRITOS = {
-    "03": {
-        "07": {
-            "1": "Mallorca",
-            "2": "Menorca",
-            "3": "Ibiza-Formentera",
-        },
-        "35": {
-            "1": "Gran Canaria",
-            "2": "Lanzarote",
-            "3": "Fuerteventura",
-        },
-        "38": {
-            "4": "Tenerife",
-            "5": "La Palma",
-            "6": "La Gomera",
-            "7": "El Hierro",
-        },
-    },
-    "05": {
-        "07": {
-            "1": "Mallorca",
-            "2": "Menorca",
-            "3": "Ibiza",
-            "4": "Formentera",
-        },
-        "30": {
-            "1": "Primera",
-            "2": "Segunda",
-            "3": "Tercera",
-            "4": "Cuarta",
-            "5": "Quinta",
-        },
-        "33": {
-            "1": "Oriente",
-            "2": "Centro",
-            "3": "Occidente",
-        },
-        "35": {
-            "1": "Gran Canaria",
-            "2": "Lanzarote",
-            "3": "Fuerteventura",
-        },
-        "38": {
-            "4": "Tenerife",
-            "5": "La Palma",
-            "6": "La Gomera",
-            "7": "El Hierro",
-        },
-    },
-    "06": {
-        "35": {
-            "1": "Gran Canaria",
-            "2": "Lanzarote",
-            "3": "Fuerteventura",
-        },
-        "38": {
-            "4": "Tenerife",
-            "5": "La Palmaa",
-            "6": "La Gomera",
-            "7": "El Hierro",
-        },
-    },
-    "15": {
-        "01": {
-            "1": "Vitoria-Gasteiz",
-            "2": "Aira-Ayala",
-            "3": "Resto",
-        },
-        "20": {
-            "1": "Deba-Urola",
-            "2": "Bidasoa-Oyarzun",
-            "3": "Donostialdea",
-            "4": "Oria",
-        },
-        "48": {
-            "1": "Bilbao",
-            "2": "Encartaciones",
-            "3": "Durango-Arratia",
-            "4": "Busturia-Uribe",
-        },
-    },
+ELECTION_TYPES = {
+    "01": ElectionType.REFERENDUM,
+    "02": ElectionType.CONGRESO,
+    "03": ElectionType.SENADO,
+    "04": ElectionType.MUNICIPALES,
+    "05": ElectionType.AUTONOMICAS,
+    "06": ElectionType.CABILDOS,
+    "07": ElectionType.PARLAMENTO_EUROPEO,
+    "10": ElectionType.PARTIDOS_JUDICIALES_DIPUTACIONES,
+    "15": ElectionType.JUNTAS_GENERALES,
 }
