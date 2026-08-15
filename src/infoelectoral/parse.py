@@ -45,8 +45,8 @@ class DATElectionParser:
 
             candidate = Candidate(
                 candidacy=candidacy,
-                numero_orden=dat_candidate.order,
-                nombre_completo=prettify_name(
+                order=dat_candidate.order,
+                full_name=prettify_name(
                     build_full_name(
                         first_name=dat_candidate.name,
                         last_name1=dat_candidate.first_surname,
@@ -70,11 +70,11 @@ class DATElectionParser:
             ).append(candidate)
 
         if len(elections) == 0:
-            raise ValueError("No elections found in the provided DAT files.")
+            raise ValueError(f"No elections found in the provided DAT files: {self.candidacy_parser.filepath} and {self.candidate_parser.filepath}")
 
         if len(elections) > 1:
             raise ValueError(
-                "Multiple elections found in the provided DAT files. "
+                f"Multiple elections found in the provided DAT files. {len(elections)} elections detected. "
                 "Please ensure that the files correspond to a single election."
             )
 

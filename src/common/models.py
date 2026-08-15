@@ -16,8 +16,8 @@ class Candidate:
     """Represents information about a candidate."""
 
     candidacy: Candidacy
-    numero_orden: int
-    nombre_completo: str
+    order: int
+    full_name: str
     sex: Literal["M", "F", "O"] | None
     elected: bool
     substitute: bool

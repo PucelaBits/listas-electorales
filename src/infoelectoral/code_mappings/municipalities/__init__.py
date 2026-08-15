@@ -6,7 +6,7 @@ from common import logger
 from .ine import get_ine_municipality_codes
 from .missing import MISSING_MUNICIPIOS
 
-MIN_INE_YEAR = 2003
+MIN_INE_YEAR = 2001
 MAX_INE_YEAR = datetime.now(tz=ZoneInfo("Europe/Madrid")).year
 
 
@@ -45,7 +45,7 @@ class MunicipalityMapper:
                 try:
                     ine_mapping = get_ine_municipality_codes(y)
                     return {**ine_mapping, **MISSING_MUNICIPIOS}
-                except Exception as e:  # noqa: BLE001
+                except FileNotFoundError as e:
                     logger.warning(
                         f"Failed to load INE municipality codes for year {y}. Error details: {e}"
                     )

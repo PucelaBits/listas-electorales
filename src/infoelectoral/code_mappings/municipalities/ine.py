@@ -15,7 +15,7 @@ def get_ine_municipality_codes(year: int) -> dict[str, str]:
             url = f"https://www.ine.es/daco/daco42/codmun/diccionario{yy}.xlsx"
         else:
             url = f"https://www.ine.es/daco/daco42/codmun/codmun{yy}/{yy}codmun{ext}"
-        cache_path = os.path.join(CACHE_DIR, "ine-municipalities", f"{year}codmun{ext}")
+        cache_path = os.path.join(CACHE_DIR, "ine-municipalities", f"ine_municipalities_{year}{ext}")
         try:
             CachedRequester.get(url, cache_path)
             file_path = cache_path
@@ -32,9 +32,14 @@ def get_ine_municipality_codes(year: int) -> dict[str, str]:
             f"Unable to retrieve INE municipality codes for year {year}"
         )
 
-    df = pd.read_excel(file_path, dtype=str)
-    if "CPRO" not in df.columns:
+    # TODO: Check islas for < 2020
+    if year <= 2003:
+        df = pd.read_excel(file_path, dtype=str, skiprows=3, names=["CPRO", "CMUN", "NOMBRE"])
+    elif year <= 2004:
+        df = pd.read_excel(file_path, dtype=str)
+    else:
         df = pd.read_excel(file_path, dtype=str, skiprows=1)
+    df.columns = [col.upper().strip() for col in df.columns]
     if "CPRO" not in df.columns:
         raise ValueError(
             f"Unexpected format for INE municipality codes file for year {year}. 'CPRO' column not found: {df.columns.tolist()}"

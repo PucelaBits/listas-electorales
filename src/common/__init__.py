@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-from typing import BinaryIO
 
 import requests
 
