@@ -14,6 +14,7 @@ class CachedRequester:
     """
     A helper class to manage HTTP requests and local file caching.
     """
+
     @classmethod
     def get(cls, url: str, cache_path: str, **kwargs) -> None:
         """
@@ -54,21 +55,35 @@ def prettify_name(name: str) -> str | None:
     @link          https://github.com/JaimeObregon/infoelectoral
     @license       https://www.gnu.org/licenses/agpl-3.0.en.html
     """
-    if not name or not name.strip():
+    name = name.strip()
+    if not name:
         return None
 
     # Title casing
     name = name.title()
 
-    # Replacements map for particles
+    # Replacements map
     replacements = {
-        r" De Los ": " de los ",
-        r" De La ": " de la ",
-        r" Del ": " del ",
-        r" De ": " de ",
-        r" Y ": " y ",
-        r" I ": " i ",
-        r" E ": " e ",
+        r"\bDe Los\b": "de los",
+        r"\bDe Las\b": "de las",
+        r"\bDe La\b": "de la",
+        r"\bDel\b": "del",
+        r"\bAl\b": "al",
+        r"\bDe\b": "de",
+        r"\bY\b": "y",
+        r"\bI\b": "i",
+        r"\bE\b": "e",
+        r"\bEl\b": "el",
+        r"\bLa\b": "la",
+        r"\bLos\b": "los",
+        r"\bLas\b": "las",
+        r"\bDa\b": "da",
+        r"\bDos\b": "dos",
+        r"\bDi\b": "di",
+        r"\bVon\b": "von",
+        r"\bVan\b": "van",
+        r"\bM[ªa]\b|\bM\.?[ªa]\.?\b": "María",  # Mª, M.ª, Ma., Ma, etc.
+        r"\bFco\.?\b|\bF\.co\b": "Francisco",
     }
 
     for pattern, replacement in replacements.items():
@@ -78,19 +93,6 @@ def prettify_name(name: str) -> str | None:
     name = re.sub(r"\(.+\)\s*$", "", name).strip()
 
     return name if name else None
-
-def build_full_name(first_name: str, last_name1: str | None, last_name2: str | None) -> str:
-    """
-    Constructs a full name from first name and last names.
-    Handles cases where last names may be None or empty.
-    """
-    parts = [first_name]
-    if last_name1:
-        parts.append(last_name1)
-        if last_name2:
-            parts.append(last_name2)
-
-    return " ".join(parts).strip()
 
 
 def prettify_municipality(name: str) -> str:

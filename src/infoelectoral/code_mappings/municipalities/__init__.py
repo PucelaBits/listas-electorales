@@ -1,8 +1,6 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from common import logger
-
 from .ine import get_ine_municipality_codes
 from .missing import MISSING_MUNICIPIOS
 
@@ -33,21 +31,6 @@ class MunicipalityMapper:
         return self._cache[year]
 
     def load_municipalities_mapping(self, year: int) -> dict[str, str | None]:
-        # Ensure the year is not earlier than 2003 and than the current year
         year = max(MIN_INE_YEAR, min(year, MAX_INE_YEAR))
-        # Explore years around the given year to find a valid INE mapping
-        for i in range(MAX_INE_YEAR - MIN_INE_YEAR):
-            if year + i > MAX_INE_YEAR and year - i < MIN_INE_YEAR:
-                break
-            for y in (year + i, year - i):
-                if y < MIN_INE_YEAR or y > MAX_INE_YEAR:
-                    continue
-                try:
-                    ine_mapping = get_ine_municipality_codes(y)
-                    return {**ine_mapping, **MISSING_MUNICIPIOS}
-                except FileNotFoundError as e:
-                    logger.warning(
-                        f"Failed to load INE municipality codes for year {y}. Error details: {e}"
-                    )
-                    continue
-        raise ValueError(f"No valid INE municipality codes could be loaded for {year}")
+        ine_mapping = get_ine_municipality_codes(year)
+        return {**MISSING_MUNICIPIOS, **ine_mapping}

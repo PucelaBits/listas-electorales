@@ -15,7 +15,9 @@ def get_ine_municipality_codes(year: int) -> dict[str, str]:
             url = f"https://www.ine.es/daco/daco42/codmun/diccionario{yy}.xlsx"
         else:
             url = f"https://www.ine.es/daco/daco42/codmun/codmun{yy}/{yy}codmun{ext}"
-        cache_path = os.path.join(CACHE_DIR, "ine-municipalities", f"ine_municipalities_{year}{ext}")
+        cache_path = os.path.join(
+            CACHE_DIR, "ine-municipalities", f"ine_municipalities_{year}{ext}"
+        )
         try:
             CachedRequester.get(url, cache_path)
             file_path = cache_path
@@ -34,7 +36,9 @@ def get_ine_municipality_codes(year: int) -> dict[str, str]:
 
     # TODO: Check islas for < 2020
     if year <= 2003:
-        df = pd.read_excel(file_path, dtype=str, skiprows=3, names=["CPRO", "CMUN", "NOMBRE"])
+        df = pd.read_excel(
+            file_path, dtype=str, skiprows=3, names=["CPRO", "CMUN", "NOMBRE"]
+        )
     elif year <= 2004:
         df = pd.read_excel(file_path, dtype=str)
     else:
@@ -51,3 +55,7 @@ def get_ine_municipality_codes(year: int) -> dict[str, str]:
     filtered_ine_code = df["INE_CODE"].str[-5:]
 
     return dict(zip(filtered_ine_code, df["NOMBRE"]))
+
+
+# TODO: Check the mappings of this:
+# Lourdes M. Soledad San Ma Rtin Camino,municipales,2003,5,UA,UNIDAD ALAVESA,,Álava,3,0,0

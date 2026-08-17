@@ -17,7 +17,7 @@ class Candidate:
 
     candidacy: Candidacy
     order: int
-    full_name: str
+    full_name: str | None  # None for "derecho al olvido"
     sex: Literal["M", "F", "O"] | None
     elected: bool
     substitute: bool
