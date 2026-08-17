@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 
 import requests
 
@@ -43,82 +42,3 @@ class CachedRequester:
         raise FileNotFoundError(
             f"Failed to download file from {url}. Status code: {response.status_code}"
         )
-
-
-def prettify_name(name: str | None) -> str | None:
-    """
-    Cleans and formats a candidate's full name.
-
-    Adapted from "infoelectoral" project by Jaime Gómez-Obregón (AGPL-3.0 license).
-
-    @copyright     Copyright (c) Jaime Gómez-Obregón
-    @link          https://github.com/JaimeObregon/infoelectoral
-    @license       https://www.gnu.org/licenses/agpl-3.0.en.html
-    """
-    if name is None:
-        return None
-    name = name.strip()
-    if not name:
-        return None
-
-    # Title casing
-    name = name.title()
-
-    # Replacements map
-    replacements = {
-        r"\bDe Los\b": "de los",
-        r"\bDe Las\b": "de las",
-        r"\bDe La\b": "de la",
-        r"\bDel\b": "del",
-        r"\bAl\b": "al",
-        r"\bDe\b": "de",
-        r"\bY\b": "y",
-        r"\bI\b": "i",
-        r"\bE\b": "e",
-        r"\bEl\b": "el",
-        r"\bLa\b": "la",
-        r"\bLos\b": "los",
-        r"\bLas\b": "las",
-        r"\bDa\b": "da",
-        r"\bDos\b": "dos",
-        r"\bDi\b": "di",
-        r"\bVon\b": "von",
-        r"\bVan\b": "van",
-        r"\bM[ªa]\b|\bM\.?[ªa]\.?\b": "María",  # Mª, M.ª, Ma., Ma, etc.
-        r"\bFco\.?\b|\bF\.co\b": "Francisco",
-    }
-
-    for pattern, replacement in replacements.items():
-        name = re.sub(pattern, replacement, name)
-
-    # Remove suffixes inside parentheses
-    name = re.sub(r"\(.+\)\s*$", "", name).strip()
-
-    return name if name else None
-
-
-def prettify_municipality(name: str) -> str:
-    """
-    Beautifies municipality names, handling double spaces and suffixes.
-    Adapted from "infoelectoral" project by Jaime Gómez-Obregón (AGPL-3.0 license).
-
-    @copyright     Copyright (c) Jaime Gómez-Obregón
-    @link          https://github.com/JaimeObregon/infoelectoral
-    @license       https://www.gnu.org/licenses/agpl-3.0.en.html
-    """
-    name = re.sub(r" {2,}", " ", name).strip()
-
-    parts = name.split("/")
-    formatted_parts = []
-
-    suffix_pattern = (
-        r"^(.+), (A|As|El|Els|Es|L'|La|Las|Les|Los|O|Os|Sa|Ses|el|els|l'|la|les)$"
-    )
-
-    for part in parts:
-        part = re.sub(suffix_pattern, r"\2 \1", part)
-        part = re.sub(r"^[Ll]' ", "L'", part)
-        part = part[0].upper() + part[1:] if part else part
-        formatted_parts.append(part)
-
-    return "/".join(formatted_parts)

@@ -1,8 +1,9 @@
-from common import prettify_municipality, prettify_name
+from common import logger
 from common.models import Candidacy, Candidate, Election, ElectionType
+from common.names import prettify_municipality, prettify_name
 
 from .code_mappings.mappings import PROVINCES
-from .code_mappings.municipalities import MunicipalityMapper
+from .code_mappings.municipalities import MAX_INE_YEAR, MIN_INE_YEAR, MunicipalityMapper
 from .dat_files import CandidacyDATParser, CandidateDATParser
 
 
@@ -30,7 +31,10 @@ class DATElectionParser:
 
             province = None
             municipality = None
-            if dat_candidate.province_code:
+            if (
+                dat_candidate.province_code is not None
+                and dat_candidate.municipality_code is not None
+            ):
                 province = PROVINCES.get(dat_candidate.province_code, None)
                 municipality_full_code = (
                     dat_candidate.province_code + dat_candidate.municipality_code
@@ -40,6 +44,13 @@ class DATElectionParser:
                 ).get(municipality_full_code, None)
                 if municipality is not None:
                     municipality = prettify_municipality(municipality)
+                elif (
+                    dat_candidate.year >= MIN_INE_YEAR
+                    and dat_candidate.year <= MAX_INE_YEAR
+                ):
+                    logger.warning(
+                        f"Municipality code {municipality_full_code} not found for candidate {dat_candidate.full_name} in year {dat_candidate.year}."
+                    )
 
             candidate = Candidate(
                 candidacy=candidacy,

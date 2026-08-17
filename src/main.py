@@ -82,10 +82,6 @@ def main(args):
     else:
         logger.setLevel(logging.INFO)
 
-    if args.output_file.endswith(".gz"):
-        logger.info(f"Output will be written to compressed file: {args.output_file}")
-    else:
-        logger.info(f"Output will be written to file: {args.output_file}")
     with (
         gzip.open(args.output_file, mode="wt", newline="", encoding="utf-8")
         if args.output_file.endswith(".gz")
@@ -142,6 +138,10 @@ def main(args):
                             elected,
                         ]
                     )
+    if args.output_file.endswith(".gz"):
+        logger.info(f"Output written to compressed file: {args.output_file}")
+    else:
+        logger.info(f"Output written to file: {args.output_file}")
 
 
 if __name__ == "__main__":
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         type=str,
         help="Path to the output CSV(.GZ) file",
         default=os.path.join(
-            os.path.dirname(__file__), "..", "data", "output_data.csv.gz"
+            os.path.dirname(__file__), "..", "data", "output_data.csv"
         ),
     )
     arg_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
