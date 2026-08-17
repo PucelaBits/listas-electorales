@@ -45,7 +45,7 @@ class CachedRequester:
         )
 
 
-def prettify_name(name: str) -> str | None:
+def prettify_name(name: str | None) -> str | None:
     """
     Cleans and formats a candidate's full name.
 
@@ -55,6 +55,8 @@ def prettify_name(name: str) -> str | None:
     @link          https://github.com/JaimeObregon/infoelectoral
     @license       https://www.gnu.org/licenses/agpl-3.0.en.html
     """
+    if name is None:
+        return None
     name = name.strip()
     if not name:
         return None
