@@ -32,7 +32,7 @@ class DATCandidate:
     substitute: bool
     full_name: str | None  # None for "derecho al olvido" cases
     sex: str | None
-    municipality_code: str
+    municipality_code: str | None
     province_code: str | None
     elected: bool
 
@@ -141,6 +141,6 @@ class CandidateDATParser(DATParser):
             else None,  # None for "derecho al olvido" cases
             sex={"M": "M", "F": "F"}.get(line[100:101], None),
             province_code=None if line[9:11] == "99" else line[9:11],
-            municipality_code=line[12:15],
+            municipality_code=None if line[12:15] == "999" else line[12:15],
             elected=line[119:120] == "S",
         )

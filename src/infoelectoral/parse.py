@@ -39,18 +39,23 @@ class DATElectionParser:
                 municipality_full_code = (
                     dat_candidate.province_code + dat_candidate.municipality_code
                 )
-                municipality = self.municipality_mapper.get_municipalities_mapping(
-                    dat_candidate.year
-                ).get(municipality_full_code, None)
-                if municipality is not None:
-                    municipality = prettify_municipality(municipality)
-                elif (
+                if municipality_full_code.startswith("51"):
+                    municipality = "Ceuta"
+                elif municipality_full_code.startswith("52"):
+                    municipality = "Melilla"
+                else:
+                    municipality = self.municipality_mapper.get_municipalities_mapping(
+                        dat_candidate.year
+                    ).get(municipality_full_code, "N/A")
+                if municipality == "N/A" and (
                     dat_candidate.year >= MIN_INE_YEAR
                     and dat_candidate.year <= MAX_INE_YEAR
                 ):
                     logger.warning(
-                        f"Municipality code {municipality_full_code} not found for candidate {dat_candidate.full_name} in year {dat_candidate.year}."
+                        f"Municipality code {municipality_full_code} ({province}) not found for candidate {dat_candidate.full_name} in year {dat_candidate.year}."
                     )
+                elif municipality is not None:
+                    municipality = prettify_municipality(municipality)
 
             candidate = Candidate(
                 candidacy=candidacy,

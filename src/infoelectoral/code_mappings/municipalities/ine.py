@@ -34,12 +34,15 @@ def get_ine_municipality_codes(year: int) -> dict[str, str]:
             f"Unable to retrieve INE municipality codes for year {year}"
         )
 
-    # TODO: Check islas for < 2020
-    if year <= 2003:
+    if year <= 2002:
         df = pd.read_excel(
-            file_path, dtype=str, skiprows=3, names=["CPRO", "CMUN", "NOMBRE"]
+            file_path, dtype=str, skiprows=2, names=["CPRO", "CMUN", "NOMBRE"], sheet_name="Códigos municipios"
         )
-    elif year <= 2004:
+    elif year == 2003:
+        df = pd.read_excel(
+            file_path, dtype=str, skiprows=2, names=["CPRO", "CMUN", "NOMBRE"]
+        )
+    elif year == 2004:
         df = pd.read_excel(file_path, dtype=str)
     else:
         df = pd.read_excel(file_path, dtype=str, skiprows=1)
@@ -51,11 +54,6 @@ def get_ine_municipality_codes(year: int) -> dict[str, str]:
     # Clean the column names
     df.columns = [col.upper().strip() for col in df.columns]
     df["INE_CODE"] = df["CPRO"].str.zfill(2) + df["CMUN"].str.zfill(3)
-    # We only want the last 5 digits of the INE code, which represent the province + municipality code
-    filtered_ine_code = df["INE_CODE"].str[-5:]
-
+    # We only want the first 5 digits of the INE code, which represent the province + municipality code
+    filtered_ine_code = df["INE_CODE"].str[:5]
     return dict(zip(filtered_ine_code, df["NOMBRE"]))
-
-
-# TODO: Check the mappings of this:
-# Lourdes M. Soledad San Ma Rtin Camino,municipales,2003,5,UA,UNIDAD ALAVESA,,Álava,3,0,0
