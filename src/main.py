@@ -33,8 +33,8 @@ def read_election_data(file_path: str) -> Generator[ElectionData]:
     df.sort_values(by=["year", "month"], inplace=True)
     for _, row in df.iterrows():
         if row["election_type"] == "europeas":
-            if row["year"] == 1985 and row["month"] == 12:
-                # Missing data for European elections, skipping these entries
+            # Missing data
+            if row["year"] == 1985:
                 logger.warning(
                     f"Skipping {row['year']} European elections due to missing data in the source."
                 )
@@ -46,10 +46,8 @@ def read_election_data(file_path: str) -> Generator[ElectionData]:
                 int(row["month"]),
             )
         elif row["election_type"] == "municipales":
-            if (row["year"] == 1979 and row["month"] == 4) or (
-                row["year"] == 1983 and row["month"] == 5
-            ):
-                # Missing data for municipal elections, skipping this entry
+            # Missing data
+            if (row["year"] == 1979) or (row["year"] == 1983):
                 logger.warning(
                     f"Skipping {row['year']} municipal elections due to missing data in the source."
                 )
@@ -71,6 +69,16 @@ def read_election_data(file_path: str) -> Generator[ElectionData]:
             )
             yield ElectionData(
                 ElectionType.SENADO, None, int(row["year"]), int(row["month"])
+            )
+        elif row["election_type"] == "cabildos":
+            # Missing data
+            if row["year"] == 1979 or row["year"] == 1983 or row["year"] == 1999:
+                logger.warning(
+                    f"Skipping {row['year']} cabildo elections due to missing data in the source."
+                )
+                continue
+            yield ElectionData(
+                ElectionType.CABILDOS, None, int(row["year"]), int(row["month"])
             )
         else:
             raise ValueError(f"Unknown election type: {row['election_type']}")
