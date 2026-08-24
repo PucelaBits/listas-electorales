@@ -1,12 +1,12 @@
 import argparse
 import csv
+import gzip
 import logging
 import os
 from collections.abc import Generator
 from dataclasses import dataclass
 
 import pandas as pd
-from compression import gzip
 
 from common import logger
 from common.models import ElectionType
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         type=str,
         help="Path to the output CSV(.GZ) file",
         default=os.path.join(
-            os.path.dirname(__file__), "..", "public_html", "data", "electoral_data.csv.gz"
+            os.path.dirname(__file__), "..", "docs", "data", "electoral_data.csv.gz"
         ),
     )
     arg_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
