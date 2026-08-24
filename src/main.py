@@ -30,7 +30,7 @@ def read_election_data(file_path: str) -> Generator[ElectionData]:
 
     df = pd.read_csv(file_path)
     # Sort by year and month to ensure chronological order
-    df.sort_values(by=["year", "month"], inplace=True)
+    df.sort_values(by=["year", "month"], inplace=True, ascending=False)
     for _, row in df.iterrows():
         if row["election_type"] == "europeas":
             # Missing data
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         type=str,
         help="Path to the output CSV(.GZ) file",
         default=os.path.join(
-            os.path.dirname(__file__), "..", "data", "output_data.csv"
+            os.path.dirname(__file__), "..", "public_html", "data", "electoral_data.csv.gz"
         ),
     )
     arg_parser.add_argument("--debug", action="store_true", help="Enable debug logging")

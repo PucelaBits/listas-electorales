@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador de listas electorales en España</title>
+    <link rel="icon" href="assets/images/favicon.ico" type="image/x-icon">
+
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=open-sans:400,600" rel="stylesheet" />
+    <!-- Pako (GZIP) -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <!-- PapaParse (CSV) -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Tom Select (Search in Dropdowns) -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.default.min.css" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <!-- Application styles -->
+    <link href="style/main.css" rel="stylesheet">
+</head>
+<body>
+
+    <main class="container">
+        <header class="app-header">
+            <div>
+                <h1>Explorador de listas electorales en España <span id="data-year-range-text"></span></h1>
+            </div>
+        </header>
+
+        <!-- Loading screen -->
+        <div id="initial-loader" class="card loader-wrapper">
+            <div class="loader"></div>
+            <p id="loading-text" style="color: var(--text-muted); margin-top: 0.5rem;">Conectando con el servidor...</p>
+        </div>
+
+        <!-- Main UI -->
+        <div id="app-interface" class="hidden" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="card search-card">
+                <div class="search-input-group">
+                    <label class="form-label" for="searchInput" style="color: var(--text-main)">Buscar candidato por nombre y/o apellidos</label>
+                    <input type="text" id="searchInput" placeholder="Buscar candidato..." class="form-control">
+                </div>
+            </div>
+            <div class="card">
+                <!-- Controls -->
+                <div class="table-controls">
+                    <div class="table-controls-left">
+                        <span id="results-count" class="results-count">Mostrando 0 resultados</span>
+                        <div style="border-left: 1px solid var(--border); padding-left: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">
+                            <label for="rowsPerPage">Filas / página:</label>
+                            <select id="rowsPerPage" class="form-control" style="width: auto; padding: 0.25rem 1.5rem 0.25rem 0.5rem;">
+                                <option value="25">25</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                                <option value="500">500</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-controls-right">
+                        <button id="prevBtn" class="btn-outline">Anterior</button>
+                        <div class="page-info">
+                            <span>Pág</span>
+                            <input type="number" id="pageInput" min="1" value="1" class="form-control page-input">
+                            <span id="totalPagesText">de 1</span>
+                        </div>
+                        <button id="nextBtn" class="btn-outline">Siguiente</button>
+                    </div>
+                </div>
+                <div class="table-header-scroll">
+                    <table class="data-table">
+                        <colgroup id="tableHeaderCols"></colgroup>
+                        <thead>
+                            <tr>
+                                <th>
+                                    <span class="header-title">Nombre y apellidos</span>
+                                    <div class="header-spacer"></div>
+                                </th>
+                                <th>
+                                    <span class="header-title">Proceso</span>
+                                    <select id="electionTypeFilter" autocomplete="off"></select>
+                                </th>
+                                <th style="text-align: center;">
+                                    <spanclass="header-title">Año</span>
+                                    <div class="year-range">
+                                        <input type="number" id="yearMinFilter" class="form-control" placeholder="Desde" aria-label="Año inicial">
+                                        <span class="separator" aria-hidden="true">–</span>
+                                        <input type="number" id="yearMaxFilter" class="form-control" placeholder="Hasta" aria-label="Año final">
+                                    </div>
+                                </th>
+                                <th>
+                                    <span class="header-title">Acrónimo / Partido</span>
+                                    <input type="text" id="partyInput" placeholder="Buscar partido..." class="form-control">
+                                </th>
+                                <th>
+                                    <span class="header-title">Provincia</span>
+                                    <select id="provinceFilter" autocomplete="off"></select>
+                                </th>
+                                <th>
+                                    <span class="header-title">Municipio</span>
+                                    <select id="municipalityFilter" autocomplete="off"></select>
+                                </th>
+                                <th style="text-align: center;">
+                                    <span class="header-title">Orden</span>
+                                </th>
+                                <th style="text-align: center;">
+                                    <span class="header-title">Suplente</span>
+                                    <select id="substituteFilter" class="form-control" aria-label="Filtrar suplentes"></select>
+                                </th>
+                                <th style="text-align: center;">
+                                    <span class="header-title">Electo</span>
+                                    <select id="electedFilter" class="form-control" aria-label="Filtrar electos"></select>
+                                </th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+                <div class="table-body-scroll">
+                    <table class="data-table">
+                        <colgroup id="tableBodyCols"></colgroup>
+                        <tbody id="tableBody">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <a id="download-link" href="#" download="datos_electorales.csv.gz" class="btn-primary" style="align-self: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Descargar base de datos (CSV.GZ)
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-content">
+            <div>
+                Licencia <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a> para el uso de los datos y
+                <a href="https://github.com/PucelaBits/listas-electorales/LICENCIA" target="_blank" rel="noopener noreferrer">AGPL-3.0</a> para el código fuente.
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/PucelaBits/listas-electorales" target="_blank">Código</a>
+                <a href="#">Fuentes de los datos</a>
+                <a href="#">Aviso legal</a>
+            </div>
+        </div>
+    </footer>
+    <script defer src="js/app.js"></script>
+</body>
+</html>
