@@ -271,18 +271,17 @@ function renderTable() {
 
     pageData.forEach(row => {
         const tr = document.createElement('tr');
+        tr.className = 'row-data';
         tr.innerHTML = `
-            <td style="font-weight: 600;">${row.full_name || '-'}</td>
-            <td>${prettifyElectionType(row.election_type)}</td>
-            <td style="text-align: center;">${row.year}</td>
-            <td title="${row._partyFull}">
-                <div class="truncate-cell">${row._partyFull || '-'}</div>
-            </td>
-            <td>${row.province || '-'}</td>
-            <td>${row.municipality || '-'}</td>
-            <td style="text-align: center;">${row.order || '-'}</td>
-            <td style="text-align: center;">${getBadge(row.substitute, 'badge-yellow')}</td>
-            <td style="text-align: center;">${getBadge(row.elected, 'badge-green')}</td>
+            <td class="cell cell-name" title="${row.full_name || '-'}">${row.full_name || '-'}</td>
+            <td class="cell cell-election-type">${prettifyElectionType(row.election_type)}</td>
+            <td class="cell cell-year">${row.year}</td>
+            <td class="cell cell-party" title="${row._partyFull}">${row._partyFull || '-'}</td>
+            <td class="cell cell-province" title="${row.province || '-'}">${row.province || '-'}</td>
+            <td class="cell cell-municipality" title="${row.municipality || '-'}">${row.municipality || '-'}</td>
+            <td class="cell cell-order">${row.order || '-'}</td>
+            <td class="cell cell-substitute">${getBadge(row.substitute, 'badge-yellow')}</td>
+            <td class="cell cell-elected">${getBadge(row.elected, 'badge-green')}</td>
         `;
         DOM.tableBody.appendChild(tr);
     });

@@ -80,14 +80,6 @@ a {
     overflow: hidden;
 }
 
-/* Long text inside a table cell: ellipsis instead of overflow */
-.truncate-cell {
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 @media (min-width: var(--bp-md)) {
     .truncate-cell { max-width: 250px; }
 }
@@ -332,6 +324,37 @@ a {
     border-bottom: 1px solid var(--border);
     color: var(--text-muted);
     white-space: nowrap;
+}
+
+/* Data rows */
+.data-table .row-data {
+    background: transparent;
+    transition: background-color var(--transition-fast);
+}
+
+.data-table .row-data:hover {
+    background-color: var(--row-hover);
+}
+
+.data-table .row-data td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Shared base for every cell */
+.data-table .cell {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+/* Column-specific cells */
+.data-table .cell-name {
+    font-weight: 600;
+}
+
+.data-table .cell-year, .data-table .cell-order, .data-table .cell-substitute, .data-table .cell-elected {
+    text-align: center;
 }
 
 .badge {

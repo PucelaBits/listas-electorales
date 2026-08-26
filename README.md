@@ -2,7 +2,7 @@
 
 > [![license](https://img.shields.io/badge/license-AGPL-blue.svg)](./LICENSE)
 
-Este proyecto **descarga, decodifica y normaliza** los datos oficiales de las candidaturas y candidatos de las elecciones democráticas de la historia reciente de España (1979 - 2023). Los datos se pueden explorar de forma interactiva en el [portal web](https://pucelabits.github.io/listas-electorales/).
+Este proyecto **descarga, decodifica y normaliza** los datos oficiales de las candidaturas y candidatos de las elecciones democráticas de la historia reciente de España (1979 - 2023). Los datos se pueden explorar de forma interactiva en el [portal web](https://candidaturas.pucelabits.org).
 
 - [Datos](#datos)
 - [Uso](#uso)
@@ -12,6 +12,7 @@ Este proyecto **descarga, decodifica y normaliza** los datos oficiales de las ca
   - [Atribución y origen de los datos](#atribución-y-origen-de-los-datos)
   - [Protección de datos personales](#protección-de-datos-personales)
   - [Licencia del código](#licencia-del-código)
+  - [Licencia de los datos](#licencia-de-los-datos)
 
 ## Datos
 
@@ -48,7 +49,7 @@ Los últimos datos generados se encuentran en [`docs/data/electoral_data.csv.gz`
 
 La carpeta `docs` contiene un portal web estático (sin dependencias, solo archivos estáticos) que carga los datos de forma local en el navegador. Permite buscar y filtrar candidatos por cada uno de los campos del CSV.
 
-Solamente abrir `docs/index.html` en un navegador o puedes visitar la versión [en línea](https://pucelabits.github.io/listas-electorales/).
+Solamente abrir `docs/index.html` en un navegador o puedes visitar la versión [en línea](https://candidaturas.pucelabits.org).
 
 ### Regenerar los datos
 
@@ -98,3 +99,7 @@ No obstante, la Agencia Española de Protección de Datos, en su Resolución de 
 Este repositorio se distribuye bajo la **GNU Affero General Public License v3** o posterior.
 
 Ver [`LICENSE`](./LICENSE) para más detalles.
+
+### Licencia de los datos
+
+Los datos construidos a través de este software se distribuyen bajo la **Creative Commons Attribution 4.0 International (CC BY 4.0)**.
