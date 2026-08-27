@@ -1,0 +1,572 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<HTML lang="es-ES">
+<HEAD>
+<TITLE>BOC - 1995/051. Miércoles 26 de Abril de 1995 - 763</TITLE>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">		
+        <META NAME="summary"        CONTENT="JUNTA ELECTORAL PROVINCIAL DE LAS PALMAS.- Candidaturas presentadas por la Provincia de Las Palmas para las Elecciones al Parlamento de Canarias, convocadas por Decreto 68/1995, de 3 de abril, del Presidente de la Comunidad Autónoma de Canarias...">        
+        <META NAME="plainsummary"   CONTENT="JUNTA ELECTORAL PROVINCIAL DE LAS PALMAS.- Candidaturas presentadas por la Provincia de Las Palmas para las Elecciones al Parlamento de Canarias, convocadas por Decreto 68/1995, de 3 de abril, del Presidente de la Comunidad Autonoma de Canarias.">        
+	<META NAME="keywords"       CONTENT="">                 <!--  Palabras clave para RSS -->			
+	<META NAME="documentnumber" CONTENT="051">
+	<META NAME="documentdate"   CONTENT="1995-04-26">
+	<META NAME="searchdate"     CONTENT="449834">
+	<META NAME="entity"	    CONTENT="Junta Electoral de Canarias">                          <!--emisor (consejería, presidencia, universidad, juzgado...)-->
+	<META NAME="plainentity"    CONTENT="Junta Electoral de Canarias">                          	
+        <META NAME="typedocument"   CONTENT="">                    <!--Criterio: 	Disposiciones generales => 1 Autoridades y personal => 2 Otras resoluciones 	=> 3 Anuncios 		=> 4  -->
+	<link rel="icon" type="image/png" href="/boc/favicon.ico">
+	<link href="/gc/css/estilos.css" rel="stylesheet" type="text/css" media="screen" />
+	<link href="/gc/css/imprime.css" rel="stylesheet" type="text/css" media="print"/>
+	<link href="/gc/css/voz.css" rel="stylesheet" type="text/css" media="aural"/>
+	<link href="/boc/css/boc.css" rel="stylesheet" type="text/css" media="screen" />
+</HEAD>
+
+
+<BODY>
+<div id="principal_interior">
+   <div id="bloq_menu">
+  		<h1 class="bulletin"><a class="gob" href="/" title="Le lleva a la p&aacute;gina principal del Gobierno de Canarias - Opciones de accesibilidad (tecla de acceso: i)" accesskey="i">Gobierno de Canarias</a></h1> 
+   		<h1 class="bulletin"><a class="cac" href="/" title="Le lleva a la p&aacute;gina principal del Gobierno de Canarias - Opciones de accesibilidad (tecla de acceso: i)" accesskey="i">Comunidad Autónoma de Canarias</a></h1>
+   		<h1 class="bulletin"><a class="boc" href="/boc" title="Le lleva a la página principal del Boletín Oficial de Canarias - Opciones de accesibilidad (tecla de acceso: c)" accesskey="c">Boletín Oficial de Canarias</a></h1> 
+		<div id="listado_superior">
+		<ul>
+<!-- MENú DE AYUDA -->
+	    <li class="nobarra"><a href="/boc/accesibilidad.html" accesskey="a" title="Opciones de accesibilidad (tecla de acceso: a)">Accesibilidad</a></li>
+	    <li><a href="/boc/mapa.html" accesskey="m" title="Índice de contenidos (tecla de acceso: m)">Mapa web</a></li>
+	    <li><a href="/es/contacto.html" accesskey="o" title="Contacte con nosotros (tecla de acceso: o)">Contacto</a></li>
+	    <li><a href="/boc/archivo/1995/051/pda/027.html" accesskey="t" title="Versión solo texto (tecla de acceso: t)">Versión texto</a></li>
+		</ul>
+		</div>
+  
+<!-- MEN? SUPERIOR -->      
+		<div class="menu">
+			<ul class="men">
+	<!-- SU EMPLEA EL CLASS="SELECT" PARA LA SECCIóN EN LA QUE NOS HALLEMOS Y EL CLASS="INACTIVE" PARA EL RESTO -->
+			<li class="inactive"><a href="/boc" accesskey="1" title="Página principal (tecla de acceso: 1)">Inicio</a></li>
+			<li class="selec"><a href="/boc/archivo" accesskey="2" title="Archivo (tecla de acceso: 2)">Archivo</a></li>
+			<li class="inactive"><a href="/boc/busqueda.html" accesskey="3" title="Búsqueda (tecla de acceso: 3)">Búsqueda</a></li>
+			</ul>
+		</div>
+  </div>
+	<div class="espacio">
+	</div>
+<!-- MIGAS DE PAN-->
+	<div id="migas">
+	<p class="txt">Est&aacute;s en:</p>
+	<ul>
+	<li><a href="/boc" title="Ir a Inicio">Inicio</a></li>
+	<li><a href="/boc/archivo" title="Ir a Archivo">Archivo</a></li>
+	<li><a href="/boc/1995/index.html" title="Ir al archivo del año 1995">Año 1995</a></li>
+	<li><a href="/boc/1995/051/index.html" title="Ir al Boletín 1995/051">1995/051. Miércoles 26 de Abril de 1995</a></li>
+	<li><strong>763</strong></li>
+	</ul>
+    </div>
+	
+<!--CONTENIDO-->
+	<div id="bloq_interior"  class="bulletin">
+<!-- CONTENIDO IZQUIERDO -->
+		<div class="bloq_izd">
+			<iframe class="menu" frameborder="0" src="/boc/menu.html?year=1995&number=051"><p>Menú de búsqueda y navegación</p></iframe>
+		</div>
+<!-- CONTENIDO CENTRAL -->
+		<div class="bloq_der_grande">
+        <!--<h2 class="pesta_grande2">Anuncio</h2>--> 
+			<div class="conten">
+
+          <div id="listado_superior">
+            <ul>
+              <li class="nobarra"><a href="/boc/1995/051/026.html">Anterior</a></li>
+              <li><a href="/boc/1995/051/028.html">Siguiente</a></li>
+            </ul>
+          </div>
+          <div class="espacio"> </div>
+
+        <h2>BOC Nº 051. Miércoles 26 de Abril de 1995 - 763</h2>
+				<h5>
+					
+					  V. ADMINISTRACIÓN LOCAL - Junta Electoral de Canarias
+				   
+				   
+				</h5>
+				<h3>763 - JUNTA ELECTORAL PROVINCIAL DE LAS PALMAS.- Candidaturas presentadas por la Provincia de Las Palmas para las Elecciones al Parlamento de Canarias, convocadas por Decreto 68/1995, de 3 de abril, del Presidente de la Comunidad Autónoma de Canarias.</h3>
+				
+				<p class="justificado"><img src="/boc/img/pdf.jpg" class="icon_pdf"/> <a href="/boc/1995/051/boc-1995-051-027.pdf" title="Descargar la disposición en formato PDF">Descargar en formato pdf</a></p>
+				<p>RAQUEL MARTÍNEZ MAZÓN, SECRETARIA DE LA JUNTA ELECTORAL PROVINCIAL DE LAS PALMAS.</p>
+<p>	CERTIFICA: que las candidaturas presentadas al Parlamento por las islas de Gran Canaria, Lanzarote y Fuerteventura, son las que a continuación se acompañan, para su publicación en el Boletín Oficial de Canarias, a los efectos prevenidos en el artículo 18 de la Ley 3 de 1987 del 3 de abril.</p>
+<p>	Y para que conste y surta los efectos pertinentes, expido y firmo el presente en Las Palmas de Gran Canaria, a veinticinco de abril de mil novecientos noventa y cinco.</p>
+<p>
+CIRCUNSCRIPCIÓN ELECTORAL
+ INSULAR DE FUERTEVENTURA</p>
+<p>CANDIDATURA Nº 1</p>
+<p>SIGLAS: IUC
+PART./FEDER./AGRUP.: IZQUIERDA UNIDA CANARIA</p>
+<p>CANDIDATOS</p>
+<p>1.- Jesús Pérez Gutiérrez.
+2.- Manuel Camean Lamas.
+3.- Hilda González Molina.
+4.- Juan Pedro López Alonso.
+5.- Lidia Esther Velázquez Santana.
+6.- Nuria Pilar Gimeno Ortiz.
+7.- María del Carmen Sosa García.</p>
+<p>SUPLENTES</p>
+<p>1.- Manuel García Martel.
+2.- Ángel Salvador Dominici Castellano.
+3.- Bienvenida Lorenza Hernández Ávila.</p>
+<p>CANDIDATURA Nº 2</p>
+<p>SIGLAS: PP
+PART./FEDER./AGRUP.: PARTIDO POPULAR</p>
+<p>CANDIDATOS</p>
+<p>1.- Domingo González Arroyo.
+2.- Guillermo Franquiz De León.
+3.- Esteban Lavandera López.
+4.- Blanca María Peña Padrón.
+5.- Francisco Batista Díaz.
+6.- Antonio García Ruiz.
+7.- Francisco Javier Ramos Brito.
+SUPLENTES</p>
+<p>1.- Esteban Acosta Gutiérrez.
+2.- Enrique Jorge Martínez López.
+3.- Isabel de la Cruz Ramírez.</p>
+<p>CANDIDATURA Nº 3</p>
+<p>SIGLAS: CC
+PART./FEDER./AGRUP.: COALICIÓN CANARIA</p>
+<p>CANDIDATOS</p>
+<p>1.- José Miguel Barragán Cabrera.	AM
+2.- Eugenio Cabrera Montelongo.	CCN
+3.- Raimundo Domínguez de Vera.	AM
+4.- Alfredo Alberto Hernández.	AIC
+5.- María del Carmen García Martínez.	AM
+6.- Víctor Modesto Alonso Falcón.	AM
+7.- Hanna Souweiler Rihan.	CCN</p>
+<p>SUPLENTES</p>
+<p>1.- Manuel C. Peña Sánchez.	AIF
+2.- José M. Cabrera Cabrera.	AM
+3.- Andrés Valerón Hernández.	AM</p>
+<p>CANDIDATURA Nº 4</p>
+<p>SIGLAS: P.S.O.E.
+PART./FEDER./AGRUP.: Partido Socialista Obrero Español
+CANDIDATOS</p>
+<p>1.- Eustaquio Juan Santana Gil.
+2.- Oliva Estévez Santana.
+3.- Rafael Perdomo Betancor.
+4.- José Agustín Medina González.
+5.- María del Carmen Hernández Hierro.
+6.- Alfonso Fuentes Curbelo.
+7.- Fernando Hernández Brito.</p>
+<p>SUPLENTES</p>
+<p>1.- Hortensia Pérez Pérez.
+2.- María Jesús Perdomo Perdomo.
+3.- Gustavo E. Hidalgo Amador.</p>
+<p>CANDIDATURA Nº 5</p>
+<p>SIGLAS: IF
+PART./FEDER./AGRUP.: PLATAFORMA CANARIA NACIONALISTA</p>
+<p>CANDIDATOS</p>
+<p>1.- Luis Fernando Lorenzo Mata.
+2.- Luis Chacón Negrín.
+3.- Cirilo González Santana.
+4.- Juan Manuel Brito Hernández.
+5.- Pedro De San Fernando Méndez Ramos.
+6.- María Celesta Arebalo González.
+7.- Juan Ambrosio Hernández Martínez.</p>
+<p>SUPLENTES</p>
+<p>1.- Elsa Rioz Santana.
+2.- Narciso Domingo Jorge Monserrat.
+3.- Tomás Soto Marrero.</p>
+<p>CANDIDATURA Nº 6</p>
+<p>SIGLAS: PCPC
+PART./FEDER./AGRUP.: PARTIDO COMUNISTA DEL PUEBLO CANARIO
+CANDIDATOS</p>
+<p>1.- Lorenza Machín Alarcón.
+2.- Margarita González Cabrera.
+3.- Domingo Montañez Alonso.
+4.- Julia Monserrat Díaz.
+5.- Nicolás A. Mendoza Ríos.
+6.- José Hernández Quintero.
+7.- Francisco Machín Rodríguez.</p>
+<p>SUPLENTES</p>
+<p>1.- Francisco Negrín Hernández.
+2.- Manuel Ortega Pérez.
+3.- Carlos J. Lorenzo Santana.</p>
+<p>CANDIDATURA Nº 7</p>
+<p>SIGLAS: CDS-UNIÓN CENTRISTA
+PART./FEDER./AGRUP.: COALICIÓN ELECTORAL CENTRO DEMOCRÁTICO (CDS) - UNIÓN CENTRISTA</p>
+<p>CANDIDATOS</p>
+<p>1.- Paulo Rodríguez Rodríguez.	CDS
+2.- María del Carmen Cubas Moreno.	CDS
+3.- Antonio Santos Santos.	CDS
+4.- Inmaculada Jiménez Rodríguez del Valle.	CDS
+5.- Eugenio Peña Marichal.	CDS
+6.- Adolfina Sarmiento Morena.	CDS
+7.- Genaro Izal Funes.	CDS</p>
+<p>SUPLENTES</p>
+<p>1.- María del Pilar Jiménez Rodríguez del Valle.</p>
+<p>CIRCUNSCRIPCIÓN ELECTORAL
+ INSULAR DE GRAN CANARIA</p>
+<p>CANDIDATURA Nº 1</p>
+<p>SIGLAS: IUC
+PART./FEDER./AGRUP.: Izquierda Unida Canaria</p>
+<p>CANDIDATOS</p>
+<p>1.- Segundo Martínez Vázquez.
+2.- Celia Del Pino Lorenzo.
+3.- Salvador Sánchez García.
+4.- Pablo Ojeda Déniz.
+5.- Clara Dominga González Marrero.
+6.- Manuel Salvador Rodríguez Hernández.
+7.- Francisco Puig Barrios.
+8.- Samanta Cabrera Díaz.
+9.- Teodoro Claret Sosa Monzón.
+10.- María Ángeles Sánchez González.
+11.- Miguel Suárez Bosa.
+12.- María del Pino Sánchez Bogatell.
+13.- Antonio Miguel Santana Llarena.
+14.- José Juan Cardoso Morales.
+15.- Manuel Trujillo Artiles.</p>
+<p>SUPLENTES</p>
+<p>1.- Víctor Miguel Ramos López.
+2.- Luisa Emiliana Elvira Gopar.
+3.- Francisco Hernández Trujillo.</p>
+<p>CANDIDATURA Nº 2</p>
+<p>SIGLAS: PP
+PART./FEDER./AGRUP.: PARTIDO POPULAR</p>
+<p>CANDIDATOS</p>
+<p>1.- José Miguel Bravo de Laguna Bermúdez.
+2.- María Eugenia Márquez Rodríguez.
+3.- Blas Rosales Henríquez.
+4.- Francisco Borja Benítez de Lugo Massieu.
+5.- Javier Sánchez-Simón Muñoz.
+6.- Carmen Nilva Macías Acosta.
+7.- Fernando Toribio Fernández.
+8.- Cipriano de Blas Buendía.
+9.- María del Carmen Bethencourt González.
+10.- Rafael Miguel Juan Miñon.
+11.- Francisco Javier Duñement González.
+12.- Jaime del Busto Arregui.
+13.- Beatriz Calzada Ojeda.
+14.- Manuel Juan Alonso Ojeda.
+15.- Ignacio Casteleiro Cullen.</p>
+<p>SUPLENTES</p>
+<p>1.- Guillermo Carlos Mariscal Anaya.
+2.- María José Ruiz Arteaga Gómez.
+3.- Juan Francisco Alemán Rodríguez.</p>
+<p>CANDIDATURA Nº 3</p>
+<p>SIGLAS: C.C.
+PART./FEDER./AGRUP.: COALICIÓN CANARIA</p>
+<p>CANDIDATOS</p>
+<p>1.- Lorenzo Olarte Cullen.
+2.- José Mendoza Cabrera.
+3.- Julio Bonis Álvarez.
+4.- Antonio Fernando González Vieitez.
+5.- Francisco José Rodríguez-Batllori Sánchez.
+6.- José Luis Álamo Suárez.
+7.- Eusebia María Nuez García.
+8.- Lidia María Mar Delgado Estévez.
+9.- Francisco Damián Amador Rocha.
+10.- Marino Ignacio Hugo Alduán Guerra.
+11.- Román Rodríguez Rodríguez.
+12.- María del Pilar Ortiz Barber.
+13.- Silverio Martín Sánchez.
+14.- María Victoria González Ares.
+15.- Julio Juan Rodríguez Santiago.</p>
+<p>SUPLENTES</p>
+<p>1.- Gregorio Rosario Ojeda García.
+2.- Pedro Morales Medina.
+3.- José Antonio Ramírez Marrero.</p>
+<p>CANDIDATURA Nº 4</p>
+<p>SIGLAS: P.S.O.E.
+PART./FEDER./AGRUP.: Partido Socialista Obrero Español</p>
+<p>CANDIDATOS</p>
+<p>1.- Eligio Hernández Gutiérrez.
+2.- Carmelo Padrón Díaz.
+3.- Teresita N. J. Morales De León.
+4.- José Alcaraz Abellán.
+5.- Lidia López Sánchez.
+6.- Juan José Sánchez Martín.
+7.- Saturnina Santana Dumpiérrez.
+8.- María Jesús Martín González.
+9.- Andrés Calvo González.
+10.- José Pedro Santana Arencibia.
+11.- Antonio Romero Aumente.
+12.- Eduardo Niz Suárez.
+13.- Tomás Ruano Pérez.
+14.- Juana María Pedreño Olivares.
+15.- Fátima N. Santana Santana.</p>
+<p>SUPLENTES</p>
+<p>1.- Francisco León Arrocha.
+2.- Gregorio F. Guerra Serván.
+3.- José Juan García Martín.</p>
+<p>
+CANDIDATURA Nº 5</p>
+<p>SIGLAS: P.G.C.- P.C.N.
+PART./FEDER./AGRUP.: Partido de Gran Canaria</p>
+<p>CANDIDATOS</p>
+<p>1.- Onelio Ramos Medina.
+2.- Antonio Cabral Godoy.
+3.- Jorge Enrique Cea Montero.
+4.- Juan Gómez Rosales.
+5.- Gregorio Toledo Chelala.
+6.- Rosa Delia Rodríguez González.
+7.- Adrián Díaz Saavedra Zerolo.
+8.- José Manuel Rivero Rivero.
+9.- Gustavo Ubaldo Verasategui Jorge.
+10.- Pedro Ramírez Rodríguez.
+11.- Agustín Jorge López Angulo.
+12.- Francisco Javier López Troya.
+13.- Isabel Zamora García.
+14.- Cristina Esther Chirino Ferrero.
+15.- Gregorio Toledo Rodríguez.</p>
+<p>SUPLENTES</p>
+<p>1.- Luis Chirino Hernández.
+2.- Evarista María Sarmiento Ferrera.
+3.- Manuel Cano Arroyo.</p>
+<p>
+CANDIDATURA Nº 6</p>
+<p>SIGLAS: P.C.P.C.
+PART./FEDER./AGRUP.: Partido Comunista del Pueblo Canario</p>
+<p>CANDIDATOS</p>
+<p>1.- Carmelo A. Suárez Cabrera.
+2.- Juan Rafael Lorenzo Santana.
+3.- Carmen Talavera Quevedo.
+4.- Juan Antonio Corujo Machín.
+5.- María Jesús Dolores Betancor Ojeda.
+6.- Gustavo A. Cabrera Alcántara.
+7.- Miguel A. Cruz Acebo.
+8.- Bernardino Castro Torres.
+9.- Olegario Marrero Tadeo.
+10.- Juan Ramos Collado.
+11.- José Juan Padrón Gago.
+12.- Juan S. Rodríguez Ojeda.
+13.- Manuel R. Falcón Rivero.
+14.- Francisca C. Sánchez Macías.
+15.- José Ramón Moreno González.</p>
+<p>SUPLENTES</p>
+<p>1.- Francisco Sarabia Martín.
+2.- Domingo José González Vega.
+3.- Bárbara Vegas Flor.</p>
+<p>
+CANDIDATURA Nº 7</p>
+<p>SIGLAS: CGC
+PART./FEDER./AGRUP.: COALICIÓN POR GRAN CANARIA</p>
+<p>CANDIDATOS</p>
+<p>1.- Manuel Aguiar Domínguez.
+2.- Sergio Báez Marrero.
+3.- Andrés Ruana Parada.
+4.- Manuel Esteban Fernández Sarmiento.
+5.- María Isabel Castro Melián.
+6.- Ambrosia María Jesús Machín Jiménez.
+7.- Jesús Jerónimo Armas García.
+8.- Dionisio González Naranjo.
+9.- María del Mar Suárez Vruz.
+10.- José Lorenzo López Herrera.
+11.- Antonio E. Ramírez Pérez.
+12.- Juan Quevedo Cazorla.
+13.- Eduardo José Melián Sosa.
+14.- Francisca Amada Arencibia Guerra.
+15.- Ángel Mendoza Quintana.</p>
+<p>SUPLENTES</p>
+<p>1.- Juan Manuel Padrón López.
+2.- Francisco Almeida Suárez.
+3.- Silvia Cárdenes Díaz.</p>
+<p>
+CANDIDATURA Nº 8</p>
+<p>SIGLAS: CDS - UNIÓN CENTRISTA
+PART./FEDER./AGRUP.: COALICIÓN ELECTORAL CENTRO DEMOCRÁTICO Y SOCIAL (CDS) - UNIÓN CENTRISTA</p>
+<p>CANDIDATOS</p>
+<p>1.- Buenaventura Arístides de Fez 	Centro Democrático
+      Marrero.	y Social
+2.- Marcelino Alonso Hernández.	Centro Democrático 		y Social
+3.- Pedro Ramos Sánchez.	Centro Democrático 		y Social
+4.- Carmen Robles Pérez.	Centro Democrático 		y Social
+5.- José María Suárez Rodríguez 	Centro Democrático
+      del Valle.	y Social
+6.- Juan Francisco Santana Armas.	Unión Centrista
+7.- María Luz Llanez Menéndez.	Centro Democrático 		y Social
+8.- Cristóbal Sevilla Martí.	Centro Democrático 		y Social
+9.- Luz María Sosa Pérez.	Unión Centrista
+10.- Francisco Ladeiro Martín.	Centro Democrático 		y Social
+11.- José Juan González Suárez.	Centro Democrático 		y Social
+12.- Antonio Juan Suárez Morales.	Centro Democrático 		y Social
+13.- Gonzalo Llanez Arbas.	Unión Centrista
+14.- Inmaculada Rodríguez Herrera.	Centro Democrático 		y Social
+15.- Juan Ruiz Alzola.	Unión Centrista</p>
+<p>SUPLENTES</p>
+<p>1.- José Miguel Pineda León.	Centro Democrático 		y Social
+2.- María del Pino Rodríguez Sánchez.	Unión Centrista
+3.- Manuel Marcelino Posada Naya.	Centro Democrático
+CANDIDATURA Nº 9</p>
+<p>SIGLAS: PLATAFORMA HUMANISTA
+PART./FEDER./AGRUP.: PLATAFORMA HUMANISTA</p>
+<p>
+CANDIDATOS</p>
+<p>1.- Fidel Quintana Suárez.
+2.- Rosa María Oramas Torres.
+3.- Agustín J. Prieto Aguilar.
+4.- Lourdes Benítez López.
+5.- Benito J. Hernández Pérez.
+6.- Ana M. Lermo Castelar.
+7.- Rosadelia Gil Acosta.
+8.- Juan Carlos Romero Mejías.
+9.- Ángela M. Ramírez Marrero.
+10.- Francisco M. García Alonso.
+11.- Francisco Vaquero Rodríguez.
+12.- Miguel Ángel del Moral Cruz.
+13.- Lucía E. Ruano Hernández.
+14.- Juana Fátima Déniz Pérez.
+15.- Francisco J. Fuentes Martín.</p>
+<p>SUPLENTES</p>
+<p>1.- Manuel Santana Suárez.
+2.- M. Begoña Ramírez Marrero.
+3.- Francisco J. Suárez Falcón.</p>
+<p>
+CANDIDATURA Nº 10</p>
+<p>SIGLAS: FREPIC-AWAÑAK
+PART./FEDER./AGRUP.: FRENTE POPULAR POR LA INDEPENDENCIA DE CANARIAS</p>
+<p>CANDIDATOS</p>
+<p>1.- Francisco Javier González Pérez.
+2.- Abel Fernández Acosta.
+3.- Leandro Luis Falcón Rivero.
+4.- Roque Montesdeoca Martín.
+5.- José Santana Pérez.
+6.- Lidia Esther Benítez Ojeda.
+7.- Miguel Ramos Ramírez.
+8.- Manuel Mederos Hernández.
+9.- Arturo Kamphoff Chinea.
+10.- Ernesto Nicolás Álvarez Viñoli.
+11.- Sebastián Carmelo Santana Barrera.
+12.- Carlos Manuel Ramírez Marrero.
+13.- Santiago Eulogio Quintana García.
+14.- Marcos Aurelio Fontes Moreno.
+15.- Domingo de Guzmán González Vega.</p>
+<p>
+SUPLENTES</p>
+<p>1.- Camilo Hernández Mirabal.
+2.- Fernando González Ramírez.
+3.- Yolanda Ramos Jiménez.
+CIRCUNSCRIPCIÓN ELECTORAL 
+INSULAR DE LANZAROTE</p>
+<p>CANDIDATURA Nº 1</p>
+<p>SIGLAS: IUC
+PART./FEDER./AGRUP.: IZQUIERDA UNIDA CANARIA</p>
+<p>CANDIDATOS</p>
+<p>1.- Rafael Juan Ruiz.
+2.- Gonzalo José Quintana Guerra.
+3.- Clara Delgado Sánchez.
+4.- Antonio Morera Romero.
+5.- Ángeles Del Carmen Pallares Arrocha.
+6.- Agapito Francisco González Montelongo.
+7.- Antonio Marrero Reyes.
+8.- María José Blanco Martínez.</p>
+<p>SUPLENTES</p>
+<p>1.- Carlos Pajares Blanco.
+2.- Gregorio Nicolás Sánchez.
+3.- María del Carmen Rodríguez Morales.</p>
+<p>CANDIDATURA Nº 2</p>
+<p>SIGLAS: CC
+PART./FEDER./AGRUP.: COALICIÓN CANARIA</p>
+<p>CANDIDATOS</p>
+<p>1.- Felipe Perdomo Torres.
+2.- Jesús Morales Morales.
+3.- Honorio García Bravo.
+4.- Juan Ramírez Montero.
+5.- Pablo Betancor Betancor.
+6.- Antonio Jesús Fernández Cabrera.
+7.- Juana Concepción Santacruz Socas.
+8.- Rafael Silva Betancor.</p>
+<p>SUPLENTES</p>
+<p>1.- Juan Antonio de la Hoz González.
+2.- Ana Milagros Perdomo Cabrera.
+3.- Mariano Manuel Tavío Cabrera.</p>
+<p>
+CANDIDATURA Nº 3</p>
+<p>SIGLAS: PCS
+PART./FEDER./AGRUP.: PARTIDO CANARIO SOCIALISTA</p>
+<p>CANDIDATOS</p>
+<p>1.- Edilia Soraya Noda Ramos.
+2.- Gervasio Bonel Sanz.
+3.- Gabriel D. González Hernández.
+4.- María D. Cedres Mesa.
+5.- María D. Seija López.
+6.- Andrés de la Cruz Medina Medina.
+7.- Esteban Rodríguez Medina.
+8.- Francisco Rodríguez Montero.</p>
+<p>SUPLENTES</p>
+<p>1.- Pedro M. Viera Espinosa.
+2.- Francisco Silva López.</p>
+<p>CANDIDATURA Nº 4</p>
+<p>SIGLAS: P.S.O.E.
+PART./FEDER./AGRUP.: Partido Socialista Obrero Español
+CANDIDATOS</p>
+<p>1.- Luis D. A. Fajardo Spínola.
+2.- Tomás Rodríguez Acuña.
+3.- Nieves Rosa C. Hernández Gorrín.
+4.- José Antonio Rocha Medina.
+5.- Nuria Esther Cabrera Curbelo.
+6.- Miguel González Rodríguez.
+7.- Guillermo León Russo.
+8.- Joaquín Suárez Curbelo.</p>
+<p>SUPLENTES</p>
+<p>1.- Juan José Torres Rodríguez.
+2.- María Belén Perdomo López.
+3.- Aurelio J. De la Cruz Barrios.</p>
+<p>CANDIDATURA Nº 5</p>
+<p>SIGLAS: P.I.L.-P.C.N.
+PART./FEDER./AGRUP.: Plataforma Canaria Nacionalista
+CANDIDATOS</p>
+<p>1.- Dimas Martín Martín.
+2.- Juan Carlos Becerra Robayna.
+3.- Juan Jesús González Herrera.
+4.- Emilia I. Perdomo De Quintana.
+5.- María Isabel Déniz De León.
+6.- Domingo Delgado Morín.
+7.- Plácida Guerra Cabrera.
+8.- Jesús Manuel Páez Guadalupe.</p>
+<p>SUPLENTES</p>
+<p>1.- Pedro De Armas Sanginés.
+2.- Jesús Iván Rodríguez González.
+3.- César Reyes Pérez.</p>
+<p>CANDIDATURA Nº 6</p>
+<p>SIGLAS: P.P.
+PART./FEDER./AGRUP.: Partido Popular</p>
+<p>CANDIDATOS</p>
+<p>1.- Rafael Ángel De León Expósito.
+2.- Patrocinio Barambio Delgado.
+3.- Jesús Antonio López Ramírez.
+4.- Eva María Ciprés Vidal.
+5.- Juan Villalobos Domínguez.
+6.- María Gloria Fernández Parrilla.
+7.- Juan Francisco Torres Bravo.
+8.- Enrique Antonio Miranda López.</p>
+<p>SUPLENTES</p>
+<p>1.- Zenón Andrés Mesa Guillén.
+2.- Ramón Umpiérrez Rodríguez.
+3.- María Elsa Morales Betancort.</p>
+<p>CANDIDATURA Nº 7</p>
+<p>SIGLAS: CDS-UNIÓN CENTRISTA
+PART./FEDER./AGRUP.: COALICIÓN ELECTORAL CENTRO DEMOCRÁTICO Y SOCIAL (CDS) - UNIÓN CENTRISTA</p>
+<p>CANDIDATOS</p>
+<p>1.- Cándido Reguera Díaz.	CDS
+2.- María Begoña de León Delgado.	CDS
+3.- Lorenzo Leamur Santana.	CDS
+4.- Antonio Rodríguez Cabrera.	INDEPENDIENTE
+5.- Augusto Usón Álvarez.	INDEPENDIENTE
+6.- José Manuel Juncal López.	CDS
+7.- Ruperto Morales Lugo.	CDS
+8.- Juan Manuel de León Robaina.	CDS</p>
+<p>SUPLENTES</p>
+<p>1.- Marcial Guerra Mesa.	CDS
+2.- José Domingo Perera Pérez.	CDS
+3.- Casimiro Hernández Camacho.	CDS</p>
+
+			</div>
+		</div>
+<!-- PIE DE P?GINA -->
+		<div id="pie">
+    	<p class="izda">&copy; Gobierno de Canarias</p>
+    		<div class="dcha">
+      		<ul>
+        	<li class="nobarra3"><a href="/avisolegal.html" title="Aviso legal">Aviso Legal</a></li>
+        	<li><a href="/sugrec/" title="Sugerencias y Reclamaciones">Sugerencias y Reclamaciones</a></li>
+      		</ul>
+    		</div>
+		</div> 
+	</div> 
+</div>    
+</BODY>
+</HTML>
