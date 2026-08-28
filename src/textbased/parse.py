@@ -1,0 +1,175 @@
+import re
+from dataclasses import replace
+
+from common import logger
+from common.models import Candidacy, Candidate
+from common.names import prettify_name
+from textbased.error_fixes import TextParser
+
+
+class TextElectionParser:
+    PROVINCE_RE = re.compile(
+        r"JUNTA ELECTORAL\s+(?:PROVINCIAL\s+)?DE\s+([A-ZÁÉÍÓÚÑ\s]+)", re.IGNORECASE
+    )
+    NUMBERED_ITEM_RE = re.compile(r"^(\d+)[ \.\-\–]+\s+(.+)$")
+    SUPLENTE_RE = re.compile(r"^Suplentes?:?", re.IGNORECASE)
+
+    def __init__(self, text_parser: TextParser):
+        self.text_parser = text_parser
+        self.parsed_data = []
+        self.current_province = ""
+        self.current_candidacy = None
+        self.is_substitute = False
+        self.candidate_order = 0
+        self.__reset_state()
+
+    def __reset_state(self) -> None:
+        """Resets the parser's state for a new PDF file."""
+        self.current_province = ""
+        self.current_candidacy = None
+        self.is_substitute = False
+        self.candidate_order = 0
+
+    def parse(self) -> tuple[Candidate]:
+        for line in self.text_parser.parse():
+            self.__process_line(line.strip())
+        if len(self.parsed_data) == 0:
+            raise ValueError("No candidates found")
+        return tuple(self.parsed_data)
+
+    def __process_line(self, line: str) -> None:
+        """Evaluates a single line and routes it to the appropriate state handler."""
+        if not line:
+            return
+
+        # Province
+        prov_match = self.PROVINCE_RE.search(line)
+        if prov_match:
+            self.current_province = prov_match.group(1).strip().title()
+            # Change of province indicates a new candidacy section, so reset candidacy and candidate order
+            self.current_candidacy = None
+            self.candidate_order = 0
+            return
+
+        # Substitutes
+        if self.SUPLENTE_RE.match(line):
+            if len(self.parsed_data) == 0:
+                raise ValueError(
+                    "Substitute section found before any candidates were parsed."
+                )
+            self.is_substitute = True
+            return
+
+        # Numbered items (candidacy or candidate)
+        item_match = self.NUMBERED_ITEM_RE.match(line)
+        if item_match:
+            order = int(item_match.group(1))
+            content = item_match.group(2).strip()
+            self.__handle_numbered_item(order, content)
+            return
+
+        # Handle multi-line continuations and discard decorations
+        self.__handle_unmatched_line(line)
+
+    def __handle_numbered_item(self, order: int, content: str) -> None:
+        """Processes lines that start with a number (either a candidacy or a candidate)."""
+        print(f"Processing numbered item: order={order}, content='{content}'")
+        if (
+            order == 1
+            and self.candidate_order > 0
+            and (
+                not self.is_substitute
+                or (
+                    self.is_substitute
+                    and len(self.parsed_data) > 0
+                    and self.parsed_data[-1].substitute
+                )
+            )
+        ):
+            raise ValueError(
+                "Unexpected new candidate with order 1 while already parsing candidates. This may indicate a new candidacy or a misformatted PDF."
+            )
+        if order == 1 and self.current_candidacy is None:
+            # We are starting the first candidacy in the document
+            self.__set_candidacy(content)
+            return
+        if order == self.candidate_order + 1:
+            # We expect to be parsing candidates for the current candidacy
+            self.__add_candidate(content, order)
+            self.candidate_order = order
+        else:
+            # Check if we have switched to substitutes or a new candidacy
+            if (
+                self.is_substitute
+                and len(self.parsed_data) > 0
+                and not self.parsed_data[-1].substitute
+            ):
+                # We have switched to substitutes for the current candidacy
+                self.__add_candidate(content, order)
+                self.candidate_order = order
+            else:
+                # We have switched to a new candidacy
+                self.is_substitute = False
+                self.__set_candidacy(content)
+                self.candidate_order = 0
+
+    def __set_candidacy(self, content: str) -> None:
+        """Extracts and sets the current candidacy."""
+        # TODO: Precompile regex
+        acr_match = re.search(r"(.*?)\s*\((.*?)\)$", content)
+        if acr_match:
+            current_party = acr_match.group(1).strip()
+            current_acronym = acr_match.group(2).strip()
+        else:
+            current_party = content
+            current_acronym = ""
+        self.current_candidacy = Candidacy(name=current_party, acronym=current_acronym)
+        logger.debug(f"Set current candidacy: {self.current_candidacy}")
+
+    def __add_candidate(self, content: str, order: int) -> None:
+        """Cleans candidate data and appends it to the dataset."""
+        if not self.current_candidacy:
+            raise ValueError(
+                "Unexpected candidate line without a current candidacy context."
+            )
+        if not self.current_province:
+            raise ValueError(
+                "Unexpected candidate line without a current province context."
+            )
+        candidate = Candidate(
+            full_name=prettify_name(content.rstrip(".")),
+            candidacy=self.current_candidacy,
+            province=self.current_province,
+            order=order,
+            substitute=self.is_substitute,
+            sex=None,
+            elected=None,
+            municipality=None,
+        )
+        logger.debug(
+            f"Adding candidate: {candidate.full_name} from {candidate.province} for {candidate.candidacy.name}"
+        )
+        self.parsed_data.append(candidate)
+
+    def __handle_unmatched_line(self, line: str) -> None:
+        """Discards headers/footers or appends valid multi-line names."""
+        # Discard lines with numbers (dates/pages), URLs
+        # TODO: Convert to precompiled regex for performance
+        # TODO: Check for more robust detection
+        if re.search(r"\d", line) or "http" in line.lower():
+            return
+        line = line.strip()
+        if not line:
+            return
+
+        # Append valid continuation to the last recorded candidate
+        if len(self.parsed_data) > 0 and self.candidate_order > 0:
+            self.parsed_data[-1] = replace(
+                self.parsed_data[-1],
+                full_name=prettify_name(
+                    self.parsed_data[-1].full_name + " " + line.rstrip(".")
+                ),
+            )
+        elif self.current_candidacy and self.candidate_order == 0:
+            # If we are not currently parsing candidates, this line is a continuation of the candidacy name
+            self.__set_candidacy(self.current_candidacy.name + " " + line)

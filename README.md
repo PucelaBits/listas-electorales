@@ -2,7 +2,7 @@
 
 > [![license](https://img.shields.io/badge/license-AGPL-blue.svg)](./LICENSE)
 
-Este proyecto **descarga, decodifica y normaliza** los datos oficiales de las candidaturas y candidatos de las elecciones democráticas de la historia reciente de España (1979 - 2023). Los datos se pueden explorar de forma interactiva en el [portal web](https://candidaturas.pucelabits.org).
+Este proyecto **descarga, decodifica y normaliza** los datos oficiales de las candidaturas y candidatos de las elecciones democráticas de la historia reciente de España (1979 - 2023). Los datos se pueden explorar de forma interactiva en el [portal web](https://candidaturas.pucelabits.org). También sirve de recopilación de los boletines oficiales de las candidaturas y correcciones de errores publicados por las comunidades autónomas para las elecciones autonómicas ([`data/autonomicas`](data/autonomicas)).
 
 - [Datos](#datos)
 - [Uso](#uso)

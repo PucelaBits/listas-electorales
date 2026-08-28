@@ -32,7 +32,7 @@ class CachedRequester:
 
         # Using a context manager ensures the network connection is closed properly
         logger.debug(f"Downloading file for {url} to {cache_path}")
-        with requests.get(url, headers=headers, stream=True, **kwargs) as response:
+        with requests.get(url, headers=headers, stream=True, timeout=60, **kwargs) as response:
             if response.status_code == 200:
                 # Write to disk in 8KB chunks to reduce memory usage
                 with open(cache_path, "wb") as f:

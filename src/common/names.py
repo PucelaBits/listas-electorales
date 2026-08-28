@@ -28,11 +28,13 @@ _PARTICLES_RE = re.compile(
     r"\b(?:{})\b".format("|".join(sorted(_PARTICLES_MAP.keys(), key=len, reverse=True)))
 )
 
-# Abbreviation for María and Francisco
-# Group 1: Matches abbreviations glued to a letter using a Lookahead (?=[A-Za-zÀ-ÿ])
-# Group 2: Matches standalone abbreviations (surrounded by spaces/boundaries)
-# Group 3: Specifically matches standalone "Ma" so it doesn't break names like "Macarena"
+# Prefix and Abbreviation rules
+# Group 1: Matches Don/Doña/D./etc. prefixes at the start of the string to remove them
+# Group 2: Matches abbreviations glued to a letter using a Lookahead (?=[A-Za-zÀ-ÿ])
+# Group 3: Matches standalone abbreviations (surrounded by spaces/boundaries)
+# Group 4: Specifically matches standalone "Ma" so it doesn't break names like "Macarena"
 _ABBR_RE = re.compile(
+    r"^((?:D\.|D[nñ]a\.?|D[aª]\.?|Don\b|Do[nñ]a\b)\s*)+|"
     r"\b(Mª|M\.[aªA]\.?|M[aªA]\.|Fco\.?|F\.co\.?)(?=[A-Za-zÀ-ÿ])|"
     r"\b(Mª|M\.[aªA]\.?|M[aªA]\.|Fco\.?|F\.co\.?)\b|"
     r"\b(Ma)\b",
@@ -44,16 +46,19 @@ _SUFFIX_NAMES_RE = re.compile(r"\s*\(.+\)\s*$")
 
 
 def _abbr_replacer(m: re.Match) -> str:
-    """Expands the abbreviation and adds a space if it was glued."""
+    """Expands the abbreviation, adds a space if glued, or removes prefixes."""
     if m.group(1):
+        # It's a Don/Doña prefix at the start of the string. Remove it.
+        return ""
+    if m.group(2):
         # It is glued to a letter. Add a space
-        abbr = m.group(1).lower()
-        return "María " if abbr.startswith("m") else "Francisco "
-    elif m.group(2):
-        # It is standalone. No trailing space needed.
         abbr = m.group(2).lower()
+        return "María " if abbr.startswith("m") else "Francisco "
+    if m.group(3):
+        # It is standalone. No trailing space needed.
+        abbr = m.group(3).lower()
         return "María" if abbr.startswith("m") else "Francisco"
-    elif m.group(3):
+    if m.group(4):
         # It is a standalone 'Ma'
         return "María"
 
@@ -66,7 +71,7 @@ def prettify_name(name: str | None) -> str | None:
     if not name:
         return None
 
-    # Expand abbreviations
+    # Strip prefixes and expand abbreviations in a single pass
     name = _ABBR_RE.sub(_abbr_replacer, name)
 
     name = name.title()

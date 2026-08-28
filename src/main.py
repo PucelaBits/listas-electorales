@@ -11,6 +11,7 @@ import pandas as pd
 from common import logger
 from common.models import ElectionType
 from infoelectoral import load_election as infoelectoral_load_election
+from textbased import load_election as textbased_load_election
 
 
 @dataclass(frozen=True)
@@ -56,7 +57,6 @@ def read_election_data(file_path: str) -> Generator[ElectionData]:
                 ElectionType.MUNICIPALES, None, int(row["year"]), int(row["month"])
             )
         elif row["election_type"] == "autonomicas":
-            # TODO
             yield ElectionData(
                 ElectionType.AUTONOMICAS,
                 row["scope"],
@@ -123,29 +123,36 @@ def main(args):
                 election = infoelectoral_load_election(
                     election_data.election_type, election_data.year, election_data.month
                 )
-                for candidate in election.candidates:
-                    name = candidate.full_name if candidate.full_name else ""
-                    municipality = (
-                        candidate.municipality if candidate.municipality else ""
-                    )
-                    province = candidate.province if candidate.province else ""
-                    substitute = "1" if candidate.substitute else "0"
-                    elected = "1" if candidate.elected else "0"
-                    writer.writerow(
-                        [
-                            name,
-                            election.type.value,
-                            election.year,
-                            election.month,
-                            candidate.candidacy.acronym,
-                            candidate.candidacy.name,
-                            municipality,
-                            province,
-                            candidate.order,
-                            substitute,
-                            elected,
-                        ]
-                    )
+            else:
+                # Autonomicas
+                election = textbased_load_election(
+                    election_data.election_type,
+                    election_data.region,
+                    election_data.year,
+                    election_data.month,
+                )
+            for candidate in election.candidates:
+                name = candidate.full_name if candidate.full_name else ""
+                municipality = candidate.municipality if candidate.municipality else ""
+                province = candidate.province if candidate.province else ""
+                substitute = "1" if candidate.substitute else "0"
+                elected = "1" if candidate.elected else "0"
+                writer.writerow(
+                    [
+                        name,
+                        election.type.value,
+                        election.year,
+                        election.month,
+                        candidate.candidacy.acronym,
+                        candidate.candidacy.name,
+                        municipality,
+                        province,
+                        candidate.order,
+                        substitute,
+                        elected,
+                    ]
+                )
+
     if args.output_file.endswith(".gz"):
         logger.info(f"Output written to compressed file: {args.output_file}")
     else:

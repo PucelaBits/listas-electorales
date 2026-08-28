@@ -27,7 +27,6 @@ class DATCandidate:
     month: int
     election_type: ElectionType
     candidacy_code: str
-    repetition: int
     order: int
     substitute: bool
     full_name: str | None  # None for "derecho al olvido" cases
@@ -133,7 +132,6 @@ class CandidateDATParser(DATParser):
             month=month,
             election_type=election_type,
             candidacy_code=line[15:21],
-            repetition=int(line[8:9]),
             order=int(line[21:24]),
             substitute=line[24:25] != "T",
             full_name=full_name

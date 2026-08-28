@@ -72,7 +72,6 @@ class DATElectionParser:
                     dat_candidate.election_type,
                     dat_candidate.year,
                     dat_candidate.month,
-                    dat_candidate.repetition,
                 ),
                 [],
             ).append(candidate)
@@ -88,13 +87,12 @@ class DATElectionParser:
                 "Please ensure that the files correspond to a single election."
             )
 
-        (election_type, year, month, repetition), candidates = next(
+        (election_type, year, month), candidates = next(
             iter(elections.items())
         )
         return Election(
             year=year,
             month=month,
-            repetition=repetition,
             type=ElectionType(election_type),
             candidates=tuple(candidates),
         )

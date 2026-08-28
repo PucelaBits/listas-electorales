@@ -45,6 +45,5 @@ class Election:
 
     year: int
     month: int
-    repetition: int
     type: ElectionType
     candidates: tuple[Candidate]
