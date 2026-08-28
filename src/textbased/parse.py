@@ -11,8 +11,19 @@ class TextElectionParser:
     PROVINCE_RE = re.compile(
         r"JUNTA ELECTORAL\s+(?:PROVINCIAL\s+)?DE\s+([A-ZÁÉÍÓÚÑ\s]+)", re.IGNORECASE
     )
-    NUMBERED_ITEM_RE = re.compile(r"^(\d+)[ \.\-\–]+\s+(.+)$")
+
+    # Extract explicit candidacy headers
+    EXPLICIT_CANDIDACY_RE = re.compile(
+        r"^Candidatura\s+n[úu]m\.?:\s*\d+[ \.\-\–]+\s+(.+)$", re.IGNORECASE
+    )
+
+    # Numbered items (now simplified to just catch standard numbers, e.g. "1. John Doe")
+    NUMBERED_ITEM_RE = re.compile(r"^(\d+)[ \.\-\–]+\s+(.+)$", re.IGNORECASE)
+
     SUPLENTE_RE = re.compile(r"^Suplentes?:?", re.IGNORECASE)
+
+    # Extract party name and acronym from the clean content
+    CANDIDACY_RE = re.compile(r"^(.*?)\s*\((.*?)\)$")
 
     def __init__(self, text_parser: TextParser):
         self.text_parser = text_parser
@@ -51,6 +62,16 @@ class TextElectionParser:
             self.candidate_order = 0
             return
 
+        # Explicit line candidacy headers (e.g., "Candidatura núm.: 1 Partido XYZ")
+        candidacy_match = self.EXPLICIT_CANDIDACY_RE.match(line)
+        if candidacy_match:
+            content = candidacy_match.group(1).strip()
+            # We have switched to a new candidacy, so reset order and substitute flags
+            self.is_substitute = False
+            self.candidate_order = 0
+            self.__set_candidacy(content)
+            return
+
         # Substitutes
         if self.SUPLENTE_RE.match(line):
             if len(self.parsed_data) == 0:
@@ -60,7 +81,7 @@ class TextElectionParser:
             self.is_substitute = True
             return
 
-        # Numbered items (candidacy or candidate)
+        # Numbered items (implicit candidate or candidacy if old format)
         item_match = self.NUMBERED_ITEM_RE.match(line)
         if item_match:
             order = int(item_match.group(1))
@@ -87,12 +108,13 @@ class TextElectionParser:
             )
         ):
             raise ValueError(
-                "Unexpected new candidate with order 1 while already parsing candidates. This may indicate a new candidacy or a misformatted PDF."
+                "Unexpected new candidate with order 1 while already parsing candidates."
             )
         if order == 1 and self.current_candidacy is None:
             # We are starting the first candidacy in the document
             self.__set_candidacy(content)
             return
+
         if order == self.candidate_order + 1:
             # We expect to be parsing candidates for the current candidacy
             self.__add_candidate(content, order)
@@ -115,13 +137,14 @@ class TextElectionParser:
 
     def __set_candidacy(self, content: str) -> None:
         """Extracts and sets the current candidacy."""
-        # TODO: Precompile regex
-        acr_match = re.search(r"(.*?)\s*\((.*?)\)$", content)
+        if len(self.parsed_data) == 0 and self.current_candidacy is not None:
+            raise ValueError("Candidacy set before any candidates were parsed.")
+        acr_match = self.CANDIDACY_RE.search(content)
         if acr_match:
             current_party = acr_match.group(1).strip()
             current_acronym = acr_match.group(2).strip()
         else:
-            current_party = content
+            current_party = content.strip()
             current_acronym = ""
         self.current_candidacy = Candidacy(name=current_party, acronym=current_acronym)
         logger.debug(f"Set current candidacy: {self.current_candidacy}")

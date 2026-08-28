@@ -2,8 +2,8 @@ import os
 
 from common.models import Election, ElectionType
 
-from .parse import TextElectionParser
 from .error_fixes import TextParser
+from .parse import TextElectionParser
 
 TEXT_BASED_DATA_DIR = os.path.join(
     os.path.dirname(__file__), "..", "..", "data", "regions"
