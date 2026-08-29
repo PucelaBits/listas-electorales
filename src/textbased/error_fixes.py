@@ -1,7 +1,8 @@
 import glob
+import re
 from collections.abc import Callable, Generator
 
-import pypdf
+import fitz
 
 _ERROR_FIXERS: dict[tuple[str, int, int], Callable[[str], str]] = {}
 
@@ -18,9 +19,8 @@ def register_fixer(region: str, year: int, month: int):
 
 @register_fixer("castilla_y_leon", 1983, 5)
 def fix_cyl_1983_05(text: str) -> str:
-    return text.replace(
-        "13. Roberto Jesús López Diez. \n \nCOALICION PCOE-PCEU",
-        "13. Roberto Jesús López Diez. \n \n3. COALICION PCOE-PCEU",
+    return re.sub(
+        r"^COALICION PCOE-PCEU", "3. COALICION PCOE-PCEU", text, flags=re.MULTILINE
     )
 
 
@@ -38,9 +38,9 @@ class TextParser:
             yield from self.__parse_single_file(pdf_path)
 
     def __parse_single_file(self, pdf_path: str) -> Generator[str, None, None]:
-        reader = pypdf.PdfReader(pdf_path)
-        for page in reader.pages:
-            text = page.extract_text()
+        doc = fitz.open(pdf_path)
+        for page in doc:
+            text = page.get_text()
             if not text:
                 continue
 
