@@ -21,7 +21,12 @@ def load_election(
 
     # Parse the text-based election data to create an Election object
     text_parser = TextReader(folderpath, region, year, month)
-    candidates = TextElectionParser(text_parser).parse()
+    try:
+        candidates = TextElectionParser(text_parser).parse()
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to parse election data for {region} {year}-{month}: {e}"
+        ) from e
     return Election(
         year=year,
         month=month,

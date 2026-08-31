@@ -64,21 +64,18 @@ def fix_andalucia_2008_03(text: str) -> str:
         lambda m: ANDALUCIA_2008_03_REPLACEMENTS[m.group(0)], text
     )
 
+ANDALUCIA_2015_03_REPLACEMENTS = {
+    "Doña Matilde Ortiz Arcas": "Doña Matilde Ortiz Arca",
+    "Concepción del Carmen Muñoz Sánchez": "Concepción del Carmelo Muñoz Sánchez",
+    "Javier Vicente Del Moral Quevedo": "Juan Vicente Del Moral Quevedo",
+    "Nazaret Navarro Todelado": "Nazaret Navarro Toledano",
+}
 
-# BOJA 49, err.pdf.
+P_ANDALUCIA_2015_03_LITERALS = re.compile(
+    "|".join(map(re.escape, ANDALUCIA_2015_03_REPLACEMENTS.keys()))
+)
 @register_fixer("andalucia", 2015, 3)
 def fix_andalucia_2015_03(text: str) -> str:
-    # Granada PP nº 10: Ortiz Arcas -> Ortiz Arca
-    text = text.replace("Doña Matilde Ortiz Arcas", "Doña Matilde Ortiz Arca")
-    # Granada PP 3.ª suplente: del Carmen -> del Carmelo
-    text = text.replace(
-        "Concepción del Carmen Muñoz Sánchez",
-        "Concepción del Carmelo Muñoz Sánchez",
+    return P_ANDALUCIA_2015_03_LITERALS.sub(
+        lambda m: ANDALUCIA_2015_03_REPLACEMENTS[m.group(0)], text
     )
-    # Jaén PA tit. 9: Javier -> Juan (PDF prints it with a capital "Del")
-    text = text.replace(
-        "Javier Vicente Del Moral Quevedo", "Juan Vicente Del Moral Quevedo"
-    )
-    # Jaén CILUS tit. 6: Todelado -> Toledano
-    text = text.replace("Nazaret Navarro Todelado", "Nazaret Navarro Toledano")
-    return text

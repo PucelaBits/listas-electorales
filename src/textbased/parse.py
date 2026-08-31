@@ -3,13 +3,15 @@ import re
 from collections.abc import Generator
 from dataclasses import replace
 
-import fitz
+import pymupdf
 
 from common import logger
 from common.models import Candidacy, Candidate
 from common.names import prettify_name
 
 from .error_fixes import ERROR_FIXERS
+
+LONG_LINE_THRESHOLD = 150  # Arbitrary threshold for splitting long lines
 
 
 class TextReader:
@@ -26,9 +28,9 @@ class TextReader:
             yield from self.__parse_single_file(pdf_path)
 
     def __parse_single_file(self, pdf_path: str) -> Generator[str, None, None]:
-        doc = fitz.open(pdf_path)
+        doc = pymupdf.open(pdf_path)
         for page in doc:
-            text = page.get_text()
+            text = page.get_text(sort=True)
             if not text:
                 continue
 
@@ -36,7 +38,20 @@ class TextReader:
                 text = self.fix_text(text)
 
             for line in text.split("\n"):
-                yield line.strip()
+                line = line.strip()
+                if not line:
+                    continue
+                # If the line is too long, it might have multiple stuff inside, split it
+                if len(line) > LONG_LINE_THRESHOLD:
+                    # Make a best-effort split using spaces
+                    for range_start in range(0, len(line), LONG_LINE_THRESHOLD):
+                        selected_line = line[
+                            range_start : range_start + LONG_LINE_THRESHOLD
+                        ].strip()
+                        if selected_line:
+                            yield selected_line
+                else:
+                    yield line
 
 
 class TextElectionParser:
@@ -52,6 +67,9 @@ class TextElectionParser:
     # Numbered items (now simplified to just catch standard numbers, e.g. "1. John Doe")
     NUMBERED_ITEM_RE = re.compile(r"^(\d+)[ \.\-\–]+\s+(.+)$", re.IGNORECASE)
 
+    # Catch isolated numbers sitting on their own line
+    ISOLATED_NUMBER_RE = re.compile(r"^(\d+)[ \.\-\–]+$")
+
     SUPLENTE_RE = re.compile(r"^Suplentes?:?", re.IGNORECASE)
 
     # Extract party name and acronym from the clean content
@@ -64,6 +82,9 @@ class TextElectionParser:
         self.current_candidacy = None
         self.is_substitute = False
         self.candidate_order = 0
+        # Temporarily store the order number if we encounter an isolated number on a line by itself
+        self.pending_order = None
+        self.line_completed = False
         self.__reset_state()
 
     def __reset_state(self) -> None:
@@ -72,6 +93,8 @@ class TextElectionParser:
         self.current_candidacy = None
         self.is_substitute = False
         self.candidate_order = 0
+        self.pending_order = None
+        self.line_completed = False
 
     def parse(self) -> tuple[Candidate]:
         for line in self.text_parser.parse():
@@ -82,7 +105,11 @@ class TextElectionParser:
 
     def __process_line(self, line: str) -> None:
         """Evaluates a single line and routes it to the appropriate state handler."""
-        if not line:
+        print(f"Processing line: {line}")  # Debugging output
+        # If we caught an isolated number on the previous line, this line is the name
+        if self.pending_order is not None:
+            self.__handle_numbered_item(self.pending_order, line)
+            self.pending_order = None
             return
 
         # Province
@@ -92,6 +119,7 @@ class TextElectionParser:
             # Change of province indicates a new candidacy section, so reset candidacy and candidate order
             self.current_candidacy = None
             self.candidate_order = 0
+            self.pending_order = None
             return
 
         # Explicit line candidacy headers (e.g., "Candidatura núm.: 1 Partido XYZ")
@@ -101,6 +129,7 @@ class TextElectionParser:
             # We have switched to a new candidacy, so reset order and substitute flags
             self.is_substitute = False
             self.candidate_order = 0
+            self.pending_order = None
             self.__set_candidacy(content)
             return
 
@@ -111,6 +140,7 @@ class TextElectionParser:
                     "Substitute section found before any candidates were parsed."
                 )
             self.is_substitute = True
+            self.pending_order = None
             return
 
         # Numbered items (implicit candidate or candidacy if old format)
@@ -121,12 +151,32 @@ class TextElectionParser:
             self.__handle_numbered_item(order, content)
             return
 
+        # Numbered items (split-line format)
+        isolated_match = self.ISOLATED_NUMBER_RE.match(line)
+        if isolated_match:
+            expected_order = int(isolated_match.group(1))
+            if expected_order < 100:  # Arbitrary threshold to avoid false positives
+                self.pending_order = expected_order
+            return
+
         # Handle multi-line continuations and discard decorations
-        self.__handle_unmatched_line(line)
+        # TODO: Convert to precompiled regex for performance
+        # TODO: Check for more robust detection
+        if (
+            not re.search(r"\d", line)
+            and "http" not in line.lower()
+            and not self.line_completed
+        ):
+            self.__handle_unmatched_line(line)
+            return
+        # Mark the line as completed to avoid adding more stuff to the last candidate
+        self.line_completed = True
 
     def __handle_numbered_item(self, order: int, content: str) -> None:
         """Processes lines that start with a number (either a candidacy or a candidate)."""
-        print(f"Processing numbered item: order={order}, content='{content}'")
+        if "disposiciones generales" in content.lower():
+            # Skip lines that are part of the general provisions section
+            return
         if (
             order == 1
             and self.candidate_order > 0
@@ -180,6 +230,7 @@ class TextElectionParser:
             current_acronym = ""
         self.current_candidacy = Candidacy(name=current_party, acronym=current_acronym)
         logger.debug(f"Set current candidacy: {self.current_candidacy}")
+        self.line_completed = False  # Reset line completion for new candidacy
 
     def __add_candidate(self, content: str, order: int) -> None:
         """Cleans candidate data and appends it to the dataset."""
@@ -205,18 +256,10 @@ class TextElectionParser:
             f"Adding candidate: {candidate.full_name} from {candidate.province} for {candidate.candidacy.name}"
         )
         self.parsed_data.append(candidate)
+        self.line_completed = False  # Reset line completion for new candidate
 
     def __handle_unmatched_line(self, line: str) -> None:
         """Discards headers/footers or appends valid multi-line names."""
-        # Discard lines with numbers (dates/pages), URLs
-        # TODO: Convert to precompiled regex for performance
-        # TODO: Check for more robust detection
-        if re.search(r"\d", line) or "http" in line.lower():
-            return
-        line = line.strip()
-        if not line:
-            return
-
         # Append valid continuation to the last recorded candidate
         if len(self.parsed_data) > 0 and self.candidate_order > 0:
             self.parsed_data[-1] = replace(
