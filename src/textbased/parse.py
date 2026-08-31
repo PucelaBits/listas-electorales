@@ -1,10 +1,42 @@
+import glob
 import re
+from collections.abc import Generator
 from dataclasses import replace
+
+import fitz
 
 from common import logger
 from common.models import Candidacy, Candidate
 from common.names import prettify_name
-from textbased.error_fixes import TextParser
+
+from .error_fixes import ERROR_FIXERS
+
+
+class TextReader:
+    def __init__(self, folderpath: str, region: str, year: int, month: int):
+        self.folderpath = folderpath
+        self.fix_text = ERROR_FIXERS.get((region, year, month), None)
+
+    def parse(self) -> Generator[str, None, None]:
+        pdf_files = glob.glob(f"{self.folderpath}/candidaturas*.pdf")
+        if not pdf_files:
+            raise FileNotFoundError(f"No PDF files found in {self.folderpath}")
+
+        for pdf_path in pdf_files:
+            yield from self.__parse_single_file(pdf_path)
+
+    def __parse_single_file(self, pdf_path: str) -> Generator[str, None, None]:
+        doc = fitz.open(pdf_path)
+        for page in doc:
+            text = page.get_text()
+            if not text:
+                continue
+
+            if self.fix_text is not None:
+                text = self.fix_text(text)
+
+            for line in text.split("\n"):
+                yield line.strip()
 
 
 class TextElectionParser:
@@ -25,7 +57,7 @@ class TextElectionParser:
     # Extract party name and acronym from the clean content
     CANDIDACY_RE = re.compile(r"^(.*?)\s*\((.*?)\)$")
 
-    def __init__(self, text_parser: TextParser):
+    def __init__(self, text_parser: TextReader):
         self.text_parser = text_parser
         self.parsed_data = []
         self.current_province = ""
