@@ -118,7 +118,6 @@ def prettify_municipality(name: str) -> str:
         if m:
             base, article = m.group(1), m.group(2)
 
-            # 2. Handle L' natively without needing a second regex pass
             if article.upper() == "L'":
                 part = f"L'{base}"
             else:

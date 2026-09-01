@@ -20,9 +20,11 @@ def load_election(
     folderpath = os.path.join(TEXT_BASED_DATA_DIR, region, f"{year:04d}_{month:02d}")
 
     # Parse the text-based election data to create an Election object
-    text_parser = TextReader(folderpath, region, year, month)
+    text_reader = TextReader(folderpath, region, year, month)
     try:
-        candidates = TextElectionParser(text_parser).parse()
+        parser = TextElectionParser(text_reader)
+        parser.parse()
+        candidates = parser.build()
     except Exception as e:
         raise RuntimeError(
             f"Failed to parse election data for {region} {year}-{month}: {e}"

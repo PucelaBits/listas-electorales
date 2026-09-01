@@ -1,5 +1,3 @@
-import re
-
 from ._common import register_fixer
 
 
@@ -23,59 +21,65 @@ def fix_andalucia_1994_06(text: str) -> str:
     return text
 
 
-# BOJA 37, err.pdf. One line per "Donde dice / Debe decir".
-# NOTE: NOT POSSIBLE via text fix: Granada "4. Convergencia Andaluza (CAnda)" Suplentes
-#   order 1-4 listed as [Contreras Fernández, Garrido Asenjo, Moya Martín, Martín Escobar]
-#   but must be [Garrido Asenjo, Moya Martín, Martín Escobar, Contreras Fernández];
-#   the fix swaps candidates across four "order + honorific + name" line groups that are
-#   individually identical in shape, so a per-page text substitution cannot reorder them
-#   uniquely (a candidate with a very specific name could be moved, but the parser
-#   assigns order from the "N" line, which would also have to move).
-ANDALUCIA_2008_03_REPLACEMENTS = {
-    # Original literals
-    "Rodrigo José González Soler": "Rodrigo José Rodríguez Soler",
-    "José Ortega Andrande": "José Ortega Andrade",
-    "Sara María Rodríguez Martínez": "Sara María Rodríguez Martín",
-    "Doña\nHugo Cañellas Ávila": "Don\nHugo Cañellas Ávila",
-    "María Ester Moleón Paiz": "María Esther Moleón Paiz",
-    "Jhonatan Frutos Frutos": "Jonatan Frutos Frutos",
-    "Rosa Ruiz Escobar": "Rosa María Ruiz Escobar",
-    "Gracia Collado Montañero": "Gracia Collado Montanero",
-    "M.ª Luisa Ávila de la Casa": "María Luisa Ávila de la Casa",
-    "Brun Esquilache": "Brun Esquileche",
-    "María Josefa Anes Íñiguez": "María Josefa Anés Íñiguez",
-    "Rosa Gema Flores": "Rosa Gemma Flores",
-    "de Sosa Montesino": "de Sosa Montesinos",
-    # Expanded regex variations to enable a single dictionary pass
-    "2. PARTIDO SOCIALISTA OBRERO DE ANDALUCIÁ (PSOE-A)": "2. PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCÍA (PSOE-A)",
-    "2. PARTIDO SOCIALISTA OBRERO DE ANDALUCÍA (PSOE-A)": "2. PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCÍA (PSOE-A)",
-    "ANDALUCIA-ALTERNATIVA (IULV-CA)": "ANDALUCÍA (IULV-CA)",
-    "ANDALUCÍA-ALTERNATIVA (IULV-CA)": "ANDALUCÍA (IULV-CA)",
-}
-P_ANDALUCIA_2008_03_ALL = re.compile(
-    "|".join(map(re.escape, ANDALUCIA_2008_03_REPLACEMENTS.keys()))
-)
+@register_fixer("andalucia", 2000, 3)
+def fix_andalucia_2000_03(text: str) -> str:
+    if "Instituto Geográfico Nacional" in text:
+        # Remove preamble
+        return ""
+    return text
+
+
+@register_fixer("andalucia", 2004, 3)
+def fix_andalucia_2004_03(text: str) -> str:
+    if "CONSEJERIA DE TURISMO Y DEPORTE" in text:
+        # Remove preamble
+        return ""
+    # Remove extra substitute and move it to the missing position
+    text = text.replace(
+        "Núm.   3.  Juan Tornero Cabezuelo.\n         Núm.   4.  Miguel Angel Soto Blanco.",
+        "Núm.   3.  Juan Tornero Cabezuelo.",
+    )
+    text = text.replace(
+        "Núm.   2.  Antonio Ruiz Ortega.",
+        "Núm.   2.  Antonio Ruiz Ortega.\n         Núm.   3.  Miguel Angel Soto Blanco.",
+    )
+    return text
 
 
 @register_fixer("andalucia", 2008, 3)
 def fix_andalucia_2008_03(text: str) -> str:
-    # All substitutions (including previous regexes) happen in a single pass
-    return P_ANDALUCIA_2008_03_ALL.sub(
-        lambda m: ANDALUCIA_2008_03_REPLACEMENTS[m.group(0)], text
+    text = text.replace(
+        "1      Don    Rafael Contreras Fernández\n2      Doña   María Isabel Garrido Asenjo\n3      Don    Antonio Moya Martín\n4      Doña   Montserrat Martín Escobar",
+        "1      Don    María Isabel Garrido Asenjo\n2      Don    Antonio Moya Martín\n3      Doña   Montserrat Martín Escobar\n4      Don    Rafael Contreras Fernández",
     )
+    text = text.replace(
+        "2. PARTIDO SOCIALISTA OBRERO DE ANDALUCÍA (PSOE-A)",
+        "2. PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCÍA (PSOE-A)",
+    )
+    text = text.replace("Rodrigo José González Soler", "Rodrigo José Rodríguez Soler")
+    text = text.replace("José Ortega Andrande", "José Ortega Andrade")
+    text = text.replace("Sara María Rodríguez Martínez", "Sara María Rodríguez Martín")
+    text = text.replace("María Ester Moleón Paiz", "María Esther Moleón Paiz")
+    text = text.replace("Jhonatan Frutos Frutos", "Jonatan Frutos Frutos")
+    text = text.replace("Rosa Ruiz Escobar", "Rosa María Ruiz Escobar")
+    text = text.replace("Gracia Collado Montañero", "Gracia Collado Montanero")
+    text = text.replace("ANDALUCIA-ALTERNATIVA (IULV-CA)", "ANDALUCÍA (IULV-CA)")
+    text = text.replace("M.ª Luisa Ávila de la Casa", "María Luisa Ávila de la Casa")
+    text = text.replace("Carmen Brun Esquilache", "Carmen Brun Esquileche")
+    text = text.replace("María Josefa Anes Íñiguez", "María Josefa Anés Íñiguez")
+    text = text.replace("Rosa Gema Flores", "Rosa Gemma Flores")
+    text = text.replace("Juan de Sosa Montesino", "Juan de Sosa Montesinos")
+    return text
 
-ANDALUCIA_2015_03_REPLACEMENTS = {
-    "Doña Matilde Ortiz Arcas": "Doña Matilde Ortiz Arca",
-    "Concepción del Carmen Muñoz Sánchez": "Concepción del Carmelo Muñoz Sánchez",
-    "Javier Vicente Del Moral Quevedo": "Juan Vicente Del Moral Quevedo",
-    "Nazaret Navarro Todelado": "Nazaret Navarro Toledano",
-}
 
-P_ANDALUCIA_2015_03_LITERALS = re.compile(
-    "|".join(map(re.escape, ANDALUCIA_2015_03_REPLACEMENTS.keys()))
-)
 @register_fixer("andalucia", 2015, 3)
 def fix_andalucia_2015_03(text: str) -> str:
-    return P_ANDALUCIA_2015_03_LITERALS.sub(
-        lambda m: ANDALUCIA_2015_03_REPLACEMENTS[m.group(0)], text
+    text = text.replace("Matilde Ortiz Arcas", "Matilde Ortiz Arca")
+    text = text.replace(
+        "Concepción del Carmen Muñoz Sánchez", "Concepción del Carmelo Muñoz Sánchez"
     )
+    text = text.replace(
+        "Javier Vicente Del Moral Quevedo", "Juan Vicente Del Moral Quevedo"
+    )
+    text = text.replace("Nazaret Navarro Todelado", "Nazaret Navarro Toledano")
+    return text
