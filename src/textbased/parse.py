@@ -43,7 +43,6 @@ def _has_trash_text(line: str) -> bool:
         or "junio" in line_lower
         or "agosto" in line_lower
         or "septiembre" in line_lower
-        or "octubre" in line_lower
         or "noviembre" in line_lower
         or "diciembre" in line_lower
     )
@@ -91,7 +90,7 @@ class TextReader:
 
 class TextElectionParser:
     PROVINCE_RE = re.compile(
-        r"(?:JUNTA ELECTORAL\s+PROVINCIAL\s+DE\s+|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL\:\s+)([A-ZÁÉÍÓÚÑ\s]+)",
+        r"(?:JUNTA ELECTORAL\s+PROVINCIAL\s+DE\s+|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL:\s+|PROVINCIA\s+DE\s+)([A-ZÁÉÍÓÚÑ\s]+)",
         re.IGNORECASE,
     )
 
@@ -162,19 +161,8 @@ class TextElectionParser:
         # Validate that all candidacies have the same number of candidates FOR EACH province
         for province, candidacy_counts in counts_by_province.items():
             if len(set(candidacy_counts.values())) > 1:
-                # Find the mismatch for this specific province
-                reference_count = next(iter(candidacy_counts.values()))
-                mismatch = {
-                    candidacy.name: count
-                    for candidacy, count in candidacy_counts.items()
-                    if count != reference_count
-                }
-
-                # Safely extract province name (in case 'province' is an object rather than a string)
-                prov_name = getattr(province, "name", province)
-
                 raise ValueError(
-                    f"Mismatch in number of candidates across candidacies in province '{prov_name}': {mismatch}"
+                    f"Mismatch in number of candidates across candidacies in province '{province}': {candidacy_counts}"
                 )
 
         return tuple(self.parsed_data)
@@ -190,7 +178,9 @@ class TextElectionParser:
         # Province
         prov_match = self.PROVINCE_RE.search(line)
         if prov_match:
+            self.__validate_substitutes_for_previous_candidacy()
             self.current_province = prov_match.group(1).strip().title()
+            logger.debug(f"Detected province: {self.current_province}")
             # Change of province indicates a new candidacy section, so reset candidacy and candidate order
             self.current_candidacy = None
             self.candidate_order = 0
@@ -266,7 +256,11 @@ class TextElectionParser:
             return
 
         # Handle multi-line continuations and discard decorations
-        if not re.search(r"\d", line) and "núm." not in line.lower() and not self.line_completed:
+        if (
+            not re.search(r"\d", line)
+            and "núm." not in line.lower()
+            and not self.line_completed
+        ):
             self.__handle_unmatched_line(line)
             return
         # Mark the line as completed to avoid adding more stuff to the last candidate
@@ -276,6 +270,8 @@ class TextElectionParser:
         """Processes lines that start with a number (either a candidacy or a candidate)."""
         if "disposiciones generales" in content.lower():
             # Skip lines that are part of the general provisions section
+            return
+        if order > 100:  # Arbitrary threshold to avoid false positives
             return
         if (
             order == 1
@@ -305,6 +301,9 @@ class TextElectionParser:
             ):
                 # In some PDFs, the candidacies are not separated by the a different title,
                 # so it can be mistaken as a new candidate. We are actually starting a new candidacy
+                logger.debug(
+                    f"Automatically detected new candidacy after {self.expected_substitutes} substitutes for {self.current_candidacy.name}. Setting new candidacy: {content}"
+                )
                 self.__set_candidacy(content)
                 return
             # We expect to be parsing candidates for the current candidacy
@@ -331,20 +330,7 @@ class TextElectionParser:
         current_party, current_acronym = _extract_candidacy(content)
         # Validate the number of substitutes for the previous candidacy before switching
         if self.current_candidacy is not None:
-            expected_substitutes = 0
-            for c in self.parsed_data[::-1]:
-                if c.candidacy == self.current_candidacy and c.substitute:
-                    expected_substitutes += 1
-                else:
-                    break
-            if (
-                self.expected_substitutes is not None
-                and expected_substitutes != self.expected_substitutes
-            ):
-                raise ValueError(
-                    f"Mismatch in expected substitutes for {self.current_candidacy.name}: "
-                    f"expected {self.expected_substitutes}, found {expected_substitutes}"
-                )
+            expected_substitutes = self.__validate_substitutes_for_previous_candidacy()
             self.expected_substitutes = expected_substitutes
             # In some cases, the substitutes are not explicitly marked
             if self.expected_substitutes == 0:
@@ -365,10 +351,10 @@ class TextElectionParser:
             )
         if not self.current_province:
             raise ValueError("Unexpected candidate without a current province context.")
-        # Remove digits from the name
-        content = re.sub(r"\d", "", content).strip()
+        # Keep just standard letters, Spanish accents, eñes, ü, spaces, hyphens, and apostrophes
+        content = re.sub(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ \-']", "", content).strip()
         candidate = Candidate(
-            full_name=prettify_name(content.rstrip(".")),
+            full_name=prettify_name(content),
             candidacy=self.current_candidacy,
             province=self.current_province,
             order=order,
@@ -403,3 +389,21 @@ class TextElectionParser:
             self.current_candidacy = replace(
                 self.current_candidacy, name=new_name, acronym=new_acronym
             )
+
+    def __validate_substitutes_for_previous_candidacy(self) -> int:
+        """Validates that the number of substitutes matches the expected count for the previous candidacy."""
+        expected_substitutes = 0
+        for c in self.parsed_data[::-1]:
+            if c.candidacy == self.current_candidacy and c.substitute:
+                expected_substitutes += 1
+            else:
+                break
+        if (
+            self.expected_substitutes is not None
+            and expected_substitutes != self.expected_substitutes
+        ):
+            raise ValueError(
+                f"Mismatch in expected substitutes for {self.current_candidacy.name}: "
+                f"expected {self.expected_substitutes}, found {expected_substitutes}"
+            )
+        return expected_substitutes
