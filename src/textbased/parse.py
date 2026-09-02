@@ -13,19 +13,40 @@ from .error_fixes import ERROR_FIXERS
 
 LONG_LINE_THRESHOLD = 150  # Arbitrary threshold for splitting long lines
 
-# Extract candidacy name and acronym from the clean content
-_CANDIDACY_RE = re.compile(r"^(.*?)\s*\((.*?)\)$")
+
+_CANDIDATE_TRAILING_CHARS_RE = re.compile(r"\b[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\-\(\)']{1,2}\b$")
+_CANDIDATE_WHITELIST_RE = re.compile(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ \-'\(\)]")
+
+# Extract candidacy name and acronym
+_CANDIDACY_RE = re.compile(
+    r"^(.*?)\s*"
+    r"(?:"
+    r"([A-ZÑ0-9]+\.[A-ZÑ0-9.\-]*\s*\([^()]+\))"
+    r"|"
+    r"\(([^()]+(?:\([^()]*\)[^()]*)*)\)"
+    r")$"
+)
 
 
 def _extract_candidacy(content: str) -> tuple[str, str]:
-    acr_match = _CANDIDACY_RE.search(content)
-    if acr_match:
-        current_party = acr_match.group(1).strip()
-        current_acronym = acr_match.group(2).strip()
-    else:
-        current_party = content.strip()
-        current_acronym = ""
-    return current_party, current_acronym
+    content = content.strip()
+    match = _CANDIDACY_RE.search(content)
+
+    if match:
+        party = match.group(1).strip()
+        # The acronym will be captured by either Branch A (group 2) or Branch B (group 3)
+        acronym = match.group(2) or match.group(3)
+        return party, acronym.strip()
+
+    return content, ""
+
+
+def _clean_candidate_name(name: str) -> str:
+    # Keep just standard letters, Spanish accents, eñes, ü, spaces, hyphens, and apostrophes
+    name = re.sub(_CANDIDATE_WHITELIST_RE, "", name)
+    # Remove any trailing random letters (< 3 characters) that are likely OCR artifacts
+    name = re.sub(_CANDIDATE_TRAILING_CHARS_RE, "", name)
+    return name.strip()
 
 
 def _has_trash_text(line: str) -> bool:
@@ -46,7 +67,6 @@ def _has_trash_text(line: str) -> bool:
         or "noviembre" in line_lower
         or "diciembre" in line_lower
     )
-
 
 
 def _find_column_split_x(page: pymupdf.Page, blocks: list) -> float:
@@ -92,6 +112,7 @@ def _find_column_split_x(page: pymupdf.Page, blocks: list) -> float:
 
     return default_mid
 
+
 class TextReader:
     def __init__(self, folderpath: str, region: str, year: int, month: int):
         self.folderpath = folderpath
@@ -118,7 +139,9 @@ class TextReader:
 
                 # Primary sort key: 0 for left column, 1 for right column
                 # Secondary sort key: b[1] (top vertical Y coordinate)
-                blocks.sort(key=lambda b: (0 if ((b[0] + b[2]) / 2) < split_x else 1, b[1]))
+                blocks.sort(
+                    key=lambda b: (0 if ((b[0] + b[2]) / 2) < split_x else 1, b[1])
+                )
 
                 text = "\n".join(b[4] for b in blocks)
             else:
@@ -474,10 +497,8 @@ class TextElectionParser:
             )
         if not self.current_province:
             raise ValueError("Unexpected candidate without a current province context.")
-        # Keep just standard letters, Spanish accents, eñes, ü, spaces, hyphens, and apostrophes
-        content = re.sub(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ \-']", "", content).strip()
         candidate = Candidate(
-            full_name=prettify_name(content),
+            full_name=prettify_name(_clean_candidate_name(content)),
             candidacy=self.current_candidacy,
             province=self.current_province,
             order=order,
@@ -496,19 +517,26 @@ class TextElectionParser:
         """Discards headers/footers or appends valid multi-line names."""
         # Append valid continuation to the last recorded candidate
         if len(self.parsed_data) > 0 and self.candidate_order > 0:
-            # Remove all digits from the text
-            line = re.sub(r"\d", "", line).strip()
+            if self.parsed_data[-1].full_name.endswith("-"):
+                # Handle hyphenated names that are split across lines
+                new_name = _clean_candidate_name(
+                    self.parsed_data[-1].full_name[:-1] + line
+                )
+            else:
+                new_name = _clean_candidate_name(
+                    self.parsed_data[-1].full_name + " " + line
+                )
             self.parsed_data[-1] = replace(
                 self.parsed_data[-1],
-                full_name=prettify_name(
-                    self.parsed_data[-1].full_name + " " + line.rstrip(".")
-                ),
+                full_name=prettify_name(new_name),
             )
         elif self.current_candidacy and self.candidate_order == 0:
             # If we are not currently parsing candidates, this line is a continuation of the candidacy name
-            new_name, new_acronym = _extract_candidacy(
-                self.current_candidacy.name + " " + line
-            )
+            if self.current_candidacy.name.endswith("-"):
+                full_content = self.current_candidacy.name[:-1] + line
+            else:
+                full_content = self.current_candidacy.name + " " + line
+            new_name, new_acronym = _extract_candidacy(full_content)
             self.current_candidacy = replace(
                 self.current_candidacy, name=new_name, acronym=new_acronym
             )

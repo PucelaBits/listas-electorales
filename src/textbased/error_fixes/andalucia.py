@@ -7,10 +7,67 @@ ANDALUCIA_1990_06_D_RE = re.compile(r"-?(\d+)\.?\s*D[a-zA-Zªº\-']?\.? ")
 
 @register_fixer("andalucia", 1990, 6)
 def fix_andalucia_1990_06(text: str) -> str:
-    # TODO: err.pdf
     # Remove footer
     if "PLAZOS DE SUSCRIPCION" in text:
         return ""
+    # Erratas (err.pdf)
+    text = text.replace("N 2. VERDES DE ANDALUCIA (V.A.)", "N 2. VERDES DE ANDALUCIA")
+    text = text.replace(
+        "Bruno Juan Carrera Cortés de Maia", "Bruno Juan Carrera Cortez de María"
+    )
+    text = text.replace("Jesús Romera Domené", "Jesús Romera Domene")
+    text = text.replace(
+        "M Angeles Cervantes Beneyto", "María de los Angeles Cervantes Beneyto"
+    )
+    text = text.replace("José María Gómez Terreros", "José María Gómez Terrero")
+    text = text.replace("Luisa Ibáñez Cuadrado", "Luisa Ybáñez Cuadrado")
+    text = text.replace(
+        "N 4. IZQUIERDA UNIDA-CONVOCATORIA POR\nANDALUCIA (1.U.-C.A.)",
+        "N 4. IZQUIERDA UNIDA-CONVOCATORIA POR ANDALUCIA (IU-CA)",
+    )
+    text = text.replace("María Mercedes Salguero Borrero", "María de las Mercedes Salguero Borrero")
+    text = text.replace("Ildefonso Guerrero Seijó", "Ildefonso Guerrero Seijo")
+    text = text.replace("María Josefa Pineda Ortega", "Joséfa Pineda Ortega")
+    text = text.replace("Ricardo Mazachis Rodríguez", "Ricardo Masachís Rodríguez")
+    text = text.replace("María Reyes Muñoz Terol", "María de los Reyes Muñoz Terol")
+    text = text.replace("Pilar Martín-Peñasco Román", "María del Pilar Martín-Peñasco Román")
+    text = text.replace("José Panés Muñoz", "José Panes Muñoz")
+    text = text.replace("N 9. PARTIDO ANDALUCISTA (P.A.)", "N 9. PARTIDO ANDALUCISTA")
+    text = text.replace("Carmen Lovelle Alen", "María del Carmen Lovelle Alen")
+    text = text.replace("María de los Milagros Isla Barba", "María Milagros Isla Barba")
+    text = text.replace("P.T.E.-U.C.", "PTE-UC")
+    text = text.replace("M Angeles Alvarez Martínez", "María de los Angeles Alvarez Martínez")
+    text = text.replace("Salvador Blanco Ruiz'", "Salvador Blanco Rubio")
+    text = text.replace("Carmen Mata Varelo", "Carmen Mata Valero")
+    text = text.replace(
+        "N 11. PARTIDO AGRUPACION RUIZ MATEOS", "N 11. AGRUPACION RUIZ MATEOS"
+    )
+    text = text.replace("Manuel Macías Romero", "José Manuel Macías Ramero")
+    text = text.replace("Fernández-Piñar Afán de Ri-\n\nvera", "Fernández-Piñar Afán de Ribera")
+    text = text.replace(
+        "N 2. PARTIDO SOCIALISTA OBRERO ESPAÑOL\n\n(P.S.O.E. DE ANDALUCIA)",
+        "N 2. PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA (PSOE DE ANDALUCIA)",
+    )
+    text = text.replace("N 4. PARTIDO ANDALUCISTA (P.A.)", "N 4. PARTIDO ANDALUCISTA")
+    text = text.replace("María Victoria Martín Noguez", "María Victoria Martín Nogues")
+    text = text.replace("Francisco Domínguez Chaves", "Francisco Domínguez Chavez")
+    text = text.replace("Miguel Bernáldez Prada", "Miguel Bernardez Prada")
+    text = text.replace("María José Ligero Rey", "María José Lijero Rey")
+    text = text.replace("N 13. PARTIDO ANDALUCISTA (P.A.)", "N 13. PARTIDO ANDALUCISTA")
+    # Remove candidacy name
+    text = text.replace(". PCE (M-1)", "")
+    text = text.replace(". PCE (M-L)", "")
+    text = text.replace(".\nPCE (M-L)", "")
+    text = text.replace(".\nPCE (M-1)", "")
+    text = text.replace(". Independiente", "")
+    text = text.replace(". Indepen-\ndiente", "")
+    text = text.replace(". Indepen-\n\ndiente", "")
+    text = text.replace(".\nIndependiente", "")
+    text = text.replace("lindependiente)", "")
+    text = text.replace("tindependiente)", "")
+    text = text.replace("lindependientel", "")
+    text = text.replace("lindependien-\n\ntel", "")
+
     # Duplicate missing substitutes
     text = text.replace(
         "1 D. Juan Carlos Chamón Ibáñez",
@@ -77,6 +134,7 @@ def fix_andalucia_1994_06(text: str) -> str:
     if "EXPOSICION DE MOTIVOS" in text:
         # Remove preamble
         return ""
+    # Erratas (err.pdf)
     text = text.replace(
         "PROVINCIA DE*MALAGA\n\n        Núm. 1.- PARTIDO POPULAR (P.P.)",
         "PROVINCIA DE MALAGA \nNúm. 1. PARTIDO POPULAR DE ANDALUCIA (P.P.)",
@@ -176,6 +234,7 @@ def fix_andalucia_2004_03(text: str) -> str:
 
 @register_fixer("andalucia", 2008, 3)
 def fix_andalucia_2008_03(text: str) -> str:
+    # Erratas (err.pdf)
     text = text.replace(
         "1      Don    Rafael Contreras Fernández\n2      Doña   María Isabel Garrido Asenjo\n3      Don    Antonio Moya Martín\n4      Doña   Montserrat Martín Escobar",
         "1      Don    María Isabel Garrido Asenjo\n2      Don    Antonio Moya Martín\n3      Doña   Montserrat Martín Escobar\n4      Don    Rafael Contreras Fernández",
@@ -202,6 +261,7 @@ def fix_andalucia_2008_03(text: str) -> str:
 
 @register_fixer("andalucia", 2015, 3)
 def fix_andalucia_2015_03(text: str) -> str:
+    # Erratas (err.pdf)
     text = text.replace("Matilde Ortiz Arcas", "Matilde Ortiz Arca")
     text = text.replace(
         "Concepción del Carmen Muñoz Sánchez", "Concepción del Carmelo Muñoz Sánchez"
