@@ -19,7 +19,7 @@ def clean_ocr_text(text: str) -> str:
     # Clean up "Núm" variations (e.g., "Núm.-", "Núm.- ", "Núm ")
     text = re.sub(r"Núm[\.\-\s]+", "Núm. ", text)
 
-   # Remove stray quotes around numbers and dots
+    # Remove stray quotes around numbers and dots
     text = re.sub(r"['´`\"](?=\d)", "", text)
     text = re.sub(r"(?<=\d)['´`\"]", "", text)
     text = re.sub(r"(?<=\d\.)['´`\"]", "", text)
@@ -28,16 +28,18 @@ def clean_ocr_text(text: str) -> str:
     text = re.sub(r"\b(\d+)[:!•]", r"\1.", text)
 
     # Fix CLUSTERS of messy punctuation (dots, dashes, commas, colons, exclamation marks)
-    # This will turn "11.:", "1.-.", "10!.", etc., into a clean "11. "
     text = re.sub(r"\b(\d+)[\.\-\,:\!•]{2,}\s*", r"\1. ", text)
 
     # Fix stray dots before list numbers (e.g., ".13." -> "13.")
     text = re.sub(r"(?<=\s)[\.,](\d+)[\.,]", r"\1.", text)
 
     # Add missing dots after numbers preceding names/entities (e.g., "10 Don" -> "10. Don")
-    # Looks for a number followed by a space, then "Don", "Doña", or an uppercase word.
-    text = re.sub(r"\b(\d+)\s+(?=Don|Doña|[A-Z]{2,})", r"\1. ", text)
+    text = re.sub(r"\b(\d+)\ +(?=Don|Doña|[A-Z]{2,})", r"\1. ", text)
 
     # Fix commas separating titles (e.g., "Don,Juan" -> "Don Juan")
     text = re.sub(r"(Don|Doña)[,|-]", r"\1 ", text)
+
+    # Remove stray single letters surrounded by dots after numbers (e.g., "3.x. " -> "3. ")
+    text = re.sub(r"\b(\d+)\.[a-zA-Z]\.\s*", r"\1. ", text)
+
     return text

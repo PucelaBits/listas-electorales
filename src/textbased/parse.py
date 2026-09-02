@@ -48,6 +48,50 @@ def _has_trash_text(line: str) -> bool:
     )
 
 
+
+def _find_column_split_x(page: pymupdf.Page, blocks: list) -> float:
+    """
+    Calculates the exact gutter center between two columns using an
+    area-weighted average of block boundaries.
+    """
+    default_mid = page.rect.width / 2
+
+    left_weights = 0.0
+    left_x1_sum = 0.0
+
+    right_weights = 0.0
+    right_x0_sum = 0.0
+
+    for b in blocks:
+        x0, y0, x1, y1 = b[0], b[1], b[2], b[3]
+        width = x1 - x0
+        height = y1 - y0
+        area = width * height
+
+        # Ignore full-width spanning headers/banners so they don't distort the gutter
+        if width > page.rect.width * 0.55 and x0 < default_mid < x1:
+            continue
+
+        # Classify based on the block's center X coordinate
+        block_center_x = (x0 + x1) / 2
+
+        if block_center_x < default_mid:
+            left_x1_sum += x1 * area
+            left_weights += area
+        else:
+            right_x0_sum += x0 * area
+            right_weights += area
+
+    if left_weights > 0 and right_weights > 0:
+        avg_left_x1 = left_x1_sum / left_weights
+        avg_right_x0 = right_x0_sum / right_weights
+
+        # The split point is right in the center of the gutter
+        if avg_left_x1 < avg_right_x0:
+            return (avg_left_x1 + avg_right_x0) / 2
+
+    return default_mid
+
 class TextReader:
     def __init__(self, folderpath: str, region: str, year: int, month: int):
         self.folderpath = folderpath
@@ -63,8 +107,23 @@ class TextReader:
 
     def __parse_single_file(self, pdf_path: str) -> Generator[str, None, None]:
         doc = pymupdf.open(pdf_path)
+        is_double_col = self.__is_double_column(doc)
         for page in doc:
-            text = page.get_text(sort=True)
+            if is_double_col:
+                # Extract only text blocks (type 0)
+                blocks = [b for b in page.get_text("blocks") if b[6] == 0]
+
+                # Calculate the dynamic gutter center for this specific page
+                split_x = _find_column_split_x(page, blocks)
+
+                # Primary sort key: 0 for left column, 1 for right column
+                # Secondary sort key: b[1] (top vertical Y coordinate)
+                blocks.sort(key=lambda b: (0 if ((b[0] + b[2]) / 2) < split_x else 1, b[1]))
+
+                text = "\n".join(b[4] for b in blocks)
+            else:
+                # Standard single-column extraction
+                text = page.get_text(sort=True)
             if not text:
                 continue
 
@@ -86,6 +145,60 @@ class TextReader:
                             yield selected_line
                 else:
                     yield line
+
+    def __is_double_column(self, doc: pymupdf.Document) -> bool:
+        """
+        Reads a page in the middle of the document to determine if it uses a two-column layout.
+        Returns True if a significant portion of the text area is in the right half,
+        ignoring headers and footers.
+        """
+        if doc.page_count == 0:
+            return False
+
+        # Select a page in the middle of the document to avoid title/header pages
+        mid_index = doc.page_count // 2
+        page = doc[mid_index]
+
+        midpoint_x = page.rect.width / 2
+
+        # Define vertical boundaries (ignore top 10% and bottom 10%)
+        top_boundary = page.rect.height * 0.10
+        bottom_boundary = page.rect.height * 0.90
+
+        # Extract only text blocks (type 0) that fall within the vertical boundaries
+        blocks = [
+            b
+            for b in page.get_text("blocks")
+            if b[6] == 0 and b[1] > top_boundary and b[3] < bottom_boundary
+        ]
+
+        if not blocks:
+            return False
+
+        total_area = 0.0
+        right_column_area = 0.0
+
+        for b in blocks:
+            # Calculate area: (x1 - x0) * (y1 - y0)
+            area = (b[2] - b[0]) * (b[3] - b[1])
+            total_area += area
+
+            # If the block starts on the right side, add its area to the right column total
+            if b[0] > midpoint_x:
+                right_column_area += area
+
+        if total_area == 0:
+            return False
+
+        # Threshold: if > 15% of the text area is on the right, it's double-column
+        ratio = right_column_area / total_area
+
+        result = ratio > 0.15
+        if result:
+            logger.debug(
+                f"Detected double-column layout on page {mid_index} with {right_column_area:.2f}/{total_area:.2f} ({ratio:.2%}) of text area on the right side."
+            )
+        return result
 
 
 class TextElectionParser:
@@ -165,6 +278,7 @@ class TextElectionParser:
                     f"Mismatch in number of candidates across candidacies in province '{province}': {candidacy_counts}"
                 )
 
+        # TODO: Perform a cleanup of the parsed data to remove any duplicates candidates
         return tuple(self.parsed_data)
 
     def __process_line(self, line: str) -> None:
@@ -335,6 +449,15 @@ class TextElectionParser:
             # In some cases, the substitutes are not explicitly marked
             if self.expected_substitutes == 0:
                 self.expected_substitutes = None
+            # Validate that the previuos candidacy has at least one candidate
+            if (
+                len(self.parsed_data) > 0
+                and self.parsed_data[-1].candidacy == self.current_candidacy
+                and self.candidate_order == 0
+            ):
+                raise ValueError(
+                    f"No candidates were parsed for the previous candidacy {self.current_candidacy.name} before switching to a new candidacy."
+                )
         self.current_candidacy = Candidacy(name=current_party, acronym=current_acronym)
         logger.debug(f"Set current candidacy: {self.current_candidacy}")
         self.line_completed = False  # Reset line completion for new candidacy
