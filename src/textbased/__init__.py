@@ -2,7 +2,7 @@ import os
 
 from common.models import Election, ElectionType
 
-from .parse import TextElectionParser, TextReader
+from .parse import TextElectionParser, PDFReader
 
 TEXT_BASED_DATA_DIR = os.path.join(
     os.path.dirname(__file__), "..", "..", "data", "regions"
@@ -20,7 +20,7 @@ def load_election(
     folderpath = os.path.join(TEXT_BASED_DATA_DIR, region, f"{year:04d}_{month:02d}")
 
     # Parse the text-based election data to create an Election object
-    text_reader = TextReader(folderpath, region, year, month)
+    text_reader = PDFReader(folderpath, region, year, month)
     try:
         parser = TextElectionParser(text_reader)
         parser.parse()

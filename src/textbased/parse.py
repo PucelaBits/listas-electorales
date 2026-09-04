@@ -1,25 +1,19 @@
-import glob
 import re
-from collections.abc import Generator
 from dataclasses import replace
-
-import pymupdf
 
 from common import logger
 from common.models import Candidacy, Candidate
 from common.names import prettify_name
 
-from .error_fixes import ERROR_FIXERS
-
-LONG_LINE_THRESHOLD = 150  # Arbitrary threshold for splitting long lines
-
+from .pdf import PDFReader
 
 _CANDIDATE_TRAILING_CHARS_RE = re.compile(r"\b[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\-\(\)']{1,2}\b$")
 _CANDIDATE_WHITELIST_RE = re.compile(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ \-'\(\)]")
 
 # Extract candidacy name and acronym
 _CANDIDACY_RE = re.compile(
-    r"^(.*?)\s*"
+    r"^(.*?)"
+    r"[\s.,-]*"
     r"(?:"
     r"([A-ZÑ0-9]+\.[A-ZÑ0-9.\-]*\s*\([^()]+\))"
     r"|"
@@ -33,9 +27,12 @@ def _extract_candidacy(content: str) -> tuple[str, str]:
     match = _CANDIDACY_RE.search(content)
 
     if match:
-        party = match.group(1).strip()
+        # Strip string again to catch any edge-case punctuation at the boundaries
+        party = match.group(1).strip(" .,-")
+
         # The acronym will be captured by either Branch A (group 2) or Branch B (group 3)
         acronym = match.group(2) or match.group(3)
+
         return party, acronym.strip()
 
     return content, ""
@@ -69,161 +66,6 @@ def _has_trash_text(line: str) -> bool:
     )
 
 
-def _find_column_split_x(page: pymupdf.Page, blocks: list) -> float:
-    """
-    Calculates the exact gutter center between two columns using an
-    area-weighted average of block boundaries.
-    """
-    default_mid = page.rect.width / 2
-
-    left_weights = 0.0
-    left_x1_sum = 0.0
-
-    right_weights = 0.0
-    right_x0_sum = 0.0
-
-    for b in blocks:
-        x0, y0, x1, y1 = b[0], b[1], b[2], b[3]
-        width = x1 - x0
-        height = y1 - y0
-        area = width * height
-
-        # Ignore full-width spanning headers/banners so they don't distort the gutter
-        if width > page.rect.width * 0.55 and x0 < default_mid < x1:
-            continue
-
-        # Classify based on the block's center X coordinate
-        block_center_x = (x0 + x1) / 2
-
-        if block_center_x < default_mid:
-            left_x1_sum += x1 * area
-            left_weights += area
-        else:
-            right_x0_sum += x0 * area
-            right_weights += area
-
-    if left_weights > 0 and right_weights > 0:
-        avg_left_x1 = left_x1_sum / left_weights
-        avg_right_x0 = right_x0_sum / right_weights
-
-        # The split point is right in the center of the gutter
-        if avg_left_x1 < avg_right_x0:
-            return (avg_left_x1 + avg_right_x0) / 2
-
-    return default_mid
-
-
-class TextReader:
-    def __init__(self, folderpath: str, region: str, year: int, month: int):
-        self.folderpath = folderpath
-        self.fix_text = ERROR_FIXERS.get((region, year, month), None)
-
-    def parse(self) -> Generator[str, None, None]:
-        pdf_files = glob.glob(f"{self.folderpath}/candidaturas*.pdf")
-        if not pdf_files:
-            raise FileNotFoundError(f"No PDF files found in {self.folderpath}")
-
-        for pdf_path in pdf_files:
-            yield from self.__parse_single_file(pdf_path)
-
-    def __parse_single_file(self, pdf_path: str) -> Generator[str, None, None]:
-        doc = pymupdf.open(pdf_path)
-        is_double_col = self.__is_double_column(doc)
-        for page in doc:
-            if is_double_col:
-                # Extract only text blocks (type 0)
-                blocks = [b for b in page.get_text("blocks") if b[6] == 0]
-
-                # Calculate the dynamic gutter center for this specific page
-                split_x = _find_column_split_x(page, blocks)
-
-                # Primary sort key: 0 for left column, 1 for right column
-                # Secondary sort key: b[1] (top vertical Y coordinate)
-                blocks.sort(
-                    key=lambda b: (0 if ((b[0] + b[2]) / 2) < split_x else 1, b[1])
-                )
-
-                text = "\n".join(b[4] for b in blocks)
-            else:
-                # Standard single-column extraction
-                text = page.get_text(sort=True)
-            if not text:
-                continue
-
-            if self.fix_text is not None:
-                text = self.fix_text(text)
-
-            for line in text.split("\n"):
-                line = line.strip()
-                if not line:
-                    continue
-                # If the line is too long, it might have multiple stuff inside, split it
-                if len(line) > LONG_LINE_THRESHOLD:
-                    # Make a best-effort split using spaces
-                    for range_start in range(0, len(line), LONG_LINE_THRESHOLD):
-                        selected_line = line[
-                            range_start : range_start + LONG_LINE_THRESHOLD
-                        ].strip()
-                        if selected_line:
-                            yield selected_line
-                else:
-                    yield line
-
-    def __is_double_column(self, doc: pymupdf.Document) -> bool:
-        """
-        Reads a page in the middle of the document to determine if it uses a two-column layout.
-        Returns True if a significant portion of the text area is in the right half,
-        ignoring headers and footers.
-        """
-        if doc.page_count == 0:
-            return False
-
-        # Select a page in the middle of the document to avoid title/header pages
-        mid_index = doc.page_count // 2
-        page = doc[mid_index]
-
-        midpoint_x = page.rect.width / 2
-
-        # Define vertical boundaries (ignore top 10% and bottom 10%)
-        top_boundary = page.rect.height * 0.10
-        bottom_boundary = page.rect.height * 0.90
-
-        # Extract only text blocks (type 0) that fall within the vertical boundaries
-        blocks = [
-            b
-            for b in page.get_text("blocks")
-            if b[6] == 0 and b[1] > top_boundary and b[3] < bottom_boundary
-        ]
-
-        if not blocks:
-            return False
-
-        total_area = 0.0
-        right_column_area = 0.0
-
-        for b in blocks:
-            # Calculate area: (x1 - x0) * (y1 - y0)
-            area = (b[2] - b[0]) * (b[3] - b[1])
-            total_area += area
-
-            # If the block starts on the right side, add its area to the right column total
-            if b[0] > midpoint_x:
-                right_column_area += area
-
-        if total_area == 0:
-            return False
-
-        # Threshold: if > 15% of the text area is on the right, it's double-column
-        ratio = right_column_area / total_area
-
-        result = ratio > 0.15
-        if result:
-            logger.debug(
-                f"Detected double-column layout on page {mid_index} with {right_column_area:.2f}/{total_area:.2f} ({ratio:.2%}) of text area on the right side."
-            )
-        return result
-
-
 class TextElectionParser:
     PROVINCE_RE = re.compile(
         r"(?:JUNTA ELECTORAL\s+PROVINCIAL\s+DE\s+|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL:\s+|PROVINCIA\s+DE\s+)([A-ZÁÉÍÓÚÑ\s]+)",
@@ -251,7 +93,7 @@ class TextElectionParser:
 
     SUPLENTE_RE = re.compile(r"^Suplentes?:?", re.IGNORECASE)
 
-    def __init__(self, text_reader: TextReader):
+    def __init__(self, text_reader: PDFReader):
         self.text_reader = text_reader
         self.parsed_data = []
         self.current_province = ""
@@ -517,7 +359,7 @@ class TextElectionParser:
         """Discards headers/footers or appends valid multi-line names."""
         # Append valid continuation to the last recorded candidate
         if len(self.parsed_data) > 0 and self.candidate_order > 0:
-            if self.parsed_data[-1].full_name.endswith("-"):
+            if self.parsed_data[-1].full_name.endswith("-") and line[0].islower():
                 # Handle hyphenated names that are split across lines
                 new_name = _clean_candidate_name(
                     self.parsed_data[-1].full_name[:-1] + line

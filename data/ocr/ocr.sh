@@ -20,7 +20,7 @@ ocr_one() {
     local src="$1"
     local dest="${src/raw_/}"
     echo "OCR: $src -> $dest"
-    if ! ocrmypdf -l spa --output-type pdf --color-conversion-strategy Gray --continue-on-soft-render-error --tesseract-config "$CONFIG" "$src" "$dest"; then
+    if ! ocrmypdf -l spa --tesseract-pagesegmode 11 --output-type pdf --color-conversion-strategy Gray --continue-on-soft-render-error --tesseract-config "$CONFIG" "$src" "$dest"; then
         echo "ERROR: ocrmypdf failed for $src" >&2
         echo "$src" >> "$FAIL_LOG"
         return 1
