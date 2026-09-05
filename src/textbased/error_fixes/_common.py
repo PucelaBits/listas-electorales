@@ -43,3 +43,109 @@ def clean_ocr_text(text: str) -> str:
     text = re.sub(r"\b(\d+)\.[a-zA-Z]\.\s*", r"\1. ", text)
 
     return text
+
+
+_HAS_NUMBER_RE = re.compile(r"^\d+\.")
+
+
+def fill_missing_numbers(
+    text: str, start_line: str, end_line: str, start_number: int = 1
+) -> str:
+    """
+    Fill missing numbers between start_line and end_line without splitting the whole text.
+    """
+    start_pattern = re.compile(rf"^{re.escape(start_line)}\r?$", re.MULTILINE)
+    end_pattern = re.compile(rf"^{re.escape(end_line)}\r?$", re.MULTILINE)
+
+    start_match = start_pattern.search(text)
+    end_match = end_pattern.search(text)
+
+    if not start_match:
+        raise ValueError("start_line not found in the text.")
+
+    if not end_match:
+        raise ValueError("end_line not found in the text.")
+
+    start_pos = start_match.start()
+    end_pos = end_match.end()
+
+    if start_pos > end_match.start():
+        raise ValueError("Unexpected order of start_line and end_line in the text.")
+
+    block = text[start_pos:end_pos]
+
+    block_lines = block.splitlines(keepends=True)
+
+    for i, line in enumerate(block_lines):
+        if not _HAS_NUMBER_RE.match(line):
+            block_lines[i] = f"{start_number}. {line}"
+        start_number += 1
+
+    return text[:start_pos] + "".join(block_lines) + text[end_pos:]
+
+
+_TEN_LINE_OCR_RE = re.compile(
+    r"^(?P<L1>[^\d\n].*?)\r?\n"
+    r"(?P<L2>[^\d\n].*?)\r?\n"
+    r"(?P<L3>[^\d\n].*?)\r?\n"
+    r"(?P<L4>[^\d\n].*?)\r?\n"
+    r"(?P<L5>[^\d\n].*?)\r?\n"
+    r"(?P<L6>[^\d\n].*?)\r?\n"
+    r"(?P<L7>[^\d\n].*?)\r?\n"
+    r"(?P<L8>[^\d\n].*?)\r?\n"
+    r"(?P<L9>[^\d\n].*?)\r?\n"
+    r"(?P<L10>10\..*?)$",
+    re.MULTILINE,
+)
+
+
+def fix_ten_line_ocr(text: str) -> str:
+    # Match 9 lines that don't start with a digit, followed by the 10th line
+    # Replace using the captured groups and prepending the numbers
+    return _TEN_LINE_OCR_RE.sub(
+        (
+            r"1. \g<L1>\n"
+            r"2. \g<L2>\n"
+            r"3. \g<L3>\n"
+            r"4. \g<L4>\n"
+            r"5. \g<L5>\n"
+            r"6. \g<L6>\n"
+            r"7. \g<L7>\n"
+            r"8. \g<L8>\n"
+            r"9. \g<L9>\n"
+            r"\g<L10>"
+        ),
+        text,
+    )
+
+
+_NINE_LINE_OCR_RE = re.compile(
+    r"^(?P<L1>[^\d\n].*?)\r?\n"
+    r"(?P<L2>[^\d\n].*?)\r?\n"
+    r"(?P<L3>[^\d\n].*?)\r?\n"
+    r"(?P<L4>[^\d\n].*?)\r?\n"
+    r"(?P<L5>[^\d\n].*?)\r?\n"
+    r"(?P<L6>[^\d\n].*?)\r?\n"
+    r"(?P<L7>[^\d\n].*?)\r?\n"
+    r"(?P<L8>[^\d\n].*?)\r?\n"
+    r"(?P<L9>9\..*?)$",
+    re.MULTILINE,
+)
+
+
+def fix_nine_line_ocr(text: str) -> str:
+    # Match 8 lines that don't start with a digit, followed by the 9th line
+    return _NINE_LINE_OCR_RE.sub(
+        (
+            r"1. \g<L1>\n"
+            r"2. \g<L2>\n"
+            r"3. \g<L3>\n"
+            r"4. \g<L4>\n"
+            r"5. \g<L5>\n"
+            r"6. \g<L6>\n"
+            r"7. \g<L7>\n"
+            r"8. \g<L8>\n"
+            r"\g<L9>"
+        ),
+        text,
+    )

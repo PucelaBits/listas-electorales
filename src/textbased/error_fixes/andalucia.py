@@ -1,8 +1,254 @@
 import re
 
-from ._common import clean_ocr_text, register_fixer
+from ._common import (
+    clean_ocr_text,
+    fill_missing_numbers,
+    fix_nine_line_ocr,
+    fix_ten_line_ocr,
+    register_fixer,
+)
 
-ANDALUCIA_1990_06_D_RE = re.compile(r"-?(\d+)\.?\s*D[a-zA-Zªº\-']?\.? ")
+_ANDALUCIA_1986_06_MISSING_DOT_RE = r"(\d+)(?=\ [A-ZÁÉÍÓÚÑÜ][A-ZÁÉÍÓÚÑÜa-záéíóúñü-]+\s)"
+
+
+def _fix_missing_eleven(text: str) -> str:
+    # (?m)    : Multiline mode, so '^' matches the beginning of each line.
+    # ^\s*    : Matches the start of the line and any optional leading spaces.
+    # (^\s*10\..*\n\s*) : GROUP 1 - Matches the entire "10." line, the newline, and leading spaces of the next line.
+    # 1\.     : Matches the "1." that we want to replace.
+
+    pattern = r"(?m)(^\s*10\..*\n\s*)1\."
+
+    # \g<1> inserts everything captured in Group 1, followed by our fixed "11."
+    return re.sub(pattern, r"\g<1>11.", text)
+
+
+@register_fixer("andalucia", 1986, 6)
+def fix_andalucia_1986_06(text: str) -> str:
+    print(text)
+    print(repr(text))
+    if "CONSEJERIA DE TURISMO COMERCIO" in text:
+        # Remove preamble
+        text = (
+            "JUNTA ELECTORAL PROVINCIAL DE ALMERIA"
+            + text.split("JUNTA ELECTORAL PROVINCIAL DE ALMERIA")[1]
+        )
+    # Remove header
+    text = text.replace("BOJA núm. 50", "")
+    # Erratas (err_1.pdf)
+    text = text.replace("Miguel Cartés Puentes", "Miguel Cartés Fuentes")
+    text = text.replace(
+        "Carlos-Javier Ordoñe Rodríguez", "Carlos-Javier Ordoño Rodríguez"
+    )
+    text = text.replace("Rosario Castellanos Corquera", "Rosario Castellanos Corcuera")
+    text = text.replace("Elena Ordoñe Rodríguez", "Elena Ordoño Rodríguez")
+    text = text.replace("Pablo Iglesias Roal", "Pablo Iglesias Real")
+    text = text.replace("Antonio Mateos Torres", "Antonio Mateos Tores")
+    text = text.replace(
+        "Juan de la Cruz Carlos Almanes Domínguez",
+        "Juan de la Cruz Carlos Almansa Domínguez",
+    )
+    text = text.replace("Hugo-Fermín Rodríguez Chiara", "Hugo-Fermín Rodríguez Ghiara")
+    text = text.replace("Suárez Muyer", "Suárez Muyor")
+    text = text.replace("Gloria Gago Vázquez (P.p. )", "Gloria Gago Vázquez (F.P.)")
+    text = text.replace(
+        "Francisco de Faula Prados Ruiz", "Francisco de Paula Prados Ruiz"
+    )
+
+    # Erratas (err_2.pdf)
+    text = text.replace("Diego Valderas Sosa (P.C.A.)", "Diego Valderas Sosa (PCA-PCE)")
+    text = text.replace(
+        "José Luis Pavón Cintado (P.C.P.A.)", "José Luis Pavón Cintado (PCPE)"
+    )
+    text = text.replace(
+        "José Quintero García (P.C.A.)", "José Quintero García (PCA-PCE)"
+    )
+    text = text.replace(
+        "José Zamorano Wisnes (Indep.)", "José Zamorano Wisnes (Independ.)"
+    )
+    text = text.replace("Manuela Boza Feria (P.C.A.)", "Manuela Boza Feria (PCA-PCE)")
+    text = text.replace(
+        "Vicente Rufino Rivero (Indep.)", "Vicente Rufino Rivero (Independ.)"
+    )
+    text = text.replace(
+        "Cayetano M. Montenegro Márquez (P.C.P.A.)",
+        "Cayetano M. Montenegro Márquez (PCPE)",
+    )
+    text = text.replace("Enrique Castaño González", "Enrique Costaño González")
+    text = text.replace(
+        "Rafael Aljama Alcántara (Indep.)", "Rafael Aljama Alcántara (Independ.)"
+    )
+    text = text.replace(
+        "Manuel Tellada Garrido (P.C.P.A.)", "Manuel Tellado Garrido (PCPE)"
+    )
+    text = text.replace(
+        "Mario A. Lobo Romero (P.C.A.)", "Mario A. Lobo Romero (PCA-PCE)"
+    )
+    text = text.replace(
+        "Francisco Vázquez Mojarro (Indep.)", "Francisco Vázquez Mojarro (Independ.)"
+    )
+    text = text.replace(
+        "Juan J. López Cerezo (P.C.A.)", "Juan J. López Cerezo (PCA-PCE)"
+    )
+    text = text.replace(
+        "Diego Rodríguez del Valle (P.C.A.)", "Diego Rodríguez del Valle (PCA-PCE)"
+    )
+    text = text.replace("Nieves Salinas Alejandra", "Nieves Salinas Alejandre")
+    # Duplicate missing substitutes
+    text = text.replace(
+        "). Dovid González Aguilera",
+        "1. David González Aguilera\n2. David González Aguilera\n3. David González Aguilera",
+    )
+    text = text.replace(
+        "2. Juan Jesús Merino Gutiérrez",
+        "2. Juan Jesús Merino Gutiérrez\n3. Juan Jesús Merino Gutiérrez",
+    )
+    text = text.replace(
+        "2. Serofín Morillo Medina",
+        "2. Serofín Morillo Medina\n3. Serofín Morillo Medina",
+    )
+    text = text.replace(
+        "2. Milagros León Bailén", "2. Milagros León Bailén\n3. Milagros León Bailén"
+    )
+    # Manuallt fix OCR
+    text = text.replace(
+        "I.- PARTIDO REFORMISTA DEMOCRATICO (P.R.D.",
+        "1. PARTIDO REFORMISTA DEMOCRATICO (P.R.D.)",
+    )
+    text = text.replace("S- PARTIDO ANDALUCISTA", "5. PARTIDO ANDALUCISTA")
+    text = text.replace(
+        "JUAN ELECTORAL PROVINCIAL DE HUELVA", "JUNTA ELECTORAL PROVINCIAL DE HUELVA"
+    )
+    text = text.replace("l PARTIDO ", "1. PARTIDO ")
+    text = text.replace(
+        "JUNTA ELECTORAL PROVINCIAL DE CADIZ\nCENTRO DEMOCRATICO Y SOCIAL (C.D.S.)",
+        "JUNTA ELECTORAL PROVINCIAL DE CADIZ\n1. CENTRO DEMOCRATICO Y SOCIAL (C.D.S.)",
+    )
+    text = re.sub(_ANDALUCIA_1986_06_MISSING_DOT_RE, r"\1.", text)
+    text = text.replace("nO. ", "10. ")
+    text = text.replace("vo. ", "10. ")
+    text = text.replace("TO ", "10. ")
+    text = text.replace("yO. ", "10. ")
+    text = text.replace("m1. ", "11. ")
+    text = text.replace("IT. ", "11. ")
+    text = text.replace("tl.", "11.")
+    text = text.replace("nm. ", "11. ")
+    text = text.replace("n. ", "11. ")
+    text = text.replace("mM. ", "11. ")
+    text = text.replace("Mn ", "11. ")
+    text = text.replace("mn ", "11. ")
+    text = text.replace("m11. ", "11. ")
+    text = text.replace("M11. ", "11. ")
+    text = text.replace("m3. ", "13. ")
+    text = text.replace("Y. ", "1. ")
+    text = text.replace("T. ", "1. ")
+    text = text.replace("l. ", "1. ")
+    text = text.replace("l.. ", "1. ")
+    text = text.replace("lt. ", "1. ")
+    text = text.replace("). ", "1. ")
+    text = text.replace("H M9. ", "1. ")
+    text = text.replace("ó Jorge Luis", "6. Jorge Luis")
+    text = text.replace("M1. ", "María ")
+    text = text.replace(
+        "MA Francisco Medina Fernández", "11. Francisco Medina Fernández"
+    )
+    text = text.replace("EuladioF. Martín Cano", "Euladio F. Martín Cano")
+    text = text.replace(". Antonio García Terrada", "1. Antonio García Terrada")
+    text = text.replace("ó Francisco Mellado Parra", "6. Francisco Mellado Parra")
+    text = text.replace("o Enrique Cortes Sánchez", "Enrique Cortes Sánchez")
+    text = text.replace("NA José lópez Benítez", "11. José López Benítez")
+    text = text.replace("n Monuel Pérez García", "11. Manuel Pérez García")
+    text = text.replace(
+        "n Francisca García Caballero", "11. Francisca García Caballero"
+    )
+    text = text.replace(
+        ". Antonio Sánchez Villaverde", "11. Antonio Sánchez Villaverde"
+    )
+    text = text.replace("17. Gabriel Relaño Canales", "11. Gabriel Relaño Canales")
+    text = text.replace("12. Antonio Ruano León", "17. Antonio Ruano León")
+    text = text.replace(
+        "1. Enrique Sánchez Díaz (P.C.A.-P.C.El",
+        "17. Enrique Sánchez Díaz (P.C.A.-P.C.E.)",
+    )
+    text = text.replace(
+        "1. María del Carmen Jiménez Jiménez", "María del Carmen Jiménez Jiménez"
+    )
+    text = text.replace(
+        "10 MS. de los Angeles Corral Casores",
+        "10. María de los Angeles Corral Casores",
+    )
+    text = text.replace(
+        "v Monuel Archilla Sánchez (A.P", "11. Manuel Archilla Sánchez (A.P.)"
+    )
+    text = text.replace(
+        "Vicente José Luis E. Aguilar Fernández-Capel Gollart (A.P.) Baños (e.D.p. )",
+        "José Luis Aguilar Gollart\nVicente E. Fernández-Capel Baños (P.D.P.)",
+    )
+    text = text.replace(
+        "José Manuel Gard íta Ragel\nLópez Ñ\nFrancisco López",
+        "José Manuel García Ragel\nFrancisco López López",
+    )
+    text = text.replace(
+        "Concepción Carmen Jiménez Gómez Siles García de solo",
+        "Carmen Jiménez Siles\nConcepción Gómez García de Sola",
+    )
+    text = text.replace(
+        "Gregorio Cano Rodríguez\nv\nRicardo Mateo de Maya 1",
+        "Gregorio Cano Rodríguez\nRicardo Mateo de Maya",
+    )
+    text = text.replace(
+        "Alfredo Jesús Antonia Merchán Fernández Jiménez Olmedd",
+        "Alfredo Merchán Jiménez\nJesús Antonio Fernández Olmedo",
+    )
+    text = text.replace("Antonio 1. Diaz Rodríguez", "Antonio L. Díaz Rodríguez")
+    text = _fix_missing_eleven(text)
+    text = fix_ten_line_ocr(text)
+    text = fix_nine_line_ocr(text)
+    if "Domingo Domenech Cruz" in text:
+        start_line = "Domingo Domenech Cruz"
+        end_line = "Francisca Crespo lópez"
+        text = fill_missing_numbers(text, start_line, end_line, start_number=5)
+    elif "José Guerrero Casaus" in text:
+        start_line = "José Guerrero Casaus"
+        end_line = "Juan Carlos Murga Tejada"
+        text = fill_missing_numbers(text, start_line, end_line, start_number=3)
+        start_line = "Manuel Llamas Sanjuan"
+        end_line = "Antonio Luque Prados"
+        text = fill_missing_numbers(text, start_line, end_line, start_number=4)
+    elif "Antonio José Peláez Montalvo" in text:
+        start_line = "Antonio José Peláez Montalvo"
+        end_line = "Daniel Torres Castillo"
+        text = fill_missing_numbers(text, start_line, end_line, start_number=5)
+    elif "Jasé Carlos Espin Ballesta" in text:
+        start_line = "Jasé Carlos Espin Ballesta"
+        end_line = "José Ruiz Higueras"
+        text = fill_missing_numbers(text, start_line, end_line, start_number=4)
+    elif "Francisco Palomo Aragón" in text:
+        start_line = "Francisco Palomo Aragón"
+        end_line = "Juan José Caballero Montilla"
+        text = fill_missing_numbers(text, start_line, end_line, start_number=3)
+    elif "Elisa García Delgado" in text:
+        start_line = "Elisa García Delgado"
+        end_line = "Diego Honorio Moreno Muñoz"
+        text = fill_missing_numbers(text, start_line, end_line, start_number=4)
+    elif "Enrique linde Cirujano" in text:
+        start_line = "Enrique linde Cirujano"
+        end_line = "Francisco Parra Medina"
+        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
+    elif "Antonio Luis Calderón Díaz" in text:
+        start_line = "Antonio Luis Calderón Díaz"
+        end_line = "Euladio F. Martín Cano"
+        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
+    elif "Mariano Barrios Moga" in text:
+        start_line = "Mariano Barrios Moga"
+        end_line = "Francisco López López"
+        text = fill_missing_numbers(text, start_line, end_line, start_number=11)
+    text = text.replace("Dovid", "David")
+    text = text.replace("Monuel", "Manuel")
+    return text
+
+
+_ANDALUCIA_1990_06_D_RE = re.compile(r"-?(\d+)\.?\s*D[a-zA-Zªº\-']?\.?\.? ")
 
 
 @register_fixer("andalucia", 1990, 6)
@@ -10,6 +256,8 @@ def fix_andalucia_1990_06(text: str) -> str:
     # Remove footer
     if "PLAZOS DE SUSCRIPCION" in text:
         return ""
+    # Remove header
+    text = text.replace("BOJA núm. 43", "")
     # Erratas (err.pdf)
     text = text.replace("N 2. VERDES DE ANDALUCIA (V.A.)", "N 2. VERDES DE ANDALUCIA")
     text = text.replace(
@@ -25,25 +273,36 @@ def fix_andalucia_1990_06(text: str) -> str:
         "N 4. IZQUIERDA UNIDA-CONVOCATORIA POR\nANDALUCIA (1.U.-C.A.)",
         "N 4. IZQUIERDA UNIDA-CONVOCATORIA POR ANDALUCIA (IU-CA)",
     )
-    text = text.replace("María Mercedes Salguero Borrero", "María de las Mercedes Salguero Borrero")
-    text = text.replace("Ildefonso Guerrero Seijó", "Ildefonso Guerrero Seijo")
+    text = text.replace(
+        "María Mercedes Salguero Borrero", "María de las Mercedes Salguero Borrero"
+    )
+    text = text.replace(
+        "5 6 D. D. Juan Ildefonso Antonio Guerrero Díaz Romero Seijó",
+        "5. Idelfonso Guerrero Seijo\n6. Juan Antonio Guerrero Díaz Romero",
+    )
     text = text.replace("María Josefa Pineda Ortega", "Joséfa Pineda Ortega")
     text = text.replace("Ricardo Mazachis Rodríguez", "Ricardo Masachís Rodríguez")
     text = text.replace("María Reyes Muñoz Terol", "María de los Reyes Muñoz Terol")
-    text = text.replace("Pilar Martín-Peñasco Román", "María del Pilar Martín-Peñasco Román")
+    text = text.replace(
+        "Pilar Martín-Peñasco Román", "María del Pilar Martín-Peñasco Román"
+    )
     text = text.replace("José Panés Muñoz", "José Panes Muñoz")
     text = text.replace("N 9. PARTIDO ANDALUCISTA (P.A.)", "N 9. PARTIDO ANDALUCISTA")
     text = text.replace("Carmen Lovelle Alen", "María del Carmen Lovelle Alen")
     text = text.replace("María de los Milagros Isla Barba", "María Milagros Isla Barba")
     text = text.replace("P.T.E.-U.C.", "PTE-UC")
-    text = text.replace("M Angeles Alvarez Martínez", "María de los Angeles Alvarez Martínez")
+    text = text.replace(
+        "M Angeles Alvarez Martínez", "María de los Angeles Alvarez Martínez"
+    )
     text = text.replace("Salvador Blanco Ruiz'", "Salvador Blanco Rubio")
     text = text.replace("Carmen Mata Varelo", "Carmen Mata Valero")
     text = text.replace(
         "N 11. PARTIDO AGRUPACION RUIZ MATEOS", "N 11. AGRUPACION RUIZ MATEOS"
     )
     text = text.replace("Manuel Macías Romero", "José Manuel Macías Ramero")
-    text = text.replace("Fernández-Piñar Afán de Ri-\n\nvera", "Fernández-Piñar Afán de Ribera")
+    text = text.replace(
+        "Fernández-Piñar Afán de Ri-\n\nvera", "Fernández-Piñar Afán de Ribera"
+    )
     text = text.replace(
         "N 2. PARTIDO SOCIALISTA OBRERO ESPAÑOL\n\n(P.S.O.E. DE ANDALUCIA)",
         "N 2. PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA (PSOE DE ANDALUCIA)",
@@ -77,43 +336,28 @@ def fix_andalucia_1990_06(text: str) -> str:
         "2 D. Jesús Ledro Vargas", "2 D. Jesús Ledro Vargas\n3 D. Jesús Ledro Vargas"
     )
     # Manuallt fix OCR
+    text = text.replace("D.'", "D. ")
+    text = text.replace("D.-", "D. ")
     text = text.replace(
-        ". Antonio Torres Díaz\n\nUUUUUU\n\nO 5hGO0n\n\n. Antonio-María Rodríguez Velasco\n\n. Salvador-Antonio García Guerra\n\n. José lópez Montoya\n\n. Antonio Torres Caparrós\n\n. Juan-José Requena Moreno",
-        "1. Antonio Torres Díaz\n2. Antonio-María Rodríguez Velasco\n3. Salvador-Antonio García Guerra\n4. José lópez Montoya\n5. Antonio Torres Caparrós\n6. Juan-José Requena Moreno",
+        "N 3. COALICION IZQUIERDA UNIDA-CONVO-\nCATORIA POR ANDALUCIA 1.U.-C.A",
+        "3. COALICION IZQUIERDA UNIDA-CONVOCATORIA POR ANDALUCIA (I.U.-C.A.)",
     )
-    text = text.replace(
-        ". Juan José Giménez Martínez\n\nOGOho0n\n\nUVUUOUOUOU\n\n. Julio Ortiz Pérez\n\n. Patricio Estévez López\n\n. Joaquín Rubira Ramón\n\n. Daniel Padua Arcos\n\n. Antonio Pintor López",
-        "1. Juan José Giménez Martínez\n2. Julio Ortiz Pérez\n3. Patricio Estévez López\n4. Joaquín Rubira Ramón\n5. Daniel Padua Arcos\n6. Antonio Pintor López",
-    )
-    text = text.replace(
-        ". Rafael Cota Galán\n\n00 Y Os Un E (Y NN\nDUUUUUOUO\no 0\n\n. Francisco Mozas Martínez\n\nRafael Charquero del Campo\n\n. Juan José Colmenero Pérez\n\n. Juan Trancoso Pérez\n\n. Antonio López Gorcía-Gasco\n\n. José Díaz de la Plaza\n\n. Miguel Reyes Lorite\n\n. Francisco Pacheco Reyes\n\nUU\n\n. Pablo Tejero Panadero",
-        "1. Rafael Cota Galán\n2. Francisco Mozas Martínez\n3. Rafael Charquero del Campo\n4. Juan José Colmenero Pérez\n5. Juan Trancoso Pérez\n6. Antonio López Gorcía-Gasco\n7. José Díaz de la Plaza\n8. Miguel Reyes Lorite\n9. Francisco Pacheco Reyes\n10. Pablo Tejero Panadero",
-    )
-    text = text.replace(
-        ". José Escalona Idáñez\n\nO nan\n\nU000U0U0UO0O\n\n. Juan José Cañas Navarro\n\n. Alonso Morales Gallego\n\n. José Sánchez Caballero\n\n. Antonio Sánchez Gómez\n\n. Manuel Carmona Jiménez",
-        "1. José Escalona Idáñez\n2. Juan José Cañas Navarro\n3. Alonso Morales Gallego\n4. José Sánchez Caballero\n5. Antonio Sánchez Gómez\n6. Manuel Carmona Jiménez",
-    )
-    text = text.replace(
-        ". Salvador Pérez Bueno\n\n. Antonio Ortega García\n\n. José Tomás Pérez Villar\n\n. Francisco José Vergara Huertas",
-        "1. Salvador Pérez Bueno\n2. Antonio Ortega García\n3. José Tomás Pérez Villar\n4. Francisco José Vergara Huertas"
-    )
-    text = re.sub(ANDALUCIA_1990_06_D_RE, r"\1. ", text)
-    text = text.replace("1, COALICION ELECTORAL", "1. COALICION ELECTORAL")
-    text = text.replace(
-        "N 7.PARTIDO DE LOS TRABAJADORES", "Núm. 7. PARTIDO DE LOS TRABAJADORES"
-    )
-    text = text.replace("I D. Francisco Garcia Garcia", "1. Francisco Garcia Garcia")
-    text = text.replace("Dr. Sara Díaz del Río", "1. Sara Díaz del Río")
-    text = text.replace("2 De.Virtudes", "2. Virtudes")
+    text = re.sub(_ANDALUCIA_1990_06_D_RE, r"\1. ", text)
+    text = text.replace("HD. Juan", "11. Juan")
+    text = text.replace("D. Manuel Virella Redondo", "1. Manuel Virella Redondo")
+    text = text.replace("p. Salud de Silva García", "1. Salud de Silva García")
+    text = text.replace("D. Juan Duarte Berrocal", "1. Juan Duarte Berrocal")
+    text = text.replace("1 Ó D.", "16. ")
+    text = text.replace("2D..", "2. ")
     text = text.replace("l D. ", "1. ")
     text = text.replace("9 P. ", "9. ")
+    text = text.replace("9 Pp. ", "9. ")
     text = text.replace("(A.R.) l", "(A.R.)")
     text = text.replace("Óó D. ", "6. ")
     text = text.replace("ó Dr.", "6. ")
     text = text.replace("ó D.", "6. ")
-    text = text.replace("ó D-.", "6. ")
-    text = text.replace("Ó D-.", "6. ")
     text = text.replace("Ó D.", "6. ")
+    text = text.replace("ó D-.", "6. ")
     text = text.replace("ó. ", "6. ")
     text = text.replace("O De.", "10. ")
     text = text.replace("10'D. ", "10. ")
@@ -122,9 +366,17 @@ def fix_andalucia_1990_06(text: str) -> str:
     text = text.replace("1O D. ", "10. ")
     text = text.replace("TO D. ", "10. ")
     text = text.replace("T D. ", "1. ")
+    text = text.replace("1 pr. ", "1. ")
+    text = text.replace("T Dr. ", "1. ")
+    text = text.replace("Í Dr. ", "1. ")
+    text = text.replace("T' D. ", "1. ")
+    text = text.replace("TD. ", "1. ")
+    text = text.replace("1 .D.", "1. ")
+    text = text.replace("y Dr. ", "1. ")
     text = text.replace("Y D.", "1. ")
     text = text.replace("- SUPLENTES", "SUPLENTES")
     text = text.replace("SLIPLENTES", "SUPLENTES")
+    text = text.replace("o SUPLENTES", "SUPLENTES")
     text = clean_ocr_text(text)
     return text
 
