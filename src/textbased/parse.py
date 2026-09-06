@@ -87,7 +87,7 @@ class TextElectionParser:
 
     # Extract explicit candidacy headers
     EXPLICIT_CANDIDACY_RE = re.compile(
-        r"^Candidatura\s+n[úu]m\.?:\s*\d+[ \.\-\–]+\s+(.+)$", re.IGNORECASE
+        r"^Candidatura\s+n[úu]m\.?:\s*(\d+)[ \.\-\–]+\s+(.+)$", re.IGNORECASE
     )
 
     # Numbered items
@@ -106,23 +106,31 @@ class TextElectionParser:
         self.parsed_data = []
         self.current_province = ""
         self.current_candidacy = None
+        self.candidacy_order = 0
         self.is_substitute = False
         self.candidate_order = 0
         # Temporarily store the order number if we encounter an isolated number on a line by itself
         self.pending_order = None
         self.line_completed = False
-        self.expected_substitutes = None
 
     def parse(self):
+        prev_line = None
         for line in self.text_reader.parse():
-            self.__process_line(line.strip())
+            if prev_line is None:
+                prev_line = line.strip()
+                continue
+            line = line.strip()
+            self.__process_line(prev_line, line)
+            prev_line = line
+        # Process the last line
+        self.__process_line(prev_line, "")
         if len(self.parsed_data) == 0:
             raise ValueError("No candidates found")
 
     def build(self) -> tuple[Candidate]:
         return tuple(self.parsed_data)
 
-    def __process_line(self, line: str) -> None:
+    def __process_line(self, line: str, next_line: str) -> None:
         """Evaluates a single line and routes it to the appropriate state handler."""
         print(f"Processing line: {line}")  # Debugging output
         if _has_trash_text(line):
@@ -138,15 +146,16 @@ class TextElectionParser:
             # Change of province indicates a new candidacy section, so reset candidacy and candidate order
             self.line_completed = True
             self.__mark_candidacy_as_finished()
-            # Reset expected substitutes when changing provinces
-            self.expected_substitutes = None
+            # Reset expected candidacy order for a new province
+            self.candidacy_order = 0
             return
 
         # Explicit line candidacy headers (e.g., "Candidatura núm.: 1 Partido XYZ")
         candidacy_match = self.EXPLICIT_CANDIDACY_RE.match(line)
         if candidacy_match:
-            content = candidacy_match.group(1).strip()
-            self.__set_candidacy(content)
+            order = int(candidacy_match.group(1))
+            content = candidacy_match.group(2).strip()
+            self.__set_candidacy(order, content)
             return
 
         # Substitutes
@@ -180,14 +189,22 @@ class TextElectionParser:
         # If the line contains multiple candidates or candidacies, split it and process each part
         if self.MULTI_LINE_SPLIT_RE.search(line):
             sub_lines = self.MULTI_LINE_SPLIT_RE.split(line)
+            prev_line = None
             for sub_line in sub_lines:
-                if sub_line.strip():
-                    self.__process_line(sub_line.strip())
+                if prev_line is None:
+                    prev_line = sub_line.strip()
+                    continue
+                sub_line = sub_line.strip()
+                self.__process_line(prev_line, sub_line)
+                prev_line = sub_line
+            # Process the last sub-line
+            if prev_line is not None:
+                self.__process_line(prev_line, next_line)
             return
 
         # If we caught an isolated number on the previous line, this line is the name
         if self.pending_order is not None:
-            self.__handle_numbered_item(self.pending_order, line)
+            self.__handle_numbered_item(self.pending_order, line, next_line)
             self.pending_order = None
             return
 
@@ -196,7 +213,7 @@ class TextElectionParser:
         if item_match:
             order = int(item_match.group(1))
             content = item_match.group(2).strip()
-            self.__handle_numbered_item(order, content)
+            self.__handle_numbered_item(order, content, next_line)
             return
 
         # Numbered items (split-line format)
@@ -219,7 +236,7 @@ class TextElectionParser:
         # Mark the line as completed to avoid adding more stuff to the last candidate
         self.line_completed = True
 
-    def __handle_numbered_item(self, order: int, content: str) -> None:
+    def __handle_numbered_item(self, order: int, content: str, next_line: str) -> None:
         """Processes lines that start with a number (either a candidacy or a candidate)."""
         if "disposiciones generales" in content.lower():
             # Skip lines that are part of the general provisions section
@@ -242,54 +259,60 @@ class TextElectionParser:
                 "Unexpected new candidate with order 1 while already parsing candidates."
             )
         if order == 1 and self.current_candidacy is None:
+            if self.candidacy_order != 0:
+                raise ValueError(
+                    f"Unexpected candidacy order {order} when actually expected {self.candidacy_order} in first candidacy."
+                )
             # We are starting the first candidacy in the document
-            self.__set_candidacy(content)
+            self.__set_candidacy(order, content)
+            return
+
+        if order == self.candidate_order + 1 and order == self.candidacy_order + 1:
+            logger.debug(
+                f"Ambiguous order {order} found. This could be either a new candidacy or a candidate for the current candidacy. Next line: {next_line}"
+            )
+            # This is either a candidate or a new candidacy
+            # Look at the start of the next line to determine if it's a candidate or a new candidacy
+            # There could be still other stuff that messes with the parsing, so we manually fix those
+            if next_line.startswith(("1.", "1 ", "NO PROCLAMADA")):
+                # This is a new candidacy
+                self.__set_candidacy(order, content)
+            else:
+                # This is a candidate for the current candidacy
+                self.__add_candidate(content, order)
             return
 
         if order == self.candidate_order + 1:
-            if (
-                self.is_substitute
-                and self.expected_substitutes is not None
-                and order == self.expected_substitutes + 1
-            ):
-                # In some PDFs, the candidacies are not separated by the a different title,
-                # so it can be mistaken as a new candidate. We are actually starting a new candidacy
-                logger.debug(
-                    f"Automatically detected new candidacy after {self.expected_substitutes} substitutes for {self.current_candidacy.name}. Setting new candidacy: {content}"
-                )
-                self.__set_candidacy(content)
-                return
             # We expect to be parsing candidates for the current candidacy
             self.__add_candidate(content, order)
-            self.candidate_order = order
-        else:
-            # Check if we have switched to substitutes or a new candidacy
-            if (
-                self.is_substitute
-                and len(self.parsed_data) > 0
-                and not self.parsed_data[-1].substitute
-            ):
-                # We have switched to substitutes for the current candidacy
-                self.__add_candidate(content, order)
-                self.candidate_order = order
-            else:
-                # We have switched to a new candidacy
-                self.__set_candidacy(content)
+            return
+        # Check if we have switched to substitutes
+        if (
+            order == 1
+            and self.is_substitute
+            and len(self.parsed_data) > 0
+            and not self.parsed_data[-1].substitute
+        ):
+            # We have switched to substitutes for the current candidacy
+            self.__add_candidate(content, order)
+            return
 
-    def __set_candidacy(self, content: str) -> None:
+        if self.candidacy_order + 1 == order:
+            # We have switched to a new candidacy
+            self.__set_candidacy(order, content)
+            return
+        raise ValueError(
+            f"Unexpected order {order} when actually expected candidacy ({self.candidacy_order + 1}) or candidate ({self.candidate_order + 1})."
+        )
+
+    def __set_candidacy(self, order: int, content: str) -> None:
         """Extracts and sets the current candidacy."""
         if len(self.parsed_data) == 0 and self.current_candidacy is not None:
             raise ValueError("Candidacy set before any candidates were parsed.")
         self.__mark_candidacy_as_finished()
-        # Extract "extra" data from the candidacy
-        content, extra_data = (
-            content.split("%", 1) if "%" in content else (content, None)
-        )
-        if extra_data:
-            logger.debug(f"Extracted extra data for candidacy: {extra_data.strip()}")
-            self.expected_substitutes = int(extra_data.strip())
         current_party, current_acronym = _extract_candidacy(content)
         self.current_candidacy = Candidacy(name=current_party, acronym=current_acronym)
+        self.candidacy_order = order
         logger.debug(f"Set current candidacy: {self.current_candidacy}")
         self.line_completed = False  # Reset line completion for new candidacy
         # We have switched to a new candidacy, so reset order and substitute flags
@@ -319,6 +342,7 @@ class TextElectionParser:
             f"Adding candidate: {candidate.full_name} from {candidate.province} for {candidate.candidacy.name} {'(substitute)' if candidate.substitute else ''}"
         )
         self.parsed_data.append(candidate)
+        self.candidate_order = order
         self.line_completed = False  # Reset line completion for new candidate
 
     def __handle_unmatched_line(self, line: str) -> None:
@@ -349,24 +373,6 @@ class TextElectionParser:
             self.current_candidacy = replace(
                 self.current_candidacy, name=new_name, acronym=new_acronym
             )
-
-    def __validate_substitutes_count(self) -> int:
-        """Validates that the number of substitutes matches the expected count for the previous candidacy."""
-        current_substitutes = 0
-        for c in self.parsed_data[::-1]:
-            if c.candidacy == self.current_candidacy and c.substitute:
-                current_substitutes += 1
-            else:
-                break
-        if (
-            self.expected_substitutes is not None
-            and current_substitutes != self.expected_substitutes
-        ):
-            raise ValueError(
-                f"Mismatch in expected substitutes for {self.current_candidacy.name}: "
-                f"expected {self.expected_substitutes}, found {current_substitutes}"
-            )
-        return current_substitutes
 
     def __validate_candidates_count(self) -> None:
         """Validates that the number of candidates matches the expected count for the previous candidacy."""
@@ -419,7 +425,6 @@ class TextElectionParser:
         """Marks the current candidacy as finished and resets relevant state."""
         if self.current_candidacy is None:
             return
-        self.expected_substitutes = self.__validate_substitutes_count()
         self.__validate_candidates_count()
         self.__reset_candicacy()
 
