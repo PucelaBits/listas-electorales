@@ -9,6 +9,7 @@ from .pdf import PDFReader
 
 _CANDIDATE_TRAILING_CHARS_RE = re.compile(r"\b[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\-\(\)']{1,2}\b$")
 _CANDIDATE_WHITELIST_RE = re.compile(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ \-'\(\)]")
+_DATE_RE = re.compile(r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+de\s+\d{4}\b")
 
 # Extract candidacy name and acronym
 _CANDIDACY_RE = re.compile(
@@ -65,12 +66,13 @@ def _has_trash_text(line: str) -> bool:
         or "teléfono" in line_lower
         or " enero" in line_lower
         or "febrero" in line_lower
-        or "marzo" in line_lower
         or "junio" in line_lower
         or "agosto" in line_lower
         or "septiembre" in line_lower
         or "noviembre" in line_lower
         or "diciembre" in line_lower
+        or "boletín oficial" in line_lower
+        or _DATE_RE.search(line_lower) is not None
     )
 
 
@@ -87,17 +89,17 @@ class TextElectionParser:
 
     # Extract explicit candidacy headers
     EXPLICIT_CANDIDACY_RE = re.compile(
-        r"^Candidatura\s+n[úu]m\.?:\s*(\d+)[ \.\-\–]+\s+(.+)$", re.IGNORECASE
+        r"^Candidatura\s+n[úu]m(?:ero)?\.?:?\s*(\d+)[\s\.\-\–\—~]?\s+(.+)$", re.IGNORECASE
     )
 
     # Numbered items
-    NUMBERED_ITEM_RE = re.compile(r"^(\d+)[ \.\-\–]+\s+(.+)$", re.IGNORECASE)
+    NUMBERED_ITEM_RE = re.compile(r"^(?:Nº\s?)?(\d+)\s?[\s\.\-\–\—~]+\s*([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+.+)$", re.IGNORECASE)
 
     # Catch isolated numbers sitting on their own line
-    ISOLATED_NUMBER_RE = re.compile(r"^(\d+)[ \.\-\–]+$")
+    ISOLATED_NUMBER_RE = re.compile(r"^(?:Candidatura\s+n[úu]m(?:ero)?\.?:?\s*)?(\d+)[ \.\-\–\—~]+$", re.IGNORECASE)
 
     # Catch lines that have multiple numbers and names separated by whitespace
-    MULTI_LINE_SPLIT_RE = re.compile(r"\s+(?=\d+[ \.\-\–]+\s+)")
+    MULTI_LINE_SPLIT_RE = re.compile(r"\s+(?=\d+[ \.\-\–\—~]+\s+)")
 
     SUPLENTE_RE = re.compile(r"^Suplentes?:?", re.IGNORECASE)
 
@@ -158,17 +160,6 @@ class TextElectionParser:
             self.__set_candidacy(order, content)
             return
 
-        # Substitutes
-        if self.SUPLENTE_RE.match(line):
-            if len(self.parsed_data) == 0:
-                raise ValueError(
-                    "Substitute section found before any candidates were parsed."
-                )
-            self.is_substitute = True
-            self.pending_order = None
-            self.line_completed = True
-            return
-
         if self.NOT_PROCLAMATED_RE.match(line):
             if self.current_candidacy is None:
                 raise ValueError(
@@ -186,20 +177,15 @@ class TextElectionParser:
             self.__reset_candicacy()
             return
 
-        # If the line contains multiple candidates or candidacies, split it and process each part
-        if self.MULTI_LINE_SPLIT_RE.search(line):
-            sub_lines = self.MULTI_LINE_SPLIT_RE.split(line)
-            prev_line = None
-            for sub_line in sub_lines:
-                if prev_line is None:
-                    prev_line = sub_line.strip()
-                    continue
-                sub_line = sub_line.strip()
-                self.__process_line(prev_line, sub_line)
-                prev_line = sub_line
-            # Process the last sub-line
-            if prev_line is not None:
-                self.__process_line(prev_line, next_line)
+        # Substitutes
+        if self.SUPLENTE_RE.match(line):
+            if len(self.parsed_data) == 0:
+                raise ValueError(
+                    "Substitute section found before any candidates were parsed."
+                )
+            self.is_substitute = True
+            self.pending_order = None
+            self.line_completed = True
             return
 
         # If we caught an isolated number on the previous line, this line is the name
@@ -211,6 +197,21 @@ class TextElectionParser:
         # Numbered items (implicit candidate or candidacy if old format)
         item_match = self.NUMBERED_ITEM_RE.match(line)
         if item_match:
+            # If the line contains multiple candidates or candidacies, split it and process each part
+            if self.MULTI_LINE_SPLIT_RE.search(line):
+                sub_lines = self.MULTI_LINE_SPLIT_RE.split(line)
+                prev_line = None
+                for sub_line in sub_lines:
+                    if prev_line is None:
+                        prev_line = sub_line.strip()
+                        continue
+                    sub_line = sub_line.strip()
+                    self.__process_line(prev_line, sub_line)
+                    prev_line = sub_line
+                # Process the last sub-line
+                if prev_line is not None:
+                    self.__process_line(prev_line, next_line)
+                return
             order = int(item_match.group(1))
             content = item_match.group(2).strip()
             self.__handle_numbered_item(order, content, next_line)

@@ -14,6 +14,30 @@ def register_fixer(region: str, year: int, month: int):
     return decorator
 
 
+def fix_ocr_numbers(text: str) -> str:
+    """Fixes common OCR errors related to numbers in the text."""
+    # Replace common OCR misreads of numbers
+    text = text.replace("1O", "10")
+    text = text.replace("I0", "10")
+    text = text.replace("T0", "10")
+    text = text.replace("lO", "10")
+    text = text.replace("l1", "11")
+    text = text.replace("1l", "11")
+    text = text.replace("1T", "11")
+    text = text.replace("l2", "12")
+    text = text.replace("l3", "13")
+    text = text.replace("l4", "14")
+    text = text.replace("l5", "15")
+    text = text.replace("l6", "16")
+    text = text.replace("l7", "17")
+    text = text.replace("l8", "18")
+    text = text.replace("l9", "19")
+    # This could be dangerous, that's why we require the dot at the end
+    text = text.replace("ll.", "11.")
+    text = text.replace("l.", "1.")
+    return text
+
+
 def clean_ocr_text(text: str) -> str:
     """Cleans up common OCR errors in the text, such as stray punctuation, missing dots after numbers, and inconsistent formatting."""
     # Clean up "Núm" variations (e.g., "Núm.-", "Núm.- ", "Núm ")
@@ -28,10 +52,10 @@ def clean_ocr_text(text: str) -> str:
     text = re.sub(r"\b(\d+)[:!•]", r"\1.", text)
 
     # Fix CLUSTERS of messy punctuation (dots, dashes, commas, colons, exclamation marks)
-    text = re.sub(r"\b(\d+)[\.\-\,:\!•]{2,}\s*", r"\1. ", text)
+    text = re.sub(r"\b(\d+)[\.\-\,:\!•'·;]{2,}\s*", r"\1. ", text)
 
     # Fix stray dots before list numbers (e.g., ".13." -> "13.")
-    text = re.sub(r"(?<=\s)[\.,](\d+)[\.,]", r"\1.", text)
+    text = re.sub(r"\ *[\.,]\ *(\d+)[\.,]", r"\1.", text)
 
     # Add missing dots after numbers preceding names/entities (e.g., "10 Don" -> "10. Don")
     text = re.sub(r"\b(\d+)\ +(?=Don|Doña|[A-Z]{2,})", r"\1. ", text)
@@ -45,7 +69,7 @@ def clean_ocr_text(text: str) -> str:
     return text
 
 
-_HAS_NUMBER_RE = re.compile(r"^\d+\.")
+_HAS_NUMBER_RE = re.compile(r"^(\d+)\.")
 
 
 def fill_missing_numbers(
@@ -77,7 +101,13 @@ def fill_missing_numbers(
     block_lines = block.splitlines(keepends=True)
 
     for i, line in enumerate(block_lines):
-        if not _HAS_NUMBER_RE.match(line):
+        match = _HAS_NUMBER_RE.match(line)
+        if match:
+            # Replace the number with the current start_number
+            block_lines[i] = block_lines[i].replace(
+                match.group(1), str(start_number), 1
+            )
+        else:
             block_lines[i] = f"{start_number}. {line}"
         start_number += 1
 

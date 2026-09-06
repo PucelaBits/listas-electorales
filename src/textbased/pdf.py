@@ -7,51 +7,56 @@ from common import logger
 
 from .error_fixes import ERROR_FIXERS
 
-_LONG_LINE_THRESHOLD = 150  # Arbitrary threshold for splitting long lines
+# Threshold for splitting lines with too many consecutive spaces
+_TOO_MANY_SPACES_THRESHOLD = 7
 
 
-def _find_column_split_x(page: pymupdf.Page, words: list[str]) -> float:
+def _find_column_split_x(page: pymupdf.Page, words: list[tuple]) -> float:
     """
-    Calculates the exact gutter center between two columns using an
-    area-weighted average of word boundaries.
+    Calculates the center between two columns using the midpoint
+    between the leftmost and rightmost text boundaries.
+    Ignores headers and footers.
     """
     default_mid = page.rect.width / 2
+    page_height = page.rect.height
 
-    left_weights = 0.0
-    left_x1_sum = 0.0
+    # Define vertical limits to ignore headers and footers
+    header_limit = page_height * 0.10
+    footer_limit = page_height * 0.90
 
-    right_weights = 0.0
-    right_x0_sum = 0.0
+    min_x = float("inf")
+    max_x = float("-inf")
 
     for w in words:
         x0, y0, x1, y1 = w[0], w[1], w[2], w[3]
-        width = x1 - x0
-        height = y1 - y0
-        area = width * height
 
-        # Ignore huge words (like title banners/watermarks) that span across the middle
-        if width > page.rect.width * 0.30 and x0 < default_mid < x1:
+        # Skip words in the header or footer regions
+        if y1 < header_limit or y0 > footer_limit:
             continue
 
-        # Classify based on the word's center X coordinate
-        word_center_x = (x0 + x1) / 2
+        # Track the absolute minimum x and maximum x
+        min_x = min(min_x, x0)
+        max_x = max(max_x, x1)
 
-        if word_center_x < default_mid:
-            left_x1_sum += x1 * area
-            left_weights += area
-        else:
-            right_x0_sum += x0 * area
-            right_weights += area
+    # If we found valid text boundaries, return their midpoint
+    if min_x != float("inf") and max_x != float("-inf"):
+        return (min_x + max_x) / 2
 
-    if left_weights > 0 and right_weights > 0:
-        avg_left_x1 = left_x1_sum / left_weights
-        avg_right_x0 = right_x0_sum / right_weights
-
-        # The split point is right in the center of the gutter
-        if avg_left_x1 < avg_right_x0:
-            return (avg_left_x1 + avg_right_x0) / 2
-
+    # Fallback to absolute center of the page if no valid text is found
     return default_mid
+
+
+def _split_too_many_spaces(
+    line: str, space_threshold: int = _TOO_MANY_SPACES_THRESHOLD
+) -> Generator[str, None, None]:
+    """Splits a line into multiple lines if it contains too many consecutive spaces."""
+    if " " * space_threshold in line:
+        for segment in line.split(" " * space_threshold):
+            segment = segment.strip()
+            if segment:
+                yield segment
+    else:
+        yield line
 
 
 class PDFReader:
@@ -64,6 +69,7 @@ class PDFReader:
         if not pdf_files:
             raise FileNotFoundError(f"No PDF files found in {self.folderpath}")
 
+        pdf_files.sort()  # Ensure consistent order
         for pdf_path in pdf_files:
             yield from self.__parse_single_file(pdf_path)
 
@@ -111,9 +117,8 @@ class PDFReader:
         if total_area == 0:
             return False
 
-        # Threshold: if > 15% of the text area is on the right, it's double-column
         ratio = right_column_area / total_area
-        result = ratio > 0.15
+        result = ratio > 0.30
 
         if result:
             logger.debug(
@@ -189,18 +194,8 @@ class PDFReader:
             if self.fix_text is not None:
                 text = self.fix_text(text)
 
-            for line in text.split("\n"):
+            for line in text.splitlines():
                 line = line.strip()
                 if not line:
                     continue
-                # If the line is too long, it might have multiple stuff inside, split it
-                if len(line) > _LONG_LINE_THRESHOLD:
-                    # Make a best-effort split using spaces
-                    for range_start in range(0, len(line), _LONG_LINE_THRESHOLD):
-                        selected_line = line[
-                            range_start : range_start + _LONG_LINE_THRESHOLD
-                        ].strip()
-                        if selected_line:
-                            yield selected_line
-                else:
-                    yield line
+                yield from _split_too_many_spaces(line)

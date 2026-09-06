@@ -4,6 +4,7 @@ from ._common import (
     clean_ocr_text,
     fill_missing_numbers,
     fix_nine_line_ocr,
+    fix_ocr_numbers,
     fix_ten_line_ocr,
     register_fixer,
     remove_single_letter_lines,
@@ -45,7 +46,9 @@ def fix_andalucia_1982_05(text: str) -> str:
         "14. Bartolome Antero Jimenez Antonio.",
     )
     text = text.replace("D.José Ruiz Martín.\n14", "14. José Ruiz Martín.")
-    text = text.replace("D Francisca Olias Ferrera.\n18", "18. Francisca Olias Ferrera.")
+    text = text.replace(
+        "D Francisca Olias Ferrera.\n18", "18. Francisca Olias Ferrera."
+    )
     text = text.replace("MOVIMIENTO COMUNISTA\nN 12.-", "12. MOVIMIENTO COMUNISTA\n")
     text = text.replace(
         "- FEDERACION DE ALIANZA POPULAR", "2. FEDERACION DE ALIANZA POPULAR"
@@ -56,10 +59,20 @@ def fix_andalucia_1982_05(text: str) -> str:
     text = text.replace(
         "N 1.2. FEDERACION DE ALIANZA POPULAR.", "1. FEDERACION DE ALIANZA POPULAR."
     )
-    text = text.replace("NO FEDERACION DE ALIANZA POPULAR", "3. FEDERACION DE ALIANZA POPULAR")
-    text = text.replace("18. José Luis Rios Moreno.\nN2. PARTIDO SOCIALISTA OBRERO", "18. José Luis Rios Moreno.\n7. PARTIDO SOCIALISTA OBRERO")
-    text = text.replace("FEDERACION DE ALIANZA POPULAR.\nN6", "6. FEDERACION DE ALIANZA POPULAR")
-    text = text.replace("PARTIDO SOCIALISTA OBRERO ESPAÑOL-\nN 2.-", "2. PARTIDO SOCIALISTA OBRERO ESPAÑOL")
+    text = text.replace(
+        "NO FEDERACION DE ALIANZA POPULAR", "3. FEDERACION DE ALIANZA POPULAR"
+    )
+    text = text.replace(
+        "18. José Luis Rios Moreno.\nN2. PARTIDO SOCIALISTA OBRERO",
+        "18. José Luis Rios Moreno.\n7. PARTIDO SOCIALISTA OBRERO",
+    )
+    text = text.replace(
+        "FEDERACION DE ALIANZA POPULAR.\nN6", "6. FEDERACION DE ALIANZA POPULAR"
+    )
+    text = text.replace(
+        "PARTIDO SOCIALISTA OBRERO ESPAÑOL-\nN 2.-",
+        "2. PARTIDO SOCIALISTA OBRERO ESPAÑOL",
+    )
     text = text.replace("D2\n", "")
     text = text.replace("Dp\n", "")
     text = text.replace("N2. ", "Núm 2. ")
@@ -123,7 +136,9 @@ def fix_andalucia_1982_05(text: str) -> str:
     text = text.replace(
         "José Antonio Marin Rite. PSOE de\n", "José Antonio Marin Rite. PSOE de "
     )
-    text = text.replace("José Rodríguez de la Borbolla\n", "José Rodríguez de la Borbolla ")
+    text = text.replace(
+        "José Rodríguez de la Borbolla\n", "José Rodríguez de la Borbolla "
+    )
     text = text.replace("Salvador lgnacio Bustamante\n", "Salvador Ignacio Bustamante ")
     text = fix_ten_line_ocr(text)
     text = fix_nine_line_ocr(text)
@@ -235,7 +250,10 @@ def fix_andalucia_1982_05(text: str) -> str:
     text = text.replace(
         "16. Eduardo Alonso García.", "SUPLENTES\n16. Eduardo Alonso García."
     )
-    text = text.replace("16. Salvador Antonio García Guerra.", "SUPLENTES\n16. Salvador Antonio García Guerra.")
+    text = text.replace(
+        "16. Salvador Antonio García Guerra.",
+        "SUPLENTES\n16. Salvador Antonio García Guerra.",
+    )
     return text
 
 
@@ -541,7 +559,11 @@ def fix_andalucia_1990_06(text: str) -> str:
         "N 3. COALICION IZQUIERDA UNIDA-CONVO-\nCATORIA POR ANDALUCIA 1.U.-C.A",
         "3. COALICION IZQUIERDA UNIDA-CONVOCATORIA POR ANDALUCIA (I.U.-C.A.)",
     )
-    text = text.replace("N 17. COALICIÓN ALIANZA POR LA REPUBLICA", "11. COALICIÓN ALIANZA POR LA REPUBLICA")
+    text = text.replace(
+        "N 17. COALICIÓN ALIANZA POR LA REPUBLICA",
+        "11. COALICIÓN ALIANZA POR LA REPUBLICA",
+    )
+    text = fix_ocr_numbers(text)
     text = re.sub(_ANDALUCIA_1990_06_D_RE, r"\1. ", text)
     text = text.replace("HD. Juan", "11. Juan")
     text = text.replace("D. Manuel Virella Redondo", "1. Manuel Virella Redondo")
@@ -561,9 +583,6 @@ def fix_andalucia_1990_06(text: str) -> str:
     text = text.replace("ó. ", "6. ")
     text = text.replace("O De.", "10. ")
     text = text.replace("10'D. ", "10. ")
-    text = text.replace("1T D. ", "11. ")
-    text = text.replace("T0 D. ", "10. ")
-    text = text.replace("1O D. ", "10. ")
     text = text.replace("TO D. ", "10. ")
     text = text.replace("T D. ", "1. ")
     text = text.replace("1 pr. ", "1. ")
@@ -579,17 +598,37 @@ def fix_andalucia_1990_06(text: str) -> str:
     text = text.replace("o SUPLENTES", "SUPLENTES")
     text = clean_ocr_text(text)
     # Fix misnumbered candidacies
-    text = text.replace("mí N 8. FRENTE ANDALUZ DE LIBERACION (F.A.L)", "7. RELLENO\nNO PROCLAMADA\n8. FRENTE ANDALUZ DE LIBERACION (F.A.L.)")
+    text = text.replace(
+        "mí N 8. FRENTE ANDALUZ DE LIBERACION (F.A.L)",
+        "7. RELLENO\nNO PROCLAMADA\n8. FRENTE ANDALUZ DE LIBERACION (F.A.L.)",
+    )
     text = text.replace(
         "CADIZ\nN 2. PARTIDO SOCIALISTA OBRERO ESPAÑOL\n",
         "CADIZ\n1. RELLENO\nNO PROCLAMADA\n 2. PARTIDO SOCIALISTA OBRERO ESPAÑOL\n",
     )
-    text = text.replace("Ne 18. PARTIDO HUMANISTA", "17. RELLENO\nNO PROCLAMADA\n18. PARTIDO HUMANISTA")
-    text = text.replace("N 2. PARTIDO COMUNISTA DE ESPAÑA", "1. RELLENO\nNO PROCLAMADA\n2. PARTIDO COMUNISTA DE ESPAÑA")
-    text = text.replace("Ne 8. PARTIDO ANDALUCISTA\n", "7. RELLENO\nNO PROCLAMADA\n8. PARTIDO ANDALUCISTA\n")
-    text = text.replace("N 19. PARTIDO FRENTE ANDALUZ", "18. RELLENO\nNO PROCLAMADA\n19. PARTIDO FRENTE ANDALUZ")
-    text = text.replace("Ne. 4. IZQUIERDA UNIDA-CONVOCATORIA", "Candidatura núm.: 4. IZQUIERDA UNIDA-CONVOCATORIA")
-    text = text.replace("Ne 3. PARTIDO DE LOS TRABAJADORES DE", "Candidatura núm.: 3. PARTIDO DE LOS TRABAJADORES DE")
+    text = text.replace(
+        "Ne 18. PARTIDO HUMANISTA", "17. RELLENO\nNO PROCLAMADA\n18. PARTIDO HUMANISTA"
+    )
+    text = text.replace(
+        "N 2. PARTIDO COMUNISTA DE ESPAÑA",
+        "1. RELLENO\nNO PROCLAMADA\n2. PARTIDO COMUNISTA DE ESPAÑA",
+    )
+    text = text.replace(
+        "Ne 8. PARTIDO ANDALUCISTA\n",
+        "7. RELLENO\nNO PROCLAMADA\n8. PARTIDO ANDALUCISTA\n",
+    )
+    text = text.replace(
+        "N 19. PARTIDO FRENTE ANDALUZ",
+        "18. RELLENO\nNO PROCLAMADA\n19. PARTIDO FRENTE ANDALUZ",
+    )
+    text = text.replace(
+        "Ne. 4. IZQUIERDA UNIDA-CONVOCATORIA",
+        "Candidatura núm.: 4. IZQUIERDA UNIDA-CONVOCATORIA",
+    )
+    text = text.replace(
+        "Ne 3. PARTIDO DE LOS TRABAJADORES DE",
+        "Candidatura núm.: 3. PARTIDO DE LOS TRABAJADORES DE",
+    )
     return text
 
 
@@ -648,7 +687,10 @@ def fix_andalucia_1994_06(text: str) -> str:
     text = text.replace("-Núm. 1. ", "1. ")
     text = text.replace("Núm. 1 ", "1. ")
     text = text.replace("Núm. 1. ", "1. ")
-    text = text.replace("4. PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA\n", "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA ")
+    text = text.replace(
+        "4. PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA\n",
+        "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA ",
+    )
     return text
 
 
@@ -657,8 +699,12 @@ def fix_andalucia_1996_03(text: str) -> str:
     if "CONSEJERIA DE TRABAJO Y ASUNTOS SOCIALES" in text:
         # Remove preamble
         return ""
-    text = text.replace("4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA\n", "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA ")
+    text = text.replace(
+        "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA\n                ",
+        "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA ",
+    )
     text = text.replace("Núm. ", "")
+    text = text.replace("Num. ", "")
     return text
 
 
@@ -668,7 +714,10 @@ def fix_andalucia_2000_03(text: str) -> str:
         # Remove preamble
         return ""
     # Not proclaimed
-    text = text.replace("3.  PARTIDO POSITIVISTA CRISTIANO (PPCr)", "3.  PARTIDO POSITIVISTA CRISTIANO (PPCr)\nNO PROCLAMADA")
+    text = text.replace(
+        "3.  PARTIDO POSITIVISTA CRISTIANO (PPCr)",
+        "3.  PARTIDO POSITIVISTA CRISTIANO (PPCr)\nNO PROCLAMADA",
+    )
     text = text.replace("Núm. ", "")
     return text
 
@@ -724,4 +773,10 @@ def fix_andalucia_2015_03(text: str) -> str:
         "Javier Vicente Del Moral Quevedo", "Juan Vicente Del Moral Quevedo"
     )
     text = text.replace("Nazaret Navarro Todelado", "Nazaret Navarro Toledano")
+    return text
+
+
+@register_fixer("andalucia", 2018, 12)
+def fix_andalucia_2018_12(text: str) -> str:
+    text = text.replace("'RxD Ángela Gallego Reina", "Ángela Gallego Reina")
     return text
