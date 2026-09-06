@@ -149,3 +149,12 @@ def fix_nine_line_ocr(text: str) -> str:
         ),
         text,
     )
+
+
+def remove_single_letter_lines(text: str) -> str:
+    """
+    Removes lines that consist of a single letter (A-Z, a-z) or multiple single
+    letters separated by spaces, optionally followed by dots.
+    """
+    pattern = r"^[ \t]*[A-Za-z]\.?(?:[ \t]+[A-Za-z]\.?)*[ \t]*(?:\r?\n|$)"
+    return re.sub(pattern, "", text, flags=re.MULTILINE)

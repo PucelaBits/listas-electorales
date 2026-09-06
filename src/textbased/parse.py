@@ -25,6 +25,11 @@ _CANDIDACY_RE = re.compile(
 def _extract_candidacy(content: str) -> tuple[str, str]:
     content = content.strip()
     match = _CANDIDACY_RE.search(content)
+    # TODO: Improve this with examples
+    # FALANGE ESPAÑOLA DE LAS J.O.N.S. (F.E. DE LAS J.O.N.S.)
+    # PARTIDO COMUNISTA DE ESPAÑA (MARXISTA-LENINISTA) P.C. (M-L)
+    # TODO: Handle dots like
+    # PARTIDO SOCIALISTA.
 
     if match:
         # Strip string again to catch any edge-case punctuation at the boundaries
@@ -43,6 +48,9 @@ def _clean_candidate_name(name: str) -> str:
     name = re.sub(_CANDIDATE_WHITELIST_RE, "", name)
     # Remove any trailing random letters (< 3 characters) that are likely OCR artifacts
     name = re.sub(_CANDIDATE_TRAILING_CHARS_RE, "", name)
+    # If the name starts with "D ", it is actually "D. "
+    if name.startswith("D "):
+        name = "D. " + name[2:]
     return name.strip()
 
 
@@ -104,17 +112,6 @@ class TextElectionParser:
         self.pending_order = None
         self.line_completed = False
         self.expected_substitutes = None
-        self.__reset_state()
-
-    def __reset_state(self) -> None:
-        """Resets the parser's state for a new PDF file."""
-        self.current_province = ""
-        self.current_candidacy = None
-        self.is_substitute = False
-        self.candidate_order = 0
-        self.pending_order = None
-        self.line_completed = False
-        self.expected_substitutes = None
 
     def parse(self):
         for line in self.text_reader.parse():
@@ -123,7 +120,6 @@ class TextElectionParser:
             raise ValueError("No candidates found")
 
     def build(self) -> tuple[Candidate]:
-        # TODO: Perform a cleanup of the parsed data to remove any duplicates candidates
         return tuple(self.parsed_data)
 
     def __process_line(self, line: str) -> None:
@@ -142,6 +138,8 @@ class TextElectionParser:
             # Change of province indicates a new candidacy section, so reset candidacy and candidate order
             self.line_completed = True
             self.__mark_candidacy_as_finished()
+            # Reset expected substitutes when changing provinces
+            self.expected_substitutes = None
             return
 
         # Explicit line candidacy headers (e.g., "Candidatura núm.: 1 Partido XYZ")
@@ -175,8 +173,8 @@ class TextElectionParser:
                 raise ValueError(
                     f"Found 'NO PROCLAMADA' line while parsing candidates for {self.current_candidacy}, but candidates were already parsed."
                 )
-            # Remove the current candidacy
-            self.__mark_candidacy_as_finished()
+            # Reset the current candidacy
+            self.__reset_candicacy()
             return
 
         # If the line contains multiple candidates or candidacies, split it and process each part
@@ -283,6 +281,13 @@ class TextElectionParser:
         if len(self.parsed_data) == 0 and self.current_candidacy is not None:
             raise ValueError("Candidacy set before any candidates were parsed.")
         self.__mark_candidacy_as_finished()
+        # Extract "extra" data from the candidacy
+        content, extra_data = (
+            content.split("%", 1) if "%" in content else (content, None)
+        )
+        if extra_data:
+            logger.debug(f"Extracted extra data for candidacy: {extra_data.strip()}")
+            self.expected_substitutes = int(extra_data.strip())
         current_party, current_acronym = _extract_candidacy(content)
         self.current_candidacy = Candidacy(name=current_party, acronym=current_acronym)
         logger.debug(f"Set current candidacy: {self.current_candidacy}")
@@ -335,6 +340,7 @@ class TextElectionParser:
             )
         elif self.current_candidacy and self.candidate_order == 0:
             # If we are not currently parsing candidates, this line is a continuation of the candidacy name
+            # TODO: This might join names with "-" incorrectly
             if self.current_candidacy.name.endswith("-"):
                 full_content = self.current_candidacy.name[:-1] + line
             else:
@@ -346,47 +352,57 @@ class TextElectionParser:
 
     def __validate_substitutes_count(self) -> int:
         """Validates that the number of substitutes matches the expected count for the previous candidacy."""
-        expected_substitutes = 0
+        current_substitutes = 0
         for c in self.parsed_data[::-1]:
             if c.candidacy == self.current_candidacy and c.substitute:
-                expected_substitutes += 1
+                current_substitutes += 1
             else:
                 break
         if (
             self.expected_substitutes is not None
-            and expected_substitutes != self.expected_substitutes
+            and current_substitutes != self.expected_substitutes
         ):
             raise ValueError(
                 f"Mismatch in expected substitutes for {self.current_candidacy.name}: "
-                f"expected {self.expected_substitutes}, found {expected_substitutes}"
+                f"expected {self.expected_substitutes}, found {current_substitutes}"
             )
-        return expected_substitutes
+        return current_substitutes
 
     def __validate_candidates_count(self) -> None:
         """Validates that the number of candidates matches the expected count for the previous candidacy."""
         expected_candidates = 0
         previous_candidacy = None
         for c in self.parsed_data[::-1]:
+            if c.substitute:
+                continue  # Skip substitutes when counting candidates
             if c.candidacy == self.current_candidacy:
                 expected_candidates += 1
             else:
-                previous_candidacy = c.candidacy
-                previous_province = c.province
                 break
         if expected_candidates == 0:
             raise ValueError(
                 f"No candidates found for {self.current_candidacy.name} in {self.current_province}"
             )
+        # Search for the previous candidacy in the parsed data
+        start_index = expected_candidates
+        for c in self.parsed_data[-expected_candidates - 1 :: -1]:
+            if c.candidacy != self.current_candidacy:
+                previous_candidacy = c.candidacy
+                previous_province = c.province
+                break
+            start_index += 1
         # Calculate the candidates of the previous candidacy to compare with the current one
         if previous_candidacy is None:
             return  # No previous candidacy to compare with
         if previous_province != self.current_province:
-            return # Different province, no need to compare
+            return  # Different province, no need to compare
         previous_candidates = 0
-        for c in self.parsed_data[-expected_candidates-1::-1]:
+        for c in self.parsed_data[-start_index - 1 :: -1]:
+            if c.substitute:
+                continue  # Skip substitutes when counting candidates
             if c.candidacy == previous_candidacy:
                 previous_candidates += 1
-            elif c.candidacy != previous_candidacy:
+            else:
                 break
         if previous_candidates == 0:
             raise ValueError(
@@ -404,10 +420,11 @@ class TextElectionParser:
         if self.current_candidacy is None:
             return
         self.expected_substitutes = self.__validate_substitutes_count()
-        # In some cases, the substitutes are not explicitly marked
-        if self.expected_substitutes == 0:
-            self.expected_substitutes = None
         self.__validate_candidates_count()
+        self.__reset_candicacy()
+
+    def __reset_candicacy(self) -> None:
+        """Resets the current candidacy and related state."""
         self.current_candidacy = None
         self.candidate_order = 0
         self.pending_order = None
