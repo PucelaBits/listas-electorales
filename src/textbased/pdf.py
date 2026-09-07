@@ -126,36 +126,35 @@ class PDFReader:
             )
         return result
 
-    def __words_to_text(self, word_list: list, y_tolerance: float = 4.0) -> str:
+    def __words_to_text(self, word_list: list, y_tolerance: float = 2.0) -> str:
         """Helper to reconstruct lines of text from floating word coordinates."""
         if not word_list:
             return ""
 
-        # Sort purely top-to-bottom by the exact Y coordinate
-        word_list.sort(key=lambda w: w[1])
+        # Sort top-to-bottom by the middle Y coordinate
+        word_list.sort(key=lambda w: (w[1] + w[3]) / 2.0)
 
         lines = []
         curr_line_words = []
         line_anchor_y = None
 
         for w in word_list:
-            y0 = w[1]
+            # Calculate the vertical center of the current word
+            mid_y = (w[1] + w[3]) / 2.0
 
             # If it's the first word or within the tolerance of the line's starting Y
-            if line_anchor_y is None or abs(y0 - line_anchor_y) <= y_tolerance:
+            if line_anchor_y is None or abs(mid_y - line_anchor_y) <= y_tolerance:
                 curr_line_words.append(w)
                 if line_anchor_y is None:
-                    line_anchor_y = y0
+                    line_anchor_y = mid_y
             else:
                 # Line is complete. Sort the line's words strictly left-to-right (by X)
                 curr_line_words.sort(key=lambda w: w[0])
-
-                # Extract text and add to lines
                 lines.append(" ".join(w[4] for w in curr_line_words))
 
                 # Start a new line with the current word
                 curr_line_words = [w]
-                line_anchor_y = y0
+                line_anchor_y = mid_y
 
         # Don't forget to process the final line
         if curr_line_words:

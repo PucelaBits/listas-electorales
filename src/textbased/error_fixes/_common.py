@@ -14,8 +14,8 @@ def register_fixer(region: str, year: int, month: int):
     return decorator
 
 
-def fix_ocr_numbers(text: str) -> str:
-    """Fixes common OCR errors related to numbers in the text."""
+def clean_ocr_numbers(text: str) -> str:
+    """Cleans up common OCR errors in the text, such as stray punctuation, missing dots after numbers, and inconsistent formatting."""
     # Replace common OCR misreads of numbers
     text = text.replace("1O", "10")
     text = text.replace("I0", "10")
@@ -34,14 +34,13 @@ def fix_ocr_numbers(text: str) -> str:
     text = text.replace("l9", "19")
     # This could be dangerous, that's why we require the dot at the end
     text = text.replace("ll.", "11.")
+    text = text.replace("IO.", "10.")
     text = text.replace("l.", "1.")
-    return text
-
-
-def clean_ocr_text(text: str) -> str:
-    """Cleans up common OCR errors in the text, such as stray punctuation, missing dots after numbers, and inconsistent formatting."""
+    text = text.replace("S.", "5.")
     # Clean up "Núm" variations (e.g., "Núm.-", "Núm.- ", "Núm ")
     text = re.sub(r"Núm[\.\-\s]+", "Núm. ", text)
+    # Replaces the N2 {number} with Núm. {number}
+    text = re.sub(r"N(?:\.2|\ 2|[2\.])[\s-]+(\d+)", r"\1", text)
 
     # Remove stray quotes around numbers and dots
     text = re.sub(r"['´`\"](?=\d)", "", text)
@@ -51,14 +50,16 @@ def clean_ocr_text(text: str) -> str:
     # Fix SINGLE colons and exclamation marks after numbers (e.g., "11:" -> "11.")
     text = re.sub(r"\b(\d+)[:!•]", r"\1.", text)
 
+    # Fix spaces between the number and the dot (e.g., "11 . " -> "11. ")
+    text = re.sub(r"\b(\d+)\s*\.\s*", r"\1. ", text)
+
     # Fix CLUSTERS of messy punctuation (dots, dashes, commas, colons, exclamation marks)
-    text = re.sub(r"\b(\d+)[\.\-\,:\!•'·;]{2,}\s*", r"\1. ", text)
+    text = re.sub(r"\b(\d+)\s*[\.\-\,:\!•'·;]{2,}\s*", r"\1. ", text)
 
     # Fix stray dots before list numbers (e.g., ".13." -> "13.")
-    text = re.sub(r"\ *[\.,]\ *(\d+)[\.,]", r"\1.", text)
-
+    text = re.sub(re.compile(r"^\ *[\.,-]\ *(\d+)\ *[\.,]", re.MULTILINE), r"\1.", text)
     # Add missing dots after numbers preceding names/entities (e.g., "10 Don" -> "10. Don")
-    text = re.sub(r"\b(\d+)\ +(?=Don|Doña|[A-Z]{2,})", r"\1. ", text)
+    text = re.sub(r"\b(\d+)\ *(?=Don|Doña|[A-Z]{2,})", r"\1. ", text)
 
     # Fix commas separating titles (e.g., "Don,Juan" -> "Don Juan")
     text = re.sub(r"(Don|Doña)[,|-]", r"\1 ", text)
@@ -70,6 +71,26 @@ def clean_ocr_text(text: str) -> str:
 
 
 _HAS_NUMBER_RE = re.compile(r"^(\d+)\.")
+
+
+def autofill_missing_numbers(text: str) -> str:
+    """
+    Automatically fills in missing numbers in a list of candidates.
+    It look at the line before and after without a number to determine the missing number.
+    """
+    lines = text.splitlines()
+    for i in range(1, len(lines) - 1):
+        if not _HAS_NUMBER_RE.match(lines[i]):
+            prev_match = _HAS_NUMBER_RE.match(lines[i - 1])
+            next_match = _HAS_NUMBER_RE.match(lines[i + 1])
+            if prev_match and next_match:
+                prev_number = int(prev_match.group(1))
+                next_number = int(next_match.group(1))
+                if next_number - prev_number == 2:
+                    missing_number = prev_number + 1
+                    lines[i] = f"{missing_number}. {lines[i].lstrip()}"
+    text = "\n".join(lines)
+    return text
 
 
 def fill_missing_numbers(

@@ -1,10 +1,9 @@
 import re
 
 from ._common import (
-    clean_ocr_text,
+    clean_ocr_numbers,
     fill_missing_numbers,
     fix_nine_line_ocr,
-    fix_ocr_numbers,
     fix_ten_line_ocr,
     register_fixer,
     remove_single_letter_lines,
@@ -404,24 +403,8 @@ def fix_andalucia_1986_06(text: str) -> str:
         "v Monuel Archilla Sánchez (A.P", "11. Manuel Archilla Sánchez (A.P.)"
     )
     text = text.replace(
-        "Vicente José Luis E. Aguilar Fernández-Capel Gollart (A.P.) Baños (e.D.p. )",
-        "José Luis Aguilar Gollart\nVicente E. Fernández-Capel Baños (P.D.P.)",
-    )
-    text = text.replace(
-        "José Manuel Gard íta Ragel\nLópez Ñ\nFrancisco López",
-        "José Manuel García Ragel\nFrancisco López López",
-    )
-    text = text.replace(
-        "Concepción Carmen Jiménez Gómez Siles García de solo",
-        "Carmen Jiménez Siles\nConcepción Gómez García de Sola",
-    )
-    text = text.replace(
         "Gregorio Cano Rodríguez\nv\nRicardo Mateo de Maya 1",
         "Gregorio Cano Rodríguez\nRicardo Mateo de Maya",
-    )
-    text = text.replace(
-        "Alfredo Jesús Antonia Merchán Fernández Jiménez Olmedd",
-        "Alfredo Merchán Jiménez\nJesús Antonio Fernández Olmedo",
     )
     text = text.replace("Antonio 1. Diaz Rodríguez", "Antonio L. Díaz Rodríguez")
     text = _fix_missing_eleven(text)
@@ -563,7 +546,6 @@ def fix_andalucia_1990_06(text: str) -> str:
         "N 17. COALICIÓN ALIANZA POR LA REPUBLICA",
         "11. COALICIÓN ALIANZA POR LA REPUBLICA",
     )
-    text = fix_ocr_numbers(text)
     text = re.sub(_ANDALUCIA_1990_06_D_RE, r"\1. ", text)
     text = text.replace("HD. Juan", "11. Juan")
     text = text.replace("D. Manuel Virella Redondo", "1. Manuel Virella Redondo")
@@ -596,7 +578,7 @@ def fix_andalucia_1990_06(text: str) -> str:
     text = text.replace("- SUPLENTES", "SUPLENTES")
     text = text.replace("SLIPLENTES", "SUPLENTES")
     text = text.replace("o SUPLENTES", "SUPLENTES")
-    text = clean_ocr_text(text)
+    text = clean_ocr_numbers(text)
     # Fix misnumbered candidacies
     text = text.replace(
         "mí N 8. FRENTE ANDALUZ DE LIBERACION (F.A.L)",
@@ -683,7 +665,7 @@ def fix_andalucia_1994_06(text: str) -> str:
     text = text.replace("Sliplentes", "Suplentes")
     text = text.replace("-Suplentes", "Suplentes")
     text = text.replace("?odríguez", "Rodríguez")
-    text = clean_ocr_text(text)
+    text = clean_ocr_numbers(text)
     text = text.replace("-Núm. 1. ", "1. ")
     text = text.replace("Núm. 1 ", "1. ")
     text = text.replace("Núm. 1. ", "1. ")

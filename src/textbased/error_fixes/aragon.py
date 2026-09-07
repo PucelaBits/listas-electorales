@@ -1,41 +1,118 @@
+import re
+
 from ._common import (
-    clean_ocr_text,
+    autofill_missing_numbers,
+    clean_ocr_numbers,
     fill_missing_numbers,
-    fix_ocr_numbers,
     register_fixer,
 )
 
 
-# BOA 55, err.pdf (BOA 53, página 1370): Huesca, candidatura nº 3.
-# «UNION ARAGONESISTA-CHUNTA ARAGONESISTA» CHA must read «CHUNTA ARAGONESISTA» CHA.
-# The scanned text is split across several lines with OCR holes ("UNJON",
-# "ARAGONESIST A"); replace each whole chunk with the corrected name only
-# (the name as printed in the other provinces).@register_fixer("aragon", 1991, 5)
+@register_fixer("aragon", 1991, 5)
 def fix_aragon_1991_05(text: str) -> str:
-    # Summary list of candidaturas (top of the Huesca page)
+    print(text)
+    print(repr(text))
+    text = text.replace("LISTA de candidaturas proclamadas por esta Jun-\n685\nta Electoral Provincial de Teruel", "Junta Electoral Provincial de Teruel")
+    # Remove preamble
     text = text.replace(
-        "«UNJON\nARAGONESIST A-CHUNT A-\nARAGONESIST A CHA».",
-        "«CHUNTA\nARAGONESISTA» CHA.",
+        "\n1.cPARTIDO ARAGONES PAR.\n2.-PARTIDO SOCIALISTA DE LOS TRABA-\nJADORES PST.\n3.UNION ARAGONESISTA-CHUNTA-\nARAGONESISTA CHA.\n4.CENTRO DEMOCRATICO Y SOCIAL\nCDS.\n5.PARTIDO SOCIALISTA OBRERO ESPA-\nÑOL PSOE.\n6.CONVERGENCIA ALTERNATIVA DE\nARAGON-IZQUIERDA UNIDA. CAA-IU.\n7.PARTIDO POPULAR. PP.\n",
+        "",
     )
-    # Candidatura nº 3 header (same page, lower)
+    # Errata (err.pdf)
     text = text.replace(
-        "N.lI 3.-«UNION\nARAGONESISTA-CHUNTA\nARA-\nGONESIST A» CHA",
-        "N.lI 3.-«CHUNTA\nARAGONESISTA» CHA",
+        "3.UNION ARAGONESISTA-CHUNTA-\nARAGONESISTA CHA.",
+        "3.CHUNTA ARAGONESISTA CHA",
     )
+    text = text.replace(
+        "3.UNION ARAGONESISTA-CHUNTA ARA-\nGONESISTA CHA",
+        "3.CHUNTA ARAGONESISTA CHA",
+    )
+    # Fix OCR
+    text = text.replace("N.2 5S", "5.")
+    text = text.replace("N.25", "5.")
+    text = clean_ocr_numbers(text)
+    text = text.replace("14. Carlos Enrique Gabriel REYES RUBIO", "4. Carlos Enrique Gabriel REYES RUBIO")
+    text = text.replace("4. PARTIDO SOCIALISTA DE LOS TRABAJA-\n", "4. PARTIDO SOCIALISTA DE LOS TRABAJA")
+    text = text.replace("N.26 PÁARTIDO", "6. PARTIDO")
+    text = text.replace("N 2.", "2.")
+    text = text.replace("N.9. ", "9. ")
+    text = text.replace("55.PARTIDO", "5. PARTIDO")
+    text = text.replace("3.Miguel FORTEA CASTELLO", "13. Miguel FORTEA CASTELLO")
+    text = text.replace("3. Agustín CLAVERO MARCO", "13. Agustín CLAVERO MARCO")
+    text = text.replace("3. Miguel FORTEA CASTELLO", "13. Miguel FORTEA CASTELLO")
+    text = text.replace("9 Francisco Javier DE JAIME LOREN", "9. Francisco Javier DE JAIME LOREN")
+    text = text.replace("13 María del Carmen SAURA SICHAR", "13. María del Carmen SAURA SICHAR")
+    text = text.replace("13 -María Pilar SERRANO EZQUERRA", "13. María Pilar SERRANO EZQUERRA")
+    text = text.replace("26. Roberto Santiago MAYORA DOMECH", "25. Roberto Santiago MAYORA DOMECH")
+    text = text.replace("Yo 12. Jovita BIEL FLETA-", "12. Jovita BIEL FLETA")
+    text = text.replace("13. Custodio ARJONA CAÑADAS", "18. Custodio ARJONA CAÑADAS")
+    text = autofill_missing_numbers(text)
+    text = text.replace("GOMEZRODRIGUEZ", "GOMEZ RODRIGUEZ")
+    text = text.replace("BASCONIDIMENEZ", "BASCON GIMENEZ")
+    text = text.replace("AgustínAQUILUE", "Agustín AQUILUE")
+    text = text.replace("ArturoGONZALVO", "Arturo GONZALVO")
     return text
+
+
+def _fix_missing_substitutes(text: str, name_regex: re.Pattern) -> str:
+    """
+    Fixes missing substitutes in the text.
+    This function looks for specific patterns in the text where substitutes numbers are missing
+    """
+    lines = text.splitlines()
+    fixed_lines = []
+    candidate_order = None
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        if line.upper() == "SUPLENTES":
+            # Check if the next line is a number; if not, insert the missing number
+            candidate_order = 1
+        elif candidate_order is not None:
+            if line.startswith(f"{candidate_order}."):
+                # Correctly numbered line, move to the next candidate
+                candidate_order += 1
+            elif line[0].isdigit():
+                # Other numbered line, but not the expected one; reset candidate_order
+                candidate_order = None
+            elif name_regex.match(line):
+                # Missing number, insert it
+                fixed_lines.append(f"{candidate_order}. {line}")
+                candidate_order += 1
+                continue
+        fixed_lines.append(line)
+    return "\n".join(fixed_lines)
+
+
+_ARAGON_1995_05_NAME_REGEX = re.compile(
+    r"^(?:DON|DOÑA)\s+[A-ZÁÉÍÓÚÜÑ]+(?:\s+[A-ZÁÉÍÓÚÜÑ]+)+$"
+)
 
 
 @register_fixer("aragon", 1995, 5)
 def fix_aragon_1995_05(text: str) -> str:
-    print(text)
     # Errata (err.pdf)
     text = text.replace("PEDRAFITA FERRER", "PIEDRAFITA FERRER")
     # Fix OCR
-    text = fix_ocr_numbers(text)
-    text = text.replace("II.-", "11.-")
-    text = text.replace("H.-", "11.-")
-    text = text.replace("I.", "1.")
-    text = clean_ocr_text(text)
+    text = text.replace(
+        "S. FEDERACION DE LA PLATAFORMA", "5. FEDERACION DE LA PLATAFORMA"
+    )
+    text = text.replace("L PARTIDO ARAGONES", "1. PARTIDO ARAGONES")
+    text = text.replace(
+        "FEDERACION DE LA PLATAFORMA.\n", "FEDERACION DE LA PLATAFORMA "
+    )
+    text = text.replace("l ISIDORO ESTEBAN IZQUIERDO", "1. ISIDORO ESTEBAN IZQUIERDO")
+    text = text.replace("E-MARÍA ANTONIA ROCA MUÑOZ", "14. MARÍA ANTONIA ROCA MUÑOZ")
+    text = text.replace("'RICARDO SESE GINE", "15. RICARDO SESE GINE")
+    text = text.replace("ROSA MARIA AGUILERA RUIZ", "4. ROSA MARIA AGUILERA RUIZ")
+    text = text.replace("DOPEDDIAZ", "LÓPEZ DÍAZ")
+    text = text.replace("1.SANTIAGO MONZON FLETA", "11. SANTIAGO MONZON FLETA")
+    text = text.replace("DON FERNANDO LABENA GALLIZO", "4. DON FERNANDO LABENA GALLIZO")
+    text = text.replace("DON CHESUS YUSTE CABELLO", "2. DON CHESUS YUSTE CABELLO")
+    text = clean_ocr_numbers(text)
+    text = autofill_missing_numbers(text)
+    text = _fix_missing_substitutes(text, _ARAGON_1995_05_NAME_REGEX)
     return text
 
 

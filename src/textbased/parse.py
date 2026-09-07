@@ -9,7 +9,7 @@ from .pdf import PDFReader
 
 _CANDIDATE_TRAILING_CHARS_RE = re.compile(r"\b[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\-\(\)']{1,2}\b$")
 _CANDIDATE_WHITELIST_RE = re.compile(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ \-'\(\)]")
-_DATE_RE = re.compile(r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+de\s+\d{4}\b")
+_DATE_RE = re.compile(r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+de\s+\d{4})?\b\.?")
 
 # Extract candidacy name and acronym
 _CANDIDACY_RE = re.compile(
@@ -46,12 +46,17 @@ def _extract_candidacy(content: str) -> tuple[str, str]:
 
 def _clean_candidate_name(name: str) -> str:
     # Keep just standard letters, Spanish accents, eñes, ü, spaces, hyphens, and apostrophes
-    name = re.sub(_CANDIDATE_WHITELIST_RE, "", name)
+    name = re.sub(_CANDIDATE_WHITELIST_RE, " ", name)
     # Remove any trailing random letters (< 3 characters) that are likely OCR artifacts
     name = re.sub(_CANDIDATE_TRAILING_CHARS_RE, "", name)
     # If the name starts with "D ", it is actually "D. "
     if name.startswith("D "):
         name = "D. " + name[2:]
+    # Remove any double spaces or extra whitespace
+    name = re.sub(r"\s+", " ", name)
+    # The split of the name into parts should be more than 3
+    if len(name.split()) < 3:
+        raise ValueError(f"Detected candidate '{name}' with too short name.")
     return name.strip()
 
 
