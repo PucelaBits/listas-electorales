@@ -14,10 +14,8 @@ _ANDALUCIA_MISSING_DOT_RE = r"(\d+)(?=\ [A-ZÁÉÍÓÚÑÜ][A-ZÁÉÍÓÚÑÜa-z
 
 @register_fixer("andalucia", 1982, 5)
 def fix_andalucia_1982_05(text: str) -> str:
-    text = text.replace("\nNUM. 10\n27 de Abril de 1982", "")
     text = text.replace("NUM. 10 Página núm. 161", "")
     text = text.replace("NUM. 10 Página núm. 165", "")
-    text = text.replace("NUM. 10 27 de Abril de 1982\n", "")
     text = text.replace("Página núm. 158 B.O.J.A.", "")
     text = text.replace("Página núm.", "")
     text = text.replace("NUM. 10  157", "")
@@ -668,7 +666,6 @@ def fix_andalucia_1994_06(text: str) -> str:
     text = clean_ocr_numbers(text)
     text = text.replace("-Núm. 1. ", "1. ")
     text = text.replace("Núm. 1 ", "1. ")
-    text = text.replace("Núm. 1. ", "1. ")
     text = text.replace(
         "4. PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA\n",
         "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA ",
@@ -685,8 +682,6 @@ def fix_andalucia_1996_03(text: str) -> str:
         "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA\n                ",
         "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA ",
     )
-    text = text.replace("Núm. ", "")
-    text = text.replace("Num. ", "")
     return text
 
 
@@ -700,7 +695,6 @@ def fix_andalucia_2000_03(text: str) -> str:
         "3.  PARTIDO POSITIVISTA CRISTIANO (PPCr)",
         "3.  PARTIDO POSITIVISTA CRISTIANO (PPCr)\nNO PROCLAMADA",
     )
-    text = text.replace("Núm. ", "")
     return text
 
 
@@ -709,7 +703,6 @@ def fix_andalucia_2004_03(text: str) -> str:
     if "CONSEJERIA DE TURISMO Y DEPORTE" in text:
         # Remove preamble
         return ""
-    text = text.replace("Núm. ", "")
     return text
 
 
@@ -741,6 +734,16 @@ def fix_andalucia_2008_03(text: str) -> str:
     text = text.replace("María Josefa Anes Íñiguez", "María Josefa Anés Íñiguez")
     text = text.replace("Rosa Gema Flores", "Rosa Gemma Flores")
     text = text.replace("Juan de Sosa Montesino", "Juan de Sosa Montesinos")
+    return text
+
+
+@register_fixer("andalucia", 2012, 3)
+def fix_andalucia_2012_03(text: str) -> str:
+    # Fix for false positive date
+    text = text.replace(
+        "PARTIDO DEL MOVIMIENTO CIUDADANO 15 MAYO",
+        "PARTIDO DEL MOVIMIENTO CIUDADANO 15-MAYO",
+    )
     return text
 
 

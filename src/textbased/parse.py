@@ -7,9 +7,13 @@ from common.names import prettify_name
 
 from .pdf import PDFReader
 
-_CANDIDATE_TRAILING_CHARS_RE = re.compile(r"\b[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\-\(\)']{1,2}\b$")
-_CANDIDATE_WHITELIST_RE = re.compile(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ \-'\(\)]")
-_DATE_RE = re.compile(r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+de\s+\d{4})?\b\.?")
+_CANDIDATE_TRAILING_CHARS_RE = re.compile(r"\b[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\-\(\)'\.]{1,2}\b$")
+_CANDIDATE_BEGINNING_CHARS_RE = re.compile(r"^\b[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\-\(\)'\.]{1,2}\b")
+_EXTRA_WHITESPACE_RE = re.compile(r"\s{2,}")
+_CANDIDATE_WHITELIST_RE = re.compile(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ \-'\(\)\.]")
+_DATE_RE = re.compile(
+    r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+?(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(?:de\s+)?\d{4})?\b\.?"
+)
 
 # Extract candidacy name and acronym
 _CANDIDACY_RE = re.compile(
@@ -47,13 +51,17 @@ def _extract_candidacy(content: str) -> tuple[str, str]:
 def _clean_candidate_name(name: str) -> str:
     # Keep just standard letters, Spanish accents, eñes, ü, spaces, hyphens, and apostrophes
     name = re.sub(_CANDIDATE_WHITELIST_RE, " ", name)
+    # If the name starts with "D ", it is actually "D. "
+    if name.startswith("D.a "):
+        name = name[3:]
+    elif name.startswith(("D ", "D.")):
+        name = name[2:]
     # Remove any trailing random letters (< 3 characters) that are likely OCR artifacts
     name = re.sub(_CANDIDATE_TRAILING_CHARS_RE, "", name)
-    # If the name starts with "D ", it is actually "D. "
-    if name.startswith("D "):
-        name = "D. " + name[2:]
+    # Remove any leading random letters (< 3 characters) that are likely OCR artifacts
+    name = re.sub(_CANDIDATE_BEGINNING_CHARS_RE, "", name)
     # Remove any double spaces or extra whitespace
-    name = re.sub(r"\s+", " ", name)
+    name = re.sub(_EXTRA_WHITESPACE_RE, " ", name)
     # The split of the name into parts should be more than 3
     if len(name.split()) < 3:
         raise ValueError(f"Detected candidate '{name}' with too short name.")
@@ -69,13 +77,6 @@ def _has_trash_text(line: str) -> bool:
         or "secretaría" in line_lower
         or "sucursal" in line_lower
         or "teléfono" in line_lower
-        or " enero" in line_lower
-        or "febrero" in line_lower
-        or "junio" in line_lower
-        or "agosto" in line_lower
-        or "septiembre" in line_lower
-        or "noviembre" in line_lower
-        or "diciembre" in line_lower
         or "boletín oficial" in line_lower
         or _DATE_RE.search(line_lower) is not None
     )
@@ -94,17 +95,23 @@ class TextElectionParser:
 
     # Extract explicit candidacy headers
     EXPLICIT_CANDIDACY_RE = re.compile(
-        r"^Candidatura\s+n[úu]m(?:ero)?\.?:?\s*(\d+)[\s\.\-\–\—~]?\s+(.+)$", re.IGNORECASE
+        r"^Candidatura\s+n[úu]m(?:ero)?\.?:?\s*(\d+)[\s\.\-\–\—~]?\s+(.+)$",
+        re.IGNORECASE,
     )
 
     # Numbered items
-    NUMBERED_ITEM_RE = re.compile(r"^(?:Nº\s?)?(\d+)\s?[\s\.\-\–\—~]+\s*([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+.+)$", re.IGNORECASE)
+    NUMBERED_ITEM_RE = re.compile(
+        r"^[\s\.\-\–\—~]?\s*(?:Nº\s*|N\s+|N\.O?\s*|Núm\.\s*|Num\.\s*)?(\d+)\s?[\s\.\-\–\—~:]+\s*([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+.+)$",
+        re.IGNORECASE,
+    )
 
     # Catch isolated numbers sitting on their own line
-    ISOLATED_NUMBER_RE = re.compile(r"^(?:Candidatura\s+n[úu]m(?:ero)?\.?:?\s*)?(\d+)[ \.\-\–\—~]+$", re.IGNORECASE)
+    ISOLATED_NUMBER_RE = re.compile(
+        r"^(?:Candidatura\s+n[úu]m(?:ero)?\.?:?\s*)?(\d+)[ \.\-\–\—~]+$", re.IGNORECASE
+    )
 
     # Catch lines that have multiple numbers and names separated by whitespace
-    MULTI_LINE_SPLIT_RE = re.compile(r"\s+(?=\d+[ \.\-\–\—~]+\s+)")
+    MULTI_LINE_SPLIT_RE = re.compile(r"\s+(?=\d+[ \.\-\–\—~:]+\s+)")
 
     SUPLENTE_RE = re.compile(r"^Suplentes?:?", re.IGNORECASE)
 
@@ -191,6 +198,8 @@ class TextElectionParser:
             self.is_substitute = True
             self.pending_order = None
             self.line_completed = True
+            if self.MULTI_LINE_SPLIT_RE.search(line):
+                self.__process_multiple_lines(line, next_line)
             return
 
         # If we caught an isolated number on the previous line, this line is the name
@@ -204,18 +213,7 @@ class TextElectionParser:
         if item_match:
             # If the line contains multiple candidates or candidacies, split it and process each part
             if self.MULTI_LINE_SPLIT_RE.search(line):
-                sub_lines = self.MULTI_LINE_SPLIT_RE.split(line)
-                prev_line = None
-                for sub_line in sub_lines:
-                    if prev_line is None:
-                        prev_line = sub_line.strip()
-                        continue
-                    sub_line = sub_line.strip()
-                    self.__process_line(prev_line, sub_line)
-                    prev_line = sub_line
-                # Process the last sub-line
-                if prev_line is not None:
-                    self.__process_line(prev_line, next_line)
+                self.__process_multiple_lines(line, next_line)
                 return
             order = int(item_match.group(1))
             content = item_match.group(2).strip()
@@ -241,6 +239,20 @@ class TextElectionParser:
             return
         # Mark the line as completed to avoid adding more stuff to the last candidate
         self.line_completed = True
+
+    def __process_multiple_lines(self, line: str, next_line: str) -> None:
+        sub_lines = self.MULTI_LINE_SPLIT_RE.split(line)
+        prev_line = None
+        for sub_line in sub_lines:
+            if prev_line is None:
+                prev_line = sub_line.strip()
+                continue
+            sub_line = sub_line.strip()
+            self.__process_line(prev_line, sub_line)
+            prev_line = sub_line
+        # Process the last sub-line
+        if prev_line is not None:
+            self.__process_line(prev_line, next_line)
 
     def __handle_numbered_item(self, order: int, content: str, next_line: str) -> None:
         """Processes lines that start with a number (either a candidacy or a candidate)."""
@@ -280,7 +292,13 @@ class TextElectionParser:
             # This is either a candidate or a new candidacy
             # Look at the start of the next line to determine if it's a candidate or a new candidacy
             # There could be still other stuff that messes with the parsing, so we manually fix those
-            if next_line.startswith(("1.", "1 ", "NO PROCLAMADA")):
+            next_number_match = self.NUMBERED_ITEM_RE.match(next_line)
+            next_isolated_match = self.ISOLATED_NUMBER_RE.match(next_line)
+            if (
+                (next_number_match and next_number_match.group(1) == "1")
+                or (next_isolated_match and next_isolated_match.group(1) == "1")
+                or re.match(self.NOT_PROCLAMATED_RE, next_line)
+            ):
                 # This is a new candidacy
                 self.__set_candidacy(order, content)
             else:
@@ -432,6 +450,13 @@ class TextElectionParser:
         if self.current_candidacy is None:
             return
         self.__validate_candidates_count()
+        # If we were parsing substitutes, ensure at least one substitute was found for the current candidacy
+        if self.is_substitute and (
+            self.parsed_data is None or not self.parsed_data[-1].substitute
+        ):
+            raise ValueError(
+                f"No substitutes found for {self.current_candidacy.name} in {self.current_province}"
+            )
         self.__reset_candicacy()
 
     def __reset_candicacy(self) -> None:

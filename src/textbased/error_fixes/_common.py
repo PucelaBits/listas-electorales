@@ -35,13 +35,12 @@ def clean_ocr_numbers(text: str) -> str:
     # This could be dangerous, that's why we require the dot at the end
     text = text.replace("ll.", "11.")
     text = text.replace("IO.", "10.")
-    text = text.replace("l.", "1.")
-    text = text.replace("S.", "5.")
+    text = re.sub(r"^l\.", "1.", text, flags=re.MULTILINE)
+    text = re.sub(r"^S\.", "5.", text, flags=re.MULTILINE)
     # Clean up "Núm" variations (e.g., "Núm.-", "Núm.- ", "Núm ")
     text = re.sub(r"Núm[\.\-\s]+", "Núm. ", text)
     # Replaces the N2 {number} with Núm. {number}
-    text = re.sub(r"N(?:\.2|\ 2|[2\.])[\s-]+(\d+)", r"\1", text)
-
+    text = re.sub(r"N(?:\.2|\ 2|[2\.])[\ -]+(\d+)", r"\1", text)
     # Remove stray quotes around numbers and dots
     text = re.sub(r"['´`\"](?=\d)", "", text)
     text = re.sub(r"(?<=\d)['´`\"]", "", text)
@@ -58,11 +57,8 @@ def clean_ocr_numbers(text: str) -> str:
 
     # Fix stray dots before list numbers (e.g., ".13." -> "13.")
     text = re.sub(re.compile(r"^\ *[\.,-]\ *(\d+)\ *[\.,]", re.MULTILINE), r"\1.", text)
-    # Add missing dots after numbers preceding names/entities (e.g., "10 Don" -> "10. Don")
-    text = re.sub(r"\b(\d+)\ *(?=Don|Doña|[A-Z]{2,})", r"\1. ", text)
-
-    # Fix commas separating titles (e.g., "Don,Juan" -> "Don Juan")
-    text = re.sub(r"(Don|Doña)[,|-]", r"\1 ", text)
+    # Add missing dots after numbers preceding names/entities (e.g., "10 Don" -> "10. Don" or "10Rosa" -> "10. Rosa")
+    text = re.sub(r"\b(\d+)\ *(?=[A-ZÁÉÍÓÚÑÜ][A-ZÁÉÍÓÚÑÜa-záéíóúñü]+)", r"\1. ", text)
 
     # Remove stray single letters surrounded by dots after numbers (e.g., "3.x. " -> "3. ")
     text = re.sub(r"\b(\d+)\.[a-zA-Z]\.\s*", r"\1. ", text)
@@ -209,3 +205,62 @@ def remove_single_letter_lines(text: str) -> str:
     """
     pattern = r"^[ \t]*[A-Za-z]\.?(?:[ \t]+[A-Za-z]\.?)*[ \t]*(?:\r?\n|$)"
     return re.sub(pattern, "", text, flags=re.MULTILINE)
+
+
+def fix_missing_substitutes(text: str, name_regex: re.Pattern) -> str:
+    """
+    Fixes missing substitutes in the text.
+    This function looks for specific patterns in the text where substitutes numbers are missing
+    """
+    lines = text.splitlines()
+    fixed_lines = []
+    candidate_order = None
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        if line.upper().startswith("SUPLENTE"):
+            # Check if the next line is a number; if not, insert the missing number
+            candidate_order = 1
+        elif candidate_order is not None:
+            if line.startswith(f"{candidate_order}."):
+                # Correctly numbered line, move to the next candidate
+                candidate_order += 1
+            elif line[0].isdigit():
+                # Other numbered line, but not the expected one; reset candidate_order
+                candidate_order = None
+            elif name_regex.match(line):
+                # Missing number, insert it
+                fixed_lines.append(f"{candidate_order}. {line}")
+                candidate_order += 1
+                continue
+        fixed_lines.append(line)
+    return "\n".join(fixed_lines)
+
+
+def number_candidates(text: str, last_number: int | None = None) -> str:
+    """
+    Automatically numbers candidates in the text, starting from last_number if provided.
+    """
+    lines = text.split("\n")
+    result = []
+    counter = last_number
+
+    for line in lines:
+        stripped_line = line.lstrip()  # Remove leading whitespace for accurate checking
+
+        # Check if the line is a candidate name
+        if stripped_line.startswith(("DON ", "DOÑA ")) and counter is not None:
+            # Add the number and increment the counter
+            result.append(f"{counter}. {line}")
+            counter += 1
+        else:
+            # Reset the counter if we hit a new list header or the "SUPLENTES" section
+            upper_line = stripped_line.upper()
+            if "CANDIDATURA NÚM." in upper_line or "SUPLENTES" in upper_line:
+                counter = 1
+
+            # Append the non-candidate line exactly as it was
+            result.append(line)
+
+    return "\n".join(result), counter
