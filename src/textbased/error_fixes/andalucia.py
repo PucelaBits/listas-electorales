@@ -465,6 +465,7 @@ def fix_andalucia_1990_06(text: str) -> str:
         return ""
     # Remove header
     text = text.replace("BOJA núm. 43", "")
+    text = text.replace("núm. 43 sSevilla Z8 de mayo de TYYu", "")
     # Erratas (err.pdf)
     text = text.replace("N 2. VERDES DE ANDALUCIA (V.A.)", "N 2. VERDES DE ANDALUCIA")
     text = text.replace(
@@ -587,28 +588,15 @@ def fix_andalucia_1990_06(text: str) -> str:
         "CADIZ\n1. RELLENO\nNO PROCLAMADA\n 2. PARTIDO SOCIALISTA OBRERO ESPAÑOL\n",
     )
     text = text.replace(
-        "Ne 18. PARTIDO HUMANISTA", "17. RELLENO\nNO PROCLAMADA\n18. PARTIDO HUMANISTA"
-    )
-    text = text.replace(
         "N 2. PARTIDO COMUNISTA DE ESPAÑA",
         "1. RELLENO\nNO PROCLAMADA\n2. PARTIDO COMUNISTA DE ESPAÑA",
-    )
-    text = text.replace(
-        "Ne 8. PARTIDO ANDALUCISTA\n",
-        "7. RELLENO\nNO PROCLAMADA\n8. PARTIDO ANDALUCISTA\n",
     )
     text = text.replace(
         "N 19. PARTIDO FRENTE ANDALUZ",
         "18. RELLENO\nNO PROCLAMADA\n19. PARTIDO FRENTE ANDALUZ",
     )
-    text = text.replace(
-        "Ne. 4. IZQUIERDA UNIDA-CONVOCATORIA",
-        "Candidatura núm.: 4. IZQUIERDA UNIDA-CONVOCATORIA",
-    )
-    text = text.replace(
-        "Ne 3. PARTIDO DE LOS TRABAJADORES DE",
-        "Candidatura núm.: 3. PARTIDO DE LOS TRABAJADORES DE",
-    )
+    text = text.replace("' N 3", "3. ")
+    text = re.sub(r"Ne\.? (?=\s*[0-9])", "Candidatura núm.: ", text)
     return text
 
 
@@ -619,7 +607,7 @@ def fix_andalucia_1994_06(text: str) -> str:
         return ""
     # Erratas (err.pdf)
     text = text.replace(
-        "PROVINCIA DE*MALAGA\n\n        Núm. 1.- PARTIDO POPULAR (P.P.)",
+        "PROVINCIA DE*MALAGA\nNúm. 1.- PARTIDO POPULAR (P.P.)",
         "PROVINCIA DE MALAGA \nNúm. 1. PARTIDO POPULAR DE ANDALUCIA (P.P.)",
     )
     text = text.replace("Rafael GraCia Contreras", "Rafael García Contreras")
@@ -657,18 +645,22 @@ def fix_andalucia_1994_06(text: str) -> str:
     text = text.replace(
         "7.? Don Francisco Martín Rodríguez", "7. Don Francisco Martín Rodríguez"
     )
-    text = text.replace("1.2.  Don José Selma García", "12. Don José Selma García")
+    text = text.replace("1.2. Don José Selma García", "12. Don José Selma García")
     text = text.replace("Núm. J. Don Juan Oleda Sanz", "Núm. 1. Don Juan Oleda Sanz")
     text = text.replace("Suplerites", "Suplentes")
     text = text.replace("Sliplentes", "Suplentes")
     text = text.replace("-Suplentes", "Suplentes")
     text = text.replace("?odríguez", "Rodríguez")
+    # Fix the "Núm." OCR errors
+    text = re.sub(r"[NÑ][A-ZÁÉÍÓÚÑÜa-záéíóúñü\-]{1,5}\.(?=\s*[0-9])", "Núm. ", text)
+    text = text.replace("Minn:", "Núm.")
+    text = text.replace("N6m.", "Núm.")
     text = clean_ocr_numbers(text)
-    text = text.replace("-Núm. 1. ", "1. ")
-    text = text.replace("Núm. 1 ", "1. ")
+    text = text.replace(" -,", " ")
+    text = text.replace("_", " ")
     text = text.replace(
-        "4. PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA\n",
-        "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA ",
+        "PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA\n",
+        "PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA ",
     )
     return text
 
@@ -679,7 +671,7 @@ def fix_andalucia_1996_03(text: str) -> str:
         # Remove preamble
         return ""
     text = text.replace(
-        "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA\n                ",
+        "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA\n",
         "4.- PARTIDO SOCIALISTA OBRERO ESPAÑOL DE ANDALUCIA ",
     )
     return text
@@ -692,8 +684,8 @@ def fix_andalucia_2000_03(text: str) -> str:
         return ""
     # Not proclaimed
     text = text.replace(
-        "3.  PARTIDO POSITIVISTA CRISTIANO (PPCr)",
-        "3.  PARTIDO POSITIVISTA CRISTIANO (PPCr)\nNO PROCLAMADA",
+        "PARTIDO POSITIVISTA CRISTIANO (PPCr)",
+        "PARTIDO POSITIVISTA CRISTIANO (PPCr)\nNO PROCLAMADA",
     )
     return text
 
@@ -711,7 +703,7 @@ def fix_andalucia_2008_03(text: str) -> str:
     if "CONSEJERÍA DE AGRICULTURA Y PESCA" in text:
         # Remove preamble
         return ""
-    text = text.replace("Orden   Nombre y apellidos\n", "")
+    text = text.replace("Orden Nombre y apellidos\n", "")
     # Erratas (err.pdf)
     text = text.replace(
         "1      Don    Rafael Contreras Fernández\n2      Doña   María Isabel Garrido Asenjo\n3      Don    Antonio Moya Martín\n4      Doña   Montserrat Martín Escobar",

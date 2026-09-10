@@ -185,8 +185,7 @@ class PDFReader:
             if is_double_col:
                 text = self.__parse_double_column_page(page)
             else:
-                # Standard single-column extraction
-                text = page.get_text(sort=True)
+                text = self.__words_to_text(page.get_text("words"))
             if not text:
                 continue
 

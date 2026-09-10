@@ -14,6 +14,7 @@ _CANDIDATE_WHITELIST_RE = re.compile(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ \-'\
 _DATE_RE = re.compile(
     r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+?(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(?:de\s+)?\d{4})?\b\.?"
 )
+_DATE_NUMBER_RE = re.compile(r"\b(?:\d{4}[\-/]\d{2}[\-/]\d{2}|(?:\d{2}[\-/]\d{2}[\-/]\d{4}))\b")
 
 # Extract candidacy name and acronym
 _CANDIDACY_RE = re.compile(
@@ -79,6 +80,7 @@ def _has_trash_text(line: str) -> bool:
         or "teléfono" in line_lower
         or "boletín oficial" in line_lower
         or _DATE_RE.search(line_lower) is not None
+        or _DATE_NUMBER_RE.search(line_lower) is not None
     )
 
 
@@ -101,7 +103,7 @@ class TextElectionParser:
 
     # Numbered items
     NUMBERED_ITEM_RE = re.compile(
-        r"^[\s\.\-\–\—~]?\s*(?:Nº\s*|N\s+|N\.O?\s*|Núm\.\s*|Num\.\s*)?(\d+)\s?[\s\.\-\–\—~:]+\s*([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+.+)$",
+        r"^[\s\.\-\–\—~]?\s*(?:Nº\s*|No\s+|N\s+|N\.O?\s*|Núm[\.:]\s*|Num[\.:]\s*)?(\d+)\s?[\s\.\-\–\—~:]+\s*([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+.+)$",
         re.IGNORECASE,
     )
 
@@ -202,12 +204,6 @@ class TextElectionParser:
                 self.__process_multiple_lines(line, next_line)
             return
 
-        # If we caught an isolated number on the previous line, this line is the name
-        if self.pending_order is not None:
-            self.__handle_numbered_item(self.pending_order, line, next_line)
-            self.pending_order = None
-            return
-
         # Numbered items (implicit candidate or candidacy if old format)
         item_match = self.NUMBERED_ITEM_RE.match(line)
         if item_match:
@@ -218,6 +214,16 @@ class TextElectionParser:
             order = int(item_match.group(1))
             content = item_match.group(2).strip()
             self.__handle_numbered_item(order, content, next_line)
+            self.pending_order = None
+            return
+
+        # If we caught an isolated number on the previous line, this line is the name
+        if self.pending_order is not None:
+            logger.debug(
+                f"Detected isolated number on previous line. Using pending order {self.pending_order} for current line: {line}"
+            )
+            self.__handle_numbered_item(self.pending_order, line, next_line)
+            self.pending_order = None
             return
 
         # Numbered items (split-line format)

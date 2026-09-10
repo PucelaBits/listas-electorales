@@ -38,7 +38,7 @@ def clean_ocr_numbers(text: str) -> str:
     text = re.sub(r"^l\.", "1.", text, flags=re.MULTILINE)
     text = re.sub(r"^S\.", "5.", text, flags=re.MULTILINE)
     # Clean up "Núm" variations (e.g., "Núm.-", "Núm.- ", "Núm ")
-    text = re.sub(r"Núm[\.\-\s]+", "Núm. ", text)
+    text = re.sub(r"Núm[\.\-\s'\"]+", "Núm. ", text)
     # Replaces the N2 {number} with Núm. {number}
     text = re.sub(r"N(?:\.2|\ 2|[2\.])[\ -]+(\d+)", r"\1", text)
     # Remove stray quotes around numbers and dots
@@ -50,13 +50,13 @@ def clean_ocr_numbers(text: str) -> str:
     text = re.sub(r"\b(\d+)[:!•]", r"\1.", text)
 
     # Fix spaces between the number and the dot (e.g., "11 . " -> "11. ")
-    text = re.sub(r"\b(\d+)\s*\.\s*", r"\1. ", text)
+    text = re.sub(r"\b(\d+)\s+\.\ *", r"\1. ", text)
 
     # Fix CLUSTERS of messy punctuation (dots, dashes, commas, colons, exclamation marks)
-    text = re.sub(r"\b(\d+)\s*[\.\-\,:\!•'·;]{2,}\s*", r"\1. ", text)
+    text = re.sub(r"\b(\d+)\s*[\.\-\,:\!•'·;\"]{2,}\s*", r"\1. ", text)
 
     # Fix stray dots before list numbers (e.g., ".13." -> "13.")
-    text = re.sub(re.compile(r"^\ *[\.,-]\ *(\d+)\ *[\.,]", re.MULTILINE), r"\1.", text)
+    text = re.sub(re.compile(r"^(?:[']*Núm\.?)?\ *[\.\-\,:\!•'·;\"]\ *(\d+)\ *[\.]\ *[\.\-\,:\!•'·;\"]*", re.MULTILINE), r"\1. ", text)
     # Add missing dots after numbers preceding names/entities (e.g., "10 Don" -> "10. Don" or "10Rosa" -> "10. Rosa")
     text = re.sub(r"\b(\d+)\ *(?=[A-ZÁÉÍÓÚÑÜ][A-ZÁÉÍÓÚÑÜa-záéíóúñü]+)", r"\1. ", text)
 

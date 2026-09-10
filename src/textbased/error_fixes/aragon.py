@@ -80,15 +80,14 @@ def fix_aragon_1991_05(text: str) -> str:
     text = text.replace("55.PARTIDO", "5. PARTIDO")
     text = text.replace("3.Miguel FORTEA CASTELLO", "13. Miguel FORTEA CASTELLO")
     text = text.replace("3. Agustín CLAVERO MARCO", "13. Agustín CLAVERO MARCO")
-    text = text.replace("3. Miguel FORTEA CASTELLO", "13. Miguel FORTEA CASTELLO")
     text = text.replace(
         "13 -María Pilar SERRANO EZQUERRA", "13. María Pilar SERRANO EZQUERRA"
     )
     text = text.replace(
-        "26. Roberto Santiago MAYORA DOMECH", "25. Roberto Santiago MAYORA DOMECH"
+        "26.Roberto Santiago MAYORA DOMECH", "25. Roberto Santiago MAYORA DOMECH"
     )
     text = text.replace("Yo 12. Jovita BIEL FLETA-", "12. Jovita BIEL FLETA")
-    text = text.replace("13. Custodio ARJONA CAÑADAS", "18. Custodio ARJONA CAÑADAS")
+    text = text.replace("13.Custodio ARJONA CAÑADAS", "18. Custodio ARJONA CAÑADAS")
     text = autofill_missing_numbers(text)
     text = text.replace("GOMEZRODRIGUEZ", "GOMEZ RODRIGUEZ")
     text = text.replace("BASCONIDIMENEZ", "BASCON GIMENEZ")
