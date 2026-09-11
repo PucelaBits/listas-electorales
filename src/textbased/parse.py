@@ -10,13 +10,11 @@ from .pdf import PDFReader
 _CANDIDATE_TRAILING_CHARS_RE = re.compile(
     r"\b[" + NAME_WHITELIST_CHARS + r" \(\)'\.]{1}\b$"
 )
-_CANDIDATE_BEGINNING_CHARS_RE = re.compile(
-    r"^\b[" + NAME_WHITELIST_CHARS + r"]{1}\b"
-)
+_CANDIDATE_BEGINNING_CHARS_RE = re.compile(r"^\b[" + NAME_WHITELIST_CHARS + r"]{1}\b")
 _EXTRA_WHITESPACE_RE = re.compile(r"\s{2,}")
 _CANDIDATE_WHITELIST_RE = re.compile(r"[^" + NAME_WHITELIST_CHARS + r" '\(\)\.]")
 _DATE_RE = re.compile(
-    r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+?(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(?:de\s+)?\d{4})?\b\.?"
+    r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+?de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(?:de\s+)?\d{4})?\b\.?"
 )
 _DATE_NUMBER_RE = re.compile(
     r"\b(?:\d{4}[\-/]\d{2}[\-/]\d{2}|(?:\d{2}[\-/]\d{2}[\-/]\d{4}))\b"
@@ -85,6 +83,7 @@ def _has_trash_text(line: str) -> bool:
         or "sucursal" in line_lower
         or "teléfono" in line_lower
         or "boletín oficial" in line_lower
+        or "titulares" in line_lower
         or _DATE_RE.search(line_lower) is not None
         or _DATE_NUMBER_RE.search(line_lower) is not None
     )
@@ -92,9 +91,9 @@ def _has_trash_text(line: str) -> bool:
 
 class TextElectionParser:
     PROVINCE_RE = re.compile(
-        r"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?|PROVINCIAL\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL:\s+|PROVINCIA\s+DE\s+)(["
+        r"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?|DE\sLA\sCOMUNIDAD\sAUT[ÓO]NOMA\sDE\s|PROVINCIAL\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL:\s+|PROVINCIA\s+DE\s+)(["
         + NAME_WHITELIST_CHARS
-        + r"\s]+)",
+        + r" ]+)",
         re.IGNORECASE,
     )
 
@@ -103,9 +102,14 @@ class TextElectionParser:
         re.IGNORECASE,
     )
 
+    NO_SUBSTITUTES_RE = re.compile(
+        r"\(Sin\s+suplentes?\)",
+        re.IGNORECASE,
+    )
+
     # Extract explicit candidacy headers
     EXPLICIT_CANDIDACY_RE = re.compile(
-        r"^Candidatura\s+n[úu]m(?:ero)?\.?:?\s*(\d+)[\s\.\-\–\—~]?\s+(.+)$",
+        r"^Candidatura\s+n[úu]m(?:ero)?\.?\s*:?\s*(\d+)[\s\.\-\–\—~]?\s*(.+)$",
         re.IGNORECASE,
     )
 
@@ -250,6 +254,14 @@ class TextElectionParser:
                 self.pending_order = (expected_order, is_candidacy)
             return
 
+        if self.NO_SUBSTITUTES_RE.match(line):
+            if not self.is_substitute:
+                raise ValueError(
+                    "Found 'Sin suplentes' line while not in a substitute section."
+                )
+            self.is_substitute = False
+            return
+
         # Handle multi-line continuations and discard decorations
         if (
             not re.search(r"\d", line)
@@ -320,6 +332,7 @@ class TextElectionParser:
                 (next_number_match and next_number_match.group(1) == "1")
                 or (next_isolated_match and next_isolated_match.group(1) == "1")
                 or re.match(self.NOT_PROCLAMATED_RE, next_line)
+                or next_line.lower().startswith("titular")
             ):
                 # This is a new candidacy
                 self.__set_candidacy(order, content)
@@ -363,7 +376,9 @@ class TextElectionParser:
             )
         else:
             current_party, current_acronym = _extract_candidacy(content)
-            self.current_candidacy = Candidacy(name=current_party, acronym=current_acronym)
+            self.current_candidacy = Candidacy(
+                name=current_party, acronym=current_acronym
+            )
             logger.debug(f"Set current candidacy: {self.current_candidacy}")
             self.line_completed = False  # Reset line completion for new candidacy
 

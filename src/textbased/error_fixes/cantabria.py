@@ -19,3 +19,9 @@ def fix_cantabria_2007_05(text: str) -> str:
         "37. D. IVAN MARTÍNEZ FERNÁNDEZ - (INDEPENDIENTE)",
     )
     return text
+
+@register_fixer("cantabria", 2023, 5)
+def fix_cantabria_2023_05(text: str) -> str:
+    # Remove preamble
+    text = text.replace("9. ELECCIONES", "")
+    return text

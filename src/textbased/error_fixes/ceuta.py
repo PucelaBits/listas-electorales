@@ -36,3 +36,10 @@ def fix_ceuta_2015_05(text: str) -> str:
     return P_CEUTA_2015_05_LITERALS.sub(
         lambda m: CEUTA_2015_05_REPLACEMENTS[m.group(0)], text
     )
+
+@register_fixer("ceuta", 2023, 5)
+def fix_ceuta_2023_05(text: str) -> str:
+    # Remove preamble
+    text = text.replace("39.- Edicto de la", "")
+    text = text.replace("39.- JUNTA", "")
+    return text

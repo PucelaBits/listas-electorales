@@ -147,7 +147,6 @@ def fix_canarias_2023_05(text: str) -> str:
         )
     # Fix missing numbers
     global _CANARIAS_2023_05_LAST_NUMBER
-    print(_CANARIAS_2023_05_CANDIDATE_REGEX)
     text, last_number = number_candidates(
         text,
         _CANARIAS_2023_05_CANDIDATE_REGEX,

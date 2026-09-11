@@ -17,3 +17,10 @@ def fix_castilla_la_mancha_2015_05(text: str) -> str:
         "Candidatura núm.: 9. PARTIDO CASTELLANO-UNIDAD CASTELLANA (PCAS-UdCA)",
     )
     return text
+
+
+@register_fixer("castilla_la_mancha", 2023, 5)
+def fix_castilla_la_mancha_2023_05(text: str) -> str:
+    # Fix dangling suplentes
+    text = text.replace("SUPLENTES:\nY para que conste", "")
+    return text

@@ -1,0 +1,77 @@
+import re
+
+from common import NAME_WHITELIST_CHARS
+
+from ._common import register_fixer
+
+_MADRID_INVERSE_CANDIDACY_REGEX = re.compile(
+    r"^([" + NAME_WHITELIST_CHARS + r"\s\(\)\+]+)[\r?\n]+(Candidatura número: \d+)$",
+    re.MULTILINE,
+)
+
+
+def _madrid_inverse_candidacy_fix(text: str) -> str:
+    for match in re.finditer(_MADRID_INVERSE_CANDIDACY_REGEX, text):
+        # We want to invert it so it is "Candidatura número: X" followed by the name
+        text = text.replace(match.group(0), match.group(2) + " " + match.group(1))
+    return text
+
+
+@register_fixer("madrid", 1995, 5)
+def fix_madrid_1995_05(text: str) -> str:
+    text = _madrid_inverse_candidacy_fix(text)
+    return text
+
+
+@register_fixer("madrid", 1999, 6)
+def fix_madrid_1999_06(text: str) -> str:
+    text = _madrid_inverse_candidacy_fix(text)
+    return text
+
+
+@register_fixer("madrid", 2003, 5)
+def fix_madrid_2003_05(text: str) -> str:
+    text = _madrid_inverse_candidacy_fix(text)
+    return text
+
+
+@register_fixer("madrid", 2003, 10)
+def fix_madrid_2003_10(text: str) -> str:
+    text = _madrid_inverse_candidacy_fix(text)
+    return text
+
+
+@register_fixer("madrid", 2007, 5)
+def fix_madrid_2007_05(text: str) -> str:
+    text = _madrid_inverse_candidacy_fix(text)
+    return text
+
+
+@register_fixer("madrid", 2011, 5)
+def fix_madrid_2011_05(text: str) -> str:
+    text = _madrid_inverse_candidacy_fix(text)
+    return text
+
+
+@register_fixer("madrid", 2015, 5)
+def fix_madrid_2015_05(text: str) -> str:
+    text = _madrid_inverse_candidacy_fix(text)
+    return text
+
+
+@register_fixer("madrid", 2019, 5)
+def fix_madrid_2019_05(text: str) -> str:
+    text = _madrid_inverse_candidacy_fix(text)
+    return text
+
+
+@register_fixer("madrid", 2021, 5)
+def fix_madrid_2021_05(text: str) -> str:
+    text = _madrid_inverse_candidacy_fix(text)
+    return text
+
+
+@register_fixer("madrid", 2023, 5)
+def fix_madrid_2023_05(text: str) -> str:
+    text = _madrid_inverse_candidacy_fix(text)
+    return text

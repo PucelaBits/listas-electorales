@@ -10,7 +10,30 @@ from . import (
     ceuta,
     extremadura,
     galicia,
+    la_rioja,
+    madrid,
+    murcia,
+    navarra,
+    valencia,
 )
 from ._common import ERROR_FIXERS
 
-__all__ = ["ERROR_FIXERS"]
+__all__ = [
+    "ERROR_FIXERS",
+    "andalucia",
+    "aragon",
+    "baleares",
+    "canarias",
+    "cantabria",
+    "castilla_la_mancha",
+    "castilla_y_leon",
+    "cataluna",
+    "ceuta",
+    "extremadura",
+    "galicia",
+    "la_rioja",
+    "madrid",
+    "murcia",
+    "navarra",
+    "valencia",
+]

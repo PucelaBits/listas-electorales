@@ -116,7 +116,7 @@ def main(args):
         for election_data in read_election_data(args.election_file):
             logger.info(
                 f"Processing election: {election_data.election_type.value} "
-                f"{election_data.year}-{election_data.month}"
+                f"{election_data.year}-{election_data.month} ({election_data.region if election_data.region else ''})"
             )
 
             if election_data.region is None:
