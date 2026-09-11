@@ -1,5 +1,6 @@
 import glob
 import re
+from collections import defaultdict
 from collections.abc import Generator
 
 import pymupdf
@@ -10,6 +11,9 @@ from .error_fixes import ERROR_FIXERS
 
 # Threshold for splitting lines with too many consecutive spaces
 _TOO_MANY_SPACES_THRESHOLD = 7
+
+# Pre-compile regex for spaces to handle exact or greater threshold optimally
+_MANY_SPACES_REGEX = re.compile(rf" {{{_TOO_MANY_SPACES_THRESHOLD},}}")
 
 # Regex to detect if a string contains any PUA characters in our target range
 _PUA_REGEX = re.compile(r"[\uF000-\uF0FF]")
@@ -33,40 +37,32 @@ def _find_column_split_x(page: pymupdf.Page, words: list[tuple]) -> float:
     Ignores headers and footers.
     """
     default_mid = page.rect.width / 2
-    page_height = page.rect.height
 
     # Define vertical limits to ignore headers and footers
-    header_limit = page_height * 0.10
-    footer_limit = page_height * 0.90
+    header_limit = page.rect.height * 0.10
+    footer_limit = page.rect.height * 0.90
 
-    min_x = float("inf")
-    max_x = float("-inf")
+    # Filter out words in header/footer boundaries in a single pass
+    valid_words = [w for w in words if header_limit <= w[1] and w[3] <= footer_limit]
 
-    for w in words:
-        x0, y0, x1, y1 = w[0], w[1], w[2], w[3]
+    if not valid_words:
+        # Fallback to absolute center of the page if no valid text is found
+        return default_mid
 
-        # Skip words in the header or footer regions
-        if y1 < header_limit or y0 > footer_limit:
-            continue
+    # zip(*...) is a highly optimized C-level transpose.
+    # x0s = all x0 coords, x1s = all x1 coords.
+    x0s, _, x1s, *_ = zip(*valid_words)
 
-        # Track the absolute minimum x and maximum x
-        min_x = min(min_x, x0)
-        max_x = max(max_x, x1)
-
-    # If we found valid text boundaries, return their midpoint
-    if min_x != float("inf") and max_x != float("-inf"):
-        return (min_x + max_x) / 2
-
-    # Fallback to absolute center of the page if no valid text is found
-    return default_mid
+    # Use C-level min/max
+    return (min(x0s) + max(x1s)) / 2
 
 
-def _split_too_many_spaces(
-    line: str, space_threshold: int = _TOO_MANY_SPACES_THRESHOLD
-) -> Generator[str, None, None]:
+def _split_too_many_spaces(line: str) -> Generator[str, None, None]:
     """Splits a line into multiple lines if it contains too many consecutive spaces."""
-    if " " * space_threshold in line:
-        for segment in line.split(" " * space_threshold):
+    # Fast initial check using string repetition
+    if " " * _TOO_MANY_SPACES_THRESHOLD in line:
+        # Use pre-compiled regex for accurate splitting (handles > threshold robustly)
+        for segment in _MANY_SPACES_REGEX.split(line):
             segment = segment.strip()
             if segment:
                 yield segment
@@ -121,8 +117,6 @@ class PDFReader:
         page = doc[mid_index]
 
         midpoint_x = page.rect.width / 2
-
-        # Define vertical boundaries (ignore top 10% and bottom 10%)
         top_boundary = page.rect.height * 0.10
         bottom_boundary = page.rect.height * 0.90
 
@@ -167,25 +161,19 @@ class PDFReader:
         if not word_list:
             return ""
 
-        # Ignore vertical or rotated text
-        grouped_lines = {}
+        # Use defaultdict for faster/cleaner grouping by block_no (w[5]) and line_no (w[6])
+        grouped_lines = defaultdict(list)
         for w in word_list:
-            # w[5] is block_no, w[6] is line_no
-            key = (w[5], w[6])
-            grouped_lines.setdefault(key, []).append(w)
+            grouped_lines[(w[5], w[6])].append(w)
 
         filtered_words = []
         for line_words in grouped_lines.values():
-            # Calculate the bounding box for the entire line
-            min_x = min(w[0] for w in line_words)
-            min_y = min(w[1] for w in line_words)
-            max_x = max(w[2] for w in line_words)
-            max_y = max(w[3] for w in line_words)
+            # Fast transpose to get all coordinates simultaneously
+            x0s, y0s, x1s, y1s, texts, *_ = zip(*line_words)
 
-            # Avoid division by zero
-            width = max(max_x - min_x, 1)
-            height = max(max_y - min_y, 1)
-            chars_count = sum(len(w[4]) for w in line_words)
+            width = max(max(x1s) - min(x0s), 1)
+            height = max(max(y1s) - min(y0s), 1)
+            chars_count = sum(len(t) for t in texts)
 
             # Heuristic: Rotated text has a bounding box that is taller than it is wide.
             # We enforce a chars_count >= 3 to avoid accidentally filtering out
@@ -195,20 +183,20 @@ class PDFReader:
 
             filtered_words.extend(line_words)
 
-        word_list = filtered_words
-
-        if not word_list:
+        if not filtered_words:
             return ""
 
         # Sort top-to-bottom by the middle Y coordinate
-        word_list.sort(key=lambda w: (w[1] + w[3]) / 2.0)
+        filtered_words.sort(key=lambda w: (w[1] + w[3]) / 2.0)
 
         lines = []
         curr_line_words = []
         line_anchor_y = None
 
-        for w in word_list:
-            # Calculate the vertical center of the current word
+        # Pre-resolve the modifier function to avoid branching inside the loop
+        clean_text = _fix_mupdf_pua_text if needs_pua_fix else lambda x: x
+
+        for w in filtered_words:
             mid_y = (w[1] + w[3]) / 2.0
 
             # If it's the first word or within the tolerance of the line's starting Y
@@ -218,14 +206,8 @@ class PDFReader:
                     line_anchor_y = mid_y
             else:
                 # Line is complete. Sort the line's words strictly left-to-right (by X)
-                curr_line_words.sort(key=lambda w: w[0])
-
-                if needs_pua_fix:
-                    lines.append(
-                        " ".join(_fix_mupdf_pua_text(w[4]) for w in curr_line_words)
-                    )
-                else:
-                    lines.append(" ".join(w[4] for w in curr_line_words))
+                curr_line_words.sort(key=lambda x: x[0])
+                lines.append(" ".join(clean_text(x[4]) for x in curr_line_words))
 
                 # Start a new line with the current word
                 curr_line_words = [w]
@@ -233,13 +215,8 @@ class PDFReader:
 
         # Don't forget to process the final line
         if curr_line_words:
-            curr_line_words.sort(key=lambda w: w[0])
-            if needs_pua_fix:
-                lines.append(
-                    " ".join(_fix_mupdf_pua_text(w[4]) for w in curr_line_words)
-                )
-            else:
-                lines.append(" ".join(w[4] for w in curr_line_words))
+            curr_line_words.sort(key=lambda x: x[0])
+            lines.append(" ".join(clean_text(x[4]) for x in curr_line_words))
 
         return "\n".join(lines)
 
@@ -250,11 +227,16 @@ class PDFReader:
         words = page.get_text("words", flags=0)
         split_x = _find_column_split_x(page, words)
 
-        # Divide words into left and right buckets based on their center points
-        left_words = [w for w in words if ((w[0] + w[2]) / 2) < split_x]
-        right_words = [w for w in words if ((w[0] + w[2]) / 2) >= split_x]
+        left_words = []
+        right_words = []
 
-        # Convert word clusters back into readable paragraph text
+        # Single pass to partition words to left/right halves
+        for w in words:
+            if (w[0] + w[2]) / 2.0 < split_x:
+                left_words.append(w)
+            else:
+                right_words.append(w)
+
         left_text = self.__words_to_text(left_words, needs_pua_fix=needs_pua_fix)
         right_text = self.__words_to_text(right_words, needs_pua_fix=needs_pua_fix)
 
