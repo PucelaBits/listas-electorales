@@ -1,20 +1,26 @@
 import re
 from dataclasses import replace
 
-from common import logger
+from common import NAME_WHITELIST_CHARS, logger
 from common.models import Candidacy, Candidate
 from common.names import prettify_name
 
 from .pdf import PDFReader
 
-_CANDIDATE_TRAILING_CHARS_RE = re.compile(r"\b[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\-\(\)'\.]{1,2}\b$")
-_CANDIDATE_BEGINNING_CHARS_RE = re.compile(r"^\b[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\-\(\)'\.]{1,2}\b")
+_CANDIDATE_TRAILING_CHARS_RE = re.compile(
+    r"\b[" + NAME_WHITELIST_CHARS + r" \(\)'\.]{1}\b$"
+)
+_CANDIDATE_BEGINNING_CHARS_RE = re.compile(
+    r"^\b[" + NAME_WHITELIST_CHARS + r"]{1}\b"
+)
 _EXTRA_WHITESPACE_RE = re.compile(r"\s{2,}")
-_CANDIDATE_WHITELIST_RE = re.compile(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ \-'\(\)\.]")
+_CANDIDATE_WHITELIST_RE = re.compile(r"[^" + NAME_WHITELIST_CHARS + r" '\(\)\.]")
 _DATE_RE = re.compile(
     r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+?(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(?:de\s+)?\d{4})?\b\.?"
 )
-_DATE_NUMBER_RE = re.compile(r"\b(?:\d{4}[\-/]\d{2}[\-/]\d{2}|(?:\d{2}[\-/]\d{2}[\-/]\d{4}))\b")
+_DATE_NUMBER_RE = re.compile(
+    r"\b(?:\d{4}[\-/]\d{2}[\-/]\d{2}|(?:\d{2}[\-/]\d{2}[\-/]\d{4}))\b"
+)
 
 # Extract candidacy name and acronym
 _CANDIDACY_RE = re.compile(
@@ -86,12 +92,14 @@ def _has_trash_text(line: str) -> bool:
 
 class TextElectionParser:
     PROVINCE_RE = re.compile(
-        r"(?:JUNTA ELECTORAL\s+PROVINCIAL\s+DE\s+|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL:\s+|PROVINCIA\s+DE\s+)([A-ZÁÉÍÓÚÑ\s]+)",
+        r"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?|PROVINCIAL\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL:\s+|PROVINCIA\s+DE\s+)(["
+        + NAME_WHITELIST_CHARS
+        + r"\s]+)",
         re.IGNORECASE,
     )
 
     NOT_PROCLAMATED_RE = re.compile(
-        r"NO\s+PROCLAMADA",
+        r"NON?\s+PROCLAMADA",
         re.IGNORECASE,
     )
 
@@ -103,19 +111,22 @@ class TextElectionParser:
 
     # Numbered items
     NUMBERED_ITEM_RE = re.compile(
-        r"^[\s\.\-\–\—~]?\s*(?:Nº\s*|No\s+|N\s+|N\.O?\s*|Núm[\.:]\s*|Num[\.:]\s*)?(\d+)\s?[\s\.\-\–\—~:]+\s*([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+.+)$",
+        r"^[\s\.\-\–\—~]?\s*(?:Nº\s*|No\s+|N\s+|N\.O?\s*|Núm[\.:]\s*|Num[\.:]\s*)?(\d+)\s?[\s\.\-\–\—~:]+\s*(["
+        + NAME_WHITELIST_CHARS
+        + r"]+.+)$",
         re.IGNORECASE,
     )
 
     # Catch isolated numbers sitting on their own line
     ISOLATED_NUMBER_RE = re.compile(
-        r"^(?:Candidatura\s+n[úu]m(?:ero)?\.?:?\s*)?(\d+)[ \.\-\–\—~]+$", re.IGNORECASE
+        r"^(?=Candidatura\s+n[úu]m(?:ero)?\.?:?|\d+[ \.\-\–\—~]+$)(?:Candidatura\s+n[úu]m(?:ero)?\.?:?\s*)?(\d+)[ \.\-\–\—~]*$",
+        re.IGNORECASE,
     )
 
     # Catch lines that have multiple numbers and names separated by whitespace
     MULTI_LINE_SPLIT_RE = re.compile(r"\s+(?=\d+[ \.\-\–\—~:]+\s+)")
 
-    SUPLENTE_RE = re.compile(r"^Suplentes?:?", re.IGNORECASE)
+    SUPLENTE_RE = re.compile(r"^Suplente?s?:?", re.IGNORECASE)
 
     def __init__(self, text_reader: PDFReader):
         self.text_reader = text_reader
@@ -222,7 +233,11 @@ class TextElectionParser:
             logger.debug(
                 f"Detected isolated number on previous line. Using pending order {self.pending_order} for current line: {line}"
             )
-            self.__handle_numbered_item(self.pending_order, line, next_line)
+            if self.pending_order[1]:
+                # It is a candidacy, so we set the candidacy with the pending order and current line
+                self.__set_candidacy(self.pending_order[0], line)
+            else:
+                self.__handle_numbered_item(self.pending_order, line, next_line)
             self.pending_order = None
             return
 
@@ -230,8 +245,9 @@ class TextElectionParser:
         isolated_match = self.ISOLATED_NUMBER_RE.match(line)
         if isolated_match:
             expected_order = int(isolated_match.group(1))
+            is_candidacy = "candidatura" in line.lower()
             if expected_order < 100:  # Arbitrary threshold to avoid false positives
-                self.pending_order = expected_order
+                self.pending_order = (expected_order, is_candidacy)
             return
 
         # Handle multi-line continuations and discard decorations
@@ -340,15 +356,16 @@ class TextElectionParser:
         if len(self.parsed_data) == 0 and self.current_candidacy is not None:
             raise ValueError("Candidacy set before any candidates were parsed.")
         self.__mark_candidacy_as_finished()
-        current_party, current_acronym = _extract_candidacy(content)
-        self.current_candidacy = Candidacy(name=current_party, acronym=current_acronym)
         self.candidacy_order = order
-        logger.debug(f"Set current candidacy: {self.current_candidacy}")
-        self.line_completed = False  # Reset line completion for new candidacy
-        # We have switched to a new candidacy, so reset order and substitute flags
-        self.is_substitute = False
-        self.candidate_order = 0
-        self.pending_order = None
+        if re.search(self.NOT_PROCLAMATED_RE, content):
+            logger.debug(
+                f"Detected 'NO PROCLAMADA' candidacy for order {order}. Skipping candidacy and resetting state."
+            )
+        else:
+            current_party, current_acronym = _extract_candidacy(content)
+            self.current_candidacy = Candidacy(name=current_party, acronym=current_acronym)
+            logger.debug(f"Set current candidacy: {self.current_candidacy}")
+            self.line_completed = False  # Reset line completion for new candidacy
 
     def __add_candidate(self, content: str, order: int) -> None:
         """Cleans candidate data and appends it to the dataset."""

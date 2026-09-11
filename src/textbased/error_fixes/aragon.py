@@ -1,5 +1,7 @@
 import re
 
+from common import NAME_WHITELIST_CHARS, NAME_WHITELIST_CHARS_UPPER
+
 from ._common import (
     autofill_missing_numbers,
     clean_ocr_numbers,
@@ -10,7 +12,15 @@ from ._common import (
 )
 
 _ARAGON_1983_05_NAME_REGEX = re.compile(
-    r"^(?:D\.?a?)\s+[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñ\-]+(?:\s*[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñ\-]+)+"
+    r"^(?:D\.?a?)\s+["
+    + NAME_WHITELIST_CHARS_UPPER
+    + r"]["
+    + NAME_WHITELIST_CHARS
+    + r"]+(?:\s*["
+    + NAME_WHITELIST_CHARS_UPPER
+    + r"]["
+    + NAME_WHITELIST_CHARS
+    + r"]+)+"
 )
 
 
@@ -98,7 +108,11 @@ def fix_aragon_1991_05(text: str) -> str:
 
 
 _ARAGON_1995_05_NAME_REGEX = re.compile(
-    r"^(?:DON|DOÑA)\s+[A-ZÁÉÍÓÚÜÑ]+(?:\s+[A-ZÁÉÍÓÚÜÑ]+)+$"
+    r"^(?:DON|DOÑA)\s+["
+    + NAME_WHITELIST_CHARS_UPPER
+    + r"]+(?:\s+["
+    + NAME_WHITELIST_CHARS_UPPER
+    + r"]+)+$"
 )
 
 
@@ -153,6 +167,9 @@ def fix_aragon_2003_05(text: str) -> str:
 
 
 _ARAGON_2007_05_LAST_NUMBER = None
+_ARAGON_2007_05_CANDIDATE_REGEX = re.compile(
+    r"^(?:DON|DOÑA)(?:\s+[" + NAME_WHITELIST_CHARS_UPPER + r"] +)+[" + NAME_WHITELIST_CHARS_UPPER + r"]+$"
+)
 
 
 @register_fixer("aragon", 2007, 5)
@@ -166,9 +183,14 @@ def fix_aragon_2007_05(text: str) -> str:
     # Facilitate parsing
     text = text.replace("Nº ", "Candidatura núm.: ")
     text = text.replace("Nº", "Candidatura núm.: ")
-    text = text.replace("4. PARTIDO SOCIALISTA OBRERO ESPAÑOL\n", "4. PARTIDO SOCIALISTA OBRERO ESPAÑOL ")
+    text = text.replace(
+        "4. PARTIDO SOCIALISTA OBRERO ESPAÑOL\n",
+        "4. PARTIDO SOCIALISTA OBRERO ESPAÑOL ",
+    )
     # Fill missing numbers
     global _ARAGON_2007_05_LAST_NUMBER
-    text, last_number = number_candidates(text, last_number=_ARAGON_2007_05_LAST_NUMBER)
+    text, last_number = number_candidates(
+        text, _ARAGON_2007_05_CANDIDATE_REGEX, last_number=_ARAGON_2007_05_LAST_NUMBER
+    )
     _ARAGON_2007_05_LAST_NUMBER = last_number
     return text

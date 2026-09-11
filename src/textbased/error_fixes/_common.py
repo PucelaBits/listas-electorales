@@ -1,6 +1,8 @@
 import re
 from collections.abc import Callable
 
+from common import NAME_WHITELIST_CHARS, NAME_WHITELIST_CHARS_UPPER
+
 ERROR_FIXERS: dict[tuple[str, int, int], Callable[[str], str]] = {}
 
 
@@ -56,9 +58,24 @@ def clean_ocr_numbers(text: str) -> str:
     text = re.sub(r"\b(\d+)\s*[\.\-\,:\!•'·;\"]{2,}\s*", r"\1. ", text)
 
     # Fix stray dots before list numbers (e.g., ".13." -> "13.")
-    text = re.sub(re.compile(r"^(?:[']*Núm\.?)?\ *[\.\-\,:\!•'·;\"]\ *(\d+)\ *[\.]\ *[\.\-\,:\!•'·;\"]*", re.MULTILINE), r"\1. ", text)
+    text = re.sub(
+        re.compile(
+            r"^(?:[']*Núm\.?)?\ *[\.\-\,:\!•'·;\"]\ *(\d+)\ *[\.]\ *[\.\-\,:\!•'·;\"]*",
+            re.MULTILINE,
+        ),
+        r"\1. ",
+        text,
+    )
     # Add missing dots after numbers preceding names/entities (e.g., "10 Don" -> "10. Don" or "10Rosa" -> "10. Rosa")
-    text = re.sub(r"\b(\d+)\ *(?=[A-ZÁÉÍÓÚÑÜ][A-ZÁÉÍÓÚÑÜa-záéíóúñü]+)", r"\1. ", text)
+    text = re.sub(
+        r"\b(\d+)\ *(?=["
+        + NAME_WHITELIST_CHARS_UPPER
+        + r"]["
+        + NAME_WHITELIST_CHARS
+        + r"]+)",
+        r"\1. ",
+        text,
+    )
 
     # Remove stray single letters surrounded by dots after numbers (e.g., "3.x. " -> "3. ")
     text = re.sub(r"\b(\d+)\.[a-zA-Z]\.\s*", r"\1. ", text)
@@ -238,7 +255,9 @@ def fix_missing_substitutes(text: str, name_regex: re.Pattern) -> str:
     return "\n".join(fixed_lines)
 
 
-def number_candidates(text: str, last_number: int | None = None) -> str:
+def number_candidates(
+    text: str, candidate_regex: re.Pattern, last_number: int | None = None
+) -> str:
     """
     Automatically numbers candidates in the text, starting from last_number if provided.
     """
@@ -250,7 +269,7 @@ def number_candidates(text: str, last_number: int | None = None) -> str:
         stripped_line = line.lstrip()  # Remove leading whitespace for accurate checking
 
         # Check if the line is a candidate name
-        if stripped_line.startswith(("DON ", "DOÑA ")) and counter is not None:
+        if candidate_regex.match(stripped_line) and counter is not None:
             # Add the number and increment the counter
             result.append(f"{counter}. {line}")
             counter += 1

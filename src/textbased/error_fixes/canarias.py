@@ -1,6 +1,8 @@
 import re
 
-from ._common import register_fixer
+from common import NAME_WHITELIST_CHARS, NAME_WHITELIST_CHARS_UPPER
+
+from ._common import number_candidates, register_fixer
 
 
 # BOC 88 (err_1) y BOC 91 (err_2), err.pdf.
@@ -115,24 +117,42 @@ def fix_canarias_2019_05(text: str) -> str:
     return text
 
 
-# BOC 85, err_1 (Junta Electoral de Canarias, n.1350, BOC n.84 de 2.5.2023):
-#   Circunscripción autonómica, cand. n.º 11 AHORA TÚ (AT): "Antonio Orlando
-#   Camacho Betencor" -> "... Betancor".
-#   This file's candidate-list body is drawn in a custom-encoded font whose
-#   glyphs come back as PUA characters U+F0xx (i.e. the byte value + 0xF000),
-#   so the pattern is written with those codepoints; the sequence is unique in
-#   the document (1 occurrence). err_2/err_3 in the 2019 folder correct 2023
-#   INSULAR circunscripciones, which are not present in this file (autonómica
-#   only), so they cannot be applied here.
+_CANARIAS_2023_05_LAST_NUMBER = None
+_CANARIAS_2023_05_CANDIDATE_REGEX = re.compile(
+    r"^(?!NO PROCLAMADA)(?:["
+    + NAME_WHITELIST_CHARS_UPPER
+    + r"]+ +)+(?:\(["
+    + NAME_WHITELIST_CHARS_UPPER
+    + r" ]+\) +)?(?:["
+    + NAME_WHITELIST_CHARS_UPPER
+    + r"]+ *)+(?:\(["
+    + NAME_WHITELIST_CHARS
+    + r" ]+\))? *$"
+)
+
+
 @register_fixer("canarias", 2023, 5)
 def fix_canarias_2023_05(text: str) -> str:
-    # CAMACHO BETENCOR  ->  CAMACHO BETANCOR.
-    # Body glyphs are PUA (U+F0xx == 0x00xx); \u escapes build those literals.
-    #   CAMACHO + ' ' = F043 F041 F04D F041 F043 F048 F04F F020
-    #   BETENCOR       = F042 F045 F054 F045 F04E F043 F04F F052
-    #   (corrected) BETANCOR = F042 F045 F054 F041 F04E F043 F04F F052
-    text = text.replace(
-        "\uf043\uf041\uf04d\uf041\uf043\uf048\uf04f\uf020\uf042\uf045\uf054\uf045\uf04e\uf043\uf04f\uf052",
-        "\uf043\uf041\uf04d\uf041\uf043\uf048\uf04f\uf020\uf042\uf045\uf054\uf041\uf04e\uf043\uf04f\uf052",
+    # TODO: err.pdf
+    # Remove weird duplication
+    if "MATÍAS HERNÁNDEZ PADRÓN" in text:
+        text = text.replace(
+            "KEVIN TOMÁS QUEVEDO MARTÍN \n \nCandidatura núm.: 10. CONTIGO SOMOS DEMOCRACIA (CONTIGO) \n \nNO PROCLAMADA \n \nCandidatura núm.: 11. AHORA TÚ (AT) \n",
+            "",
+        )
+    elif "ANTONIO MARÍN MUÑOZ" in text:
+        text = text.replace(
+            "\nSAÚL GÓMEZ ALBEROLA \nNAIRA MARRERO JAÉN \n \nSuplentes \nALEXANDER VELÁZQUEZ DÍAZ \nMARÍA DEL CARMEN LLANOS GAVIRIA \nRAMÓN TRUJILLO MORALES \n \nCandidatura núm.: 14. PAIS CON GESTORES (PAIS CON GESTORES) \n",
+            "",
+        )
+    # Fix missing numbers
+    global _CANARIAS_2023_05_LAST_NUMBER
+    print(_CANARIAS_2023_05_CANDIDATE_REGEX)
+    text, last_number = number_candidates(
+        text,
+        _CANARIAS_2023_05_CANDIDATE_REGEX,
+        last_number=_CANARIAS_2023_05_LAST_NUMBER,
     )
+    _CANARIAS_2023_05_LAST_NUMBER = last_number
+
     return text

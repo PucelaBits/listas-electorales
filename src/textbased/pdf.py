@@ -1,4 +1,5 @@
 import glob
+import re
 from collections.abc import Generator
 
 import pymupdf
@@ -9,6 +10,20 @@ from .error_fixes import ERROR_FIXERS
 
 # Threshold for splitting lines with too many consecutive spaces
 _TOO_MANY_SPACES_THRESHOLD = 7
+
+# Regex to detect if a string contains any PUA characters in our target range
+_PUA_REGEX = re.compile(r"[\uF000-\uF0FF]")
+
+# Pre-computed translation table for C-level string replacement
+_PUA_TRANSLATION_TABLE = {i: i - 0xF000 for i in range(0xF000, 0xF100)}
+
+
+def _fix_mupdf_pua_text(text: str) -> str:
+    """
+    Shifts characters mapped to the Private Use Area (U+F000 - U+F0FF)
+    back to their standard ASCII/Latin-1 Unicode ranges using C-optimized translation.
+    """
+    return text.translate(_PUA_TRANSLATION_TABLE)
 
 
 def _find_column_split_x(page: pymupdf.Page, words: list[tuple]) -> float:
@@ -73,6 +88,25 @@ class PDFReader:
         for pdf_path in pdf_files:
             yield from self.__parse_single_file(pdf_path)
 
+    def __has_pua_text(self, doc: pymupdf.Document) -> bool:
+        """
+        Scans a sample of the document to determine if it contains Private Use Area (PUA) text.
+        Checks the first, middle, and last pages.
+        """
+        if doc.page_count == 0:
+            return False
+
+        # Use a set to avoid checking the same page twice on very short documents
+        pages_to_check = {0, doc.page_count // 2, doc.page_count - 1}
+
+        for page_num in pages_to_check:
+            text = doc[page_num].get_text("text")
+            if _PUA_REGEX.search(text):
+                logger.debug(f"Detected PUA encoded text on page {page_num}.")
+                return True
+
+        return False
+
     def __is_double_column(self, doc: pymupdf.Document) -> bool:
         """
         Reads a page in the middle of the document to determine if it uses a two-column layout.
@@ -95,7 +129,7 @@ class PDFReader:
         # Extract words that fall within the vertical boundaries
         words = [
             w
-            for w in page.get_text("words")
+            for w in page.get_text("words", flags=0)
             if w[1] > top_boundary and w[3] < bottom_boundary
         ]
 
@@ -126,8 +160,43 @@ class PDFReader:
             )
         return result
 
-    def __words_to_text(self, word_list: list, y_tolerance: float = 2.0) -> str:
+    def __words_to_text(
+        self, word_list: list, y_tolerance: float = 2.0, needs_pua_fix: bool = False
+    ) -> str:
         """Helper to reconstruct lines of text from floating word coordinates."""
+        if not word_list:
+            return ""
+
+        # Ignore vertical or rotated text
+        grouped_lines = {}
+        for w in word_list:
+            # w[5] is block_no, w[6] is line_no
+            key = (w[5], w[6])
+            grouped_lines.setdefault(key, []).append(w)
+
+        filtered_words = []
+        for line_words in grouped_lines.values():
+            # Calculate the bounding box for the entire line
+            min_x = min(w[0] for w in line_words)
+            min_y = min(w[1] for w in line_words)
+            max_x = max(w[2] for w in line_words)
+            max_y = max(w[3] for w in line_words)
+
+            # Avoid division by zero
+            width = max(max_x - min_x, 1)
+            height = max(max_y - min_y, 1)
+            chars_count = sum(len(w[4]) for w in line_words)
+
+            # Heuristic: Rotated text has a bounding box that is taller than it is wide.
+            # We enforce a chars_count >= 3 to avoid accidentally filtering out
+            # naturally narrow horizontal text (like "11" or "il").
+            if height > (width * 2.0) and chars_count >= 3:
+                continue  # Skip this vertical/rotated line
+
+            filtered_words.extend(line_words)
+
+        word_list = filtered_words
+
         if not word_list:
             return ""
 
@@ -150,7 +219,13 @@ class PDFReader:
             else:
                 # Line is complete. Sort the line's words strictly left-to-right (by X)
                 curr_line_words.sort(key=lambda w: w[0])
-                lines.append(" ".join(w[4] for w in curr_line_words))
+
+                if needs_pua_fix:
+                    lines.append(
+                        " ".join(_fix_mupdf_pua_text(w[4]) for w in curr_line_words)
+                    )
+                else:
+                    lines.append(" ".join(w[4] for w in curr_line_words))
 
                 # Start a new line with the current word
                 curr_line_words = [w]
@@ -159,13 +234,20 @@ class PDFReader:
         # Don't forget to process the final line
         if curr_line_words:
             curr_line_words.sort(key=lambda w: w[0])
-            lines.append(" ".join(w[4] for w in curr_line_words))
+            if needs_pua_fix:
+                lines.append(
+                    " ".join(_fix_mupdf_pua_text(w[4]) for w in curr_line_words)
+                )
+            else:
+                lines.append(" ".join(w[4] for w in curr_line_words))
 
         return "\n".join(lines)
 
-    def __parse_double_column_page(self, page: pymupdf.Page) -> str:
+    def __parse_double_column_page(
+        self, page: pymupdf.Page, needs_pua_fix: bool
+    ) -> str:
         """Handles text extraction for a two-column layout page."""
-        words = page.get_text("words")
+        words = page.get_text("words", flags=0)
         split_x = _find_column_split_x(page, words)
 
         # Divide words into left and right buckets based on their center points
@@ -173,19 +255,24 @@ class PDFReader:
         right_words = [w for w in words if ((w[0] + w[2]) / 2) >= split_x]
 
         # Convert word clusters back into readable paragraph text
-        left_text = self.__words_to_text(left_words)
-        right_text = self.__words_to_text(right_words)
+        left_text = self.__words_to_text(left_words, needs_pua_fix=needs_pua_fix)
+        right_text = self.__words_to_text(right_words, needs_pua_fix=needs_pua_fix)
 
         return f"{left_text}\n{right_text}"
 
     def __parse_single_file(self, pdf_path: str) -> Generator[str, None, None]:
         doc = pymupdf.open(pdf_path)
         is_double_col = self.__is_double_column(doc)
+        needs_pua_fix = self.__has_pua_text(doc)
+
         for page in doc:
             if is_double_col:
-                text = self.__parse_double_column_page(page)
+                text = self.__parse_double_column_page(page, needs_pua_fix)
             else:
-                text = self.__words_to_text(page.get_text("words"))
+                text = self.__words_to_text(
+                    page.get_text("words", flags=0), needs_pua_fix=needs_pua_fix
+                )
+
             if not text:
                 continue
 

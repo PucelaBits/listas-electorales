@@ -1,5 +1,7 @@
 import re
 
+from common import NAME_WHITELIST_CHARS
+
 from ._common import (
     clean_ocr_numbers,
     fill_missing_numbers,
@@ -8,8 +10,6 @@ from ._common import (
     register_fixer,
     remove_single_letter_lines,
 )
-
-_ANDALUCIA_MISSING_DOT_RE = r"(\d+)(?=\ [A-ZÁÉÍÓÚÑÜ][A-ZÁÉÍÓÚÑÜa-záéíóúñü\.\-ªº]*\s)"
 
 
 @register_fixer("andalucia", 1982, 5)
@@ -28,7 +28,6 @@ def fix_andalucia_1982_05(text: str) -> str:
         "14. José Olea Varón\n15. Francisco Castellano Rodríguez.",
     )
     text = remove_single_letter_lines(text)
-    text = re.sub(_ANDALUCIA_MISSING_DOT_RE, r"\1.", text)
     text = text.replace("D2.lidefonsa Montalban Duran", "12. Ildefonsa Montalban Duran")
     text = text.replace("Josefa Perales Sedano.\n13", "13. Josefa Perales Sedano.")
     text = text.replace(
@@ -652,7 +651,9 @@ def fix_andalucia_1994_06(text: str) -> str:
     text = text.replace("-Suplentes", "Suplentes")
     text = text.replace("?odríguez", "Rodríguez")
     # Fix the "Núm." OCR errors
-    text = re.sub(r"[NÑ][A-ZÁÉÍÓÚÑÜa-záéíóúñü\-]{1,5}\.(?=\s*[0-9])", "Núm. ", text)
+    text = re.sub(
+        r"[NÑ][" + NAME_WHITELIST_CHARS + r"]{1,5}\.(?=\s*[0-9])", "Núm. ", text
+    )
     text = text.replace("Minn:", "Núm.")
     text = text.replace("N6m.", "Núm.")
     text = clean_ocr_numbers(text)
