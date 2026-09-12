@@ -1,6 +1,7 @@
 from . import (
     andalucia,
     aragon,
+    asturias,
     baleares,
     canarias,
     cantabria,
@@ -12,16 +13,18 @@ from . import (
     galicia,
     la_rioja,
     madrid,
+    melilla,
     murcia,
     navarra,
     valencia,
 )
-from ._common import ERROR_FIXERS
+from ._common import PARSE_FIXES
 
 __all__ = [
-    "ERROR_FIXERS",
+    "PARSE_FIXES",
     "andalucia",
     "aragon",
+    "asturias",
     "baleares",
     "canarias",
     "cantabria",
@@ -33,6 +36,7 @@ __all__ = [
     "galicia",
     "la_rioja",
     "madrid",
+    "melilla",
     "murcia",
     "navarra",
     "valencia",

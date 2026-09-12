@@ -282,32 +282,27 @@ def fix_cataluna_2010_11(text: str) -> str:
     return text
 
 
-CATALUNA_2024_05_REPLACEMENTS = {
-    "Candidatura núm. 3\nESQUERRA REPUBLICANA DE CATALUNYA (ERC / ESQUERRA)": "Candidatura núm. 3\nESQUERRA REPUBLICANA DE CATALUNYA (ERC)",
-    "Candidatura num. 3\nESQUERRA REPUBLICANA DE CATALUNYA (ERC / ESQUERRA)": "Candidatura núm. 3\nESQUERRA REPUBLICANA DE CATALUNYA (ERC)",
-}
-P_CATALUNA_2024_05_LITERALS = re.compile(
-    "|".join(map(re.escape, CATALUNA_2024_05_REPLACEMENTS.keys()))
-)
+@register_fixer("cataluna", 2021, 2)
+def fix_cataluna_2021_02(text: str) -> str:
+    # Fix missing candidacy
+    text = text.replace(
+        "6.- JUNTS PER CATALUNYA (JxCat)",
+        "Candidatura número: 5. RELLENO\nNO PROCLAMADA\n6.- JUNTS PER CATALUNYA (JxCat)",
+    )
+    # Fix ambiguous candidacy
+    text = text.replace("11.- VOX (VOX)", "Candidatura número: 11. VOX (VOX)")
+    # Fix missing candidacy
+    text = text.replace("14.- IZQUIERDA EN POSITIVO (IZQP)", "Candidatura número: 13. RELLENO\nNO PROCLAMADA\n14.- IZQUIERDA EN POSITIVO (IZQP)")
+    text = text.replace("18.- MOVIMENT PRIMÀRIES PER LA INDEPENDÈNCIA DE CATALUNYA (MPIC)", "Candidatura número: 15. RELLENO\nNO PROCLAMADA\nCandidatura número: 16. RELLENO\nNO PROCLAMADA\nCandidatura número: 17. RELLENO\nNO PROCLAMADA\n18.- MOVIMENT PRIMÀRIES PER LA INDEPENDÈNCIA DE CATALUNYA (MPIC)")
+    text = text.replace("22. RECORTES CERO-GRUP VERD-MUNICIPALISTES (RECORTES CERO-GV-M)", "Candidatura número: 21. RELLENO\nNO PROCLAMADA\n22. RECORTES CERO-GRUP VERD-MUNICIPALISTES (RECORTES CERO-GV-M)")
+    return text
 
 
 @register_fixer("cataluna", 2024, 5)
 def fix_cataluna_2024_05(text: str) -> str:
-    """Corrige el DOGC núm. 9143 (15/16.4.2024, candidaturas al Parlamento de
-    Catalunya 2024) via el DOGC núm. 9145 (18.4.2024, "Edicto de 16 de abril de
-    2024, por el que se hace pública la corrección de una errata en el Edicto
-    de 15 de abril de 2024, de la Junta Electoral Provincial de Barcelona,
-    DOGC núm. 9143, pág. 7 de 46").
-
-    Errata única. BARCELONA (24.107.081, Jaime Juan Álvarez Álvarez), c1 p6
-    (pág. 7 de 46), CANDIDATURA 3 ERC: la línea de formación lleva
-    "ESQUERRA REPUBLICANA DE CATALUNYA (ERC / ESQUERRA)" y debe decir
-    "ESQUERRA REPUBLICANA DE CATALUNYA (ERC)" (se omite la parte "ESQUERRA").
-    OJO: la misma línea "(ERC / ESQUERRA)" también aparece en el edicto de
-    GIRONA (c2 p3, CANDIDATURA 4). Se ancla el bloque de 2 líneas
-    "Candidatura núm. 3\\nESQUERRA REPUBLICANA DE CATALUNYA (ERC / ESQUERRA)"
-    (c1 p6); en Girona el cand. es num. 4, así que el ancla no collide.
-    """
-    return P_CATALUNA_2024_05_LITERALS.sub(
-        lambda m: CATALUNA_2024_05_REPLACEMENTS[m.group(0)], text
+    # Errata (err.pdf)
+    text = text.replace(
+        "ESQUERRA REPUBLICANA DE CATALUNYA (ERC / ESQUERRA)",
+        "ESQUERRA REPUBLICANA DE CATALUNYA (ERC)",
     )
+    return text

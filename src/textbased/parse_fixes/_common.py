@@ -3,14 +3,14 @@ from collections.abc import Callable
 
 from common import NAME_WHITELIST_CHARS, NAME_WHITELIST_CHARS_UPPER
 
-ERROR_FIXERS: dict[tuple[str, int, int], Callable[[str], str]] = {}
+PARSE_FIXES: dict[tuple[str, int, int], Callable[[str], str]] = {}
 
 
 def register_fixer(region: str, year: int, month: int):
     """Decorator to register a text-fixing function for a specific batch."""
 
     def decorator(func: Callable[[str], str]):
-        ERROR_FIXERS[(region, year, month)] = func
+        PARSE_FIXES[(region, year, month)] = func
         return func
 
     return decorator

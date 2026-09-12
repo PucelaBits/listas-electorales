@@ -167,9 +167,7 @@ def fix_aragon_2003_05(text: str) -> str:
 
 
 _ARAGON_2007_05_LAST_NUMBER = None
-_ARAGON_2007_05_CANDIDATE_REGEX = re.compile(
-    r"^(?:DON|DOÑA)(?:\s+[" + NAME_WHITELIST_CHARS_UPPER + r"] +)+[" + NAME_WHITELIST_CHARS_UPPER + r"]+$"
-)
+_ARAGON_2007_05_CANDIDATE_REGEX = re.compile(r"^(?:DON|DOÑA) (.+)$")
 
 
 @register_fixer("aragon", 2007, 5)

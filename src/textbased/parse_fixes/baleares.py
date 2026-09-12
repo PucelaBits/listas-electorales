@@ -2,6 +2,15 @@ import re
 
 from ._common import register_fixer
 
+
+def _baleares_province_fix(text: str) -> str:
+    text = text.replace("PALMA DE MALLORCA", "BALE-1")
+    text = text.replace("IBIZA", "BALE-2")
+    text = text.replace("MENORCA", "BALE-3")
+    text = text.replace("FORMENTERA", "BALE-4")
+    return text
+
+
 # BOCA 58, err.pdf (BOCA 55, pp. 3452-3454). Six corrections; this PDF's OCR
 # breaks most rows into separate "number" and "name" lines, so only the
 # name-level corrections can be applied with a text fixer.
@@ -47,4 +56,10 @@ def fix_baleares_2011_05(text: str) -> str:
         "1.\nSra. ELISA CRESPI ORELL\n2.\nSr. FRANCISCO FERNANDEZ OCHOA",
         "1.\nSr. FRANCISCO FERNANDEZ OCHOA\n2.\nSra. ELISA CRESPI ORELL",
     )
+    return text
+
+
+@register_fixer("baleares", 2023, 5)
+def fix_baleares_2023_05(text: str) -> str:
+    text = _baleares_province_fix(text)
     return text

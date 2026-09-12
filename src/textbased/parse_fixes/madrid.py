@@ -5,13 +5,13 @@ from common import NAME_WHITELIST_CHARS
 from ._common import register_fixer
 
 _MADRID_INVERSE_CANDIDACY_REGEX = re.compile(
-    r"^([" + NAME_WHITELIST_CHARS + r"\s\(\)\+]+)[\r?\n]+(Candidatura número: \d+)$",
+    rf"^([{NAME_WHITELIST_CHARS}\d \(\)\+\.’]+)[\r?\n]+(Candidatura número: \d+)$",
     re.MULTILINE,
 )
 
 
 def _madrid_inverse_candidacy_fix(text: str) -> str:
-    for match in re.finditer(_MADRID_INVERSE_CANDIDACY_REGEX, text):
+    for match in _MADRID_INVERSE_CANDIDACY_REGEX.finditer(text):
         # We want to invert it so it is "Candidatura número: X" followed by the name
         text = text.replace(match.group(0), match.group(2) + " " + match.group(1))
     return text
@@ -67,11 +67,13 @@ def fix_madrid_2019_05(text: str) -> str:
 
 @register_fixer("madrid", 2021, 5)
 def fix_madrid_2021_05(text: str) -> str:
+    print(text)
     text = _madrid_inverse_candidacy_fix(text)
     return text
 
 
 @register_fixer("madrid", 2023, 5)
 def fix_madrid_2023_05(text: str) -> str:
+    print(text)
     text = _madrid_inverse_candidacy_fix(text)
     return text

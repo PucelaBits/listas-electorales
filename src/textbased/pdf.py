@@ -7,7 +7,7 @@ import pymupdf
 
 from common import logger
 
-from .error_fixes import ERROR_FIXERS
+from .parse_fixes import PARSE_FIXES
 
 # Threshold for splitting lines with too many consecutive spaces
 _TOO_MANY_SPACES_THRESHOLD = 7
@@ -73,7 +73,7 @@ def _split_too_many_spaces(line: str) -> Generator[str, None, None]:
 class PDFReader:
     def __init__(self, folderpath: str, region: str, year: int, month: int):
         self.folderpath = folderpath
-        self.fix_text = ERROR_FIXERS.get((region, year, month), None)
+        self.fix_text = PARSE_FIXES.get((region, year, month), None)
 
     def parse(self) -> Generator[str, None, None]:
         pdf_files = glob.glob(f"{self.folderpath}/candidaturas*.pdf")

@@ -1,18 +1,17 @@
 import re
 from dataclasses import replace
 
-from common import NAME_WHITELIST_CHARS, logger
+from common import NAME_WHITELIST_CHARS, PROVINCES_LIST, logger
 from common.models import Candidacy, Candidate
 from common.names import prettify_name
 
 from .pdf import PDFReader
 
 _CANDIDATE_TRAILING_CHARS_RE = re.compile(
-    r"\b[" + NAME_WHITELIST_CHARS + r" \(\)'\.]{1}\b$"
+    rf"\b[{NAME_WHITELIST_CHARS} \(\)'\.]{{1}}\b$"
 )
-_CANDIDATE_BEGINNING_CHARS_RE = re.compile(r"^\b[" + NAME_WHITELIST_CHARS + r"]{1}\b")
-_EXTRA_WHITESPACE_RE = re.compile(r"\s{2,}")
-_CANDIDATE_WHITELIST_RE = re.compile(r"[^" + NAME_WHITELIST_CHARS + r" '\(\)\.]")
+_CANDIDATE_BEGINNING_CHARS_RE = re.compile(rf"^\b[{NAME_WHITELIST_CHARS}]{{1}}\b")
+_CANDIDATE_WHITELIST_RE = re.compile(rf"[^{NAME_WHITELIST_CHARS}]+")
 _DATE_RE = re.compile(
     r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+?de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(?:de\s+)?\d{4})?\b\.?"
 )
@@ -55,22 +54,24 @@ def _extract_candidacy(content: str) -> tuple[str, str]:
 
 def _clean_candidate_name(name: str) -> str:
     # Keep just standard letters, Spanish accents, eñes, ü, spaces, hyphens, and apostrophes
-    name = re.sub(_CANDIDATE_WHITELIST_RE, " ", name)
+    name = _CANDIDATE_WHITELIST_RE.sub(" ", name)
     # If the name starts with "D ", it is actually "D. "
     if name.startswith("D.a "):
         name = name[3:]
     elif name.startswith(("D ", "D.")):
         name = name[2:]
     # Remove any trailing random letters (< 3 characters) that are likely OCR artifacts
-    name = re.sub(_CANDIDATE_TRAILING_CHARS_RE, "", name)
+    name = _CANDIDATE_TRAILING_CHARS_RE.sub("", name)
     # Remove any leading random letters (< 3 characters) that are likely OCR artifacts
-    name = re.sub(_CANDIDATE_BEGINNING_CHARS_RE, "", name)
-    # Remove any double spaces or extra whitespace
-    name = re.sub(_EXTRA_WHITESPACE_RE, " ", name)
-    # The split of the name into parts should be more than 3
-    if len(name.split()) < 3:
-        raise ValueError(f"Detected candidate '{name}' with too short name.")
-    return name.strip()
+    name = _CANDIDATE_BEGINNING_CHARS_RE.sub("", name)
+
+    # Remove any double spaces or extra whitespace and strip via split/join
+    parts = name.split()
+
+    # The name should have at least two parts (first name and last name)
+    if len(parts) < 2:
+        raise ValueError(f"Detected candidate '{' '.join(parts)}' with too short name.")
+    return " ".join(parts)
 
 
 def _has_trash_text(line: str) -> bool:
@@ -91,9 +92,7 @@ def _has_trash_text(line: str) -> bool:
 
 class TextElectionParser:
     PROVINCE_RE = re.compile(
-        r"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?|DE\sLA\sCOMUNIDAD\sAUT[ÓO]NOMA\sDE\s|PROVINCIAL\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL:\s+|PROVINCIA\s+DE\s+)(["
-        + NAME_WHITELIST_CHARS
-        + r" ]+)",
+        rf"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?\s+DE\s+|DE\s+LA\s+COMUNIDAD\s+AUT[ÓO]NOMA\s+DE\s+|PROVINCIAL\s+DE\s+|DE\s+ZONA\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL:\s+|PROVINCIA\s+DE\s+)(ASTU\-\d{{1}}|BALE\-\d{{1}}|MUR\-\d{{1}}|{'|'.join(PROVINCES_LIST)})\b",
         re.IGNORECASE,
     )
 
@@ -109,23 +108,21 @@ class TextElectionParser:
 
     # Extract explicit candidacy headers
     EXPLICIT_CANDIDACY_RE = re.compile(
-        r"^Candidatura\s+n[úu]m(?:ero)?\.?\s*:?\s*(\d+)[\s\.\-\–\—~]?\s*(.+)$",
+        r"^Candidatura\s+n[úu]m(?:ero)?\.? *:? *(\d+)(?:[\.\-\–\—~:] *| +)(.+)$",
         re.IGNORECASE,
     )
 
     # Numbered items
     NUMBERED_ITEM_RE = re.compile(
-        r"^[\s\.\-\–\—~]?\s*(?:Nº\s*|No\s+|N\s+|N\.O?\s*|Núm[\.:]\s*|Num[\.:]\s*)?(\d+)\s?[\s\.\-\–\—~:]+\s*(["
-        + NAME_WHITELIST_CHARS
-        + r"]+.+)$",
+        rf"^[\s\.\-\–\—~]?\s*(?:Nº\s*|No\s+|N\s+|N\.O?\s*|Núm[\.:]\s*|Num[\.:]\s*)?(\d+)\s?[\s\.\-\–\—~:]+\s*([{NAME_WHITELIST_CHARS}]+.+)$",
         re.IGNORECASE,
     )
 
     # Catch isolated numbers sitting on their own line
-    ISOLATED_NUMBER_RE = re.compile(
-        r"^(?=Candidatura\s+n[úu]m(?:ero)?\.?:?|\d+[ \.\-\–\—~]+$)(?:Candidatura\s+n[úu]m(?:ero)?\.?:?\s*)?(\d+)[ \.\-\–\—~]*$",
-        re.IGNORECASE,
+    ISOLATED_CANDIDACY_RE = re.compile(
+        r"^Candidatura\s+n[úu]m(?:ero)?\.? *:? *(\d+)[\.\-\–\—~:]*$", re.IGNORECASE
     )
+    ISOLATED_NUMBER_RE = re.compile(r"^(\d+)[\.\-\–\—~]+$", re.IGNORECASE)
 
     # Catch lines that have multiple numbers and names separated by whitespace
     MULTI_LINE_SPLIT_RE = re.compile(r"\s+(?=\d+[ \.\-\–\—~:]+\s+)")
@@ -145,20 +142,34 @@ class TextElectionParser:
         self.line_completed = False
 
     def parse(self):
-        prev_line = None
-        for line in self.text_reader.parse():
-            if prev_line is None:
-                prev_line = line.strip()
-                continue
+        line_iterator = iter(self.text_reader.parse())
+
+        try:
+            prev_line = next(line_iterator).strip()
+        except StopIteration as exept:
+            # File is empty
+            raise ValueError("No candidates found") from exept
+
+        for line in line_iterator:
             line = line.strip()
             self.__process_line(prev_line, line)
             prev_line = line
+
         # Process the last line
         self.__process_line(prev_line, "")
-        if len(self.parsed_data) == 0:
+        if not self.parsed_data:
             raise ValueError("No candidates found")
 
     def build(self) -> tuple[Candidate]:
+        # Replace all asturias-X and murcia-X with Asturias and Murcia respectively
+        for idx, candidate in enumerate(self.parsed_data):
+            candidate_province = candidate.province.lower()
+            if candidate_province.startswith("astu-"):
+                self.parsed_data[idx] = replace(candidate, province="Asturias")
+            elif candidate_province.startswith("bale-"):
+                self.parsed_data[idx] = replace(candidate, province="Baleares")
+            elif candidate_province.startswith("mur-"):
+                self.parsed_data[idx] = replace(candidate, province="Murcia")
         return tuple(self.parsed_data)
 
     def __process_line(self, line: str, next_line: str) -> None:
@@ -196,7 +207,7 @@ class TextElectionParser:
                 )
             # Make sure no candidates were parsed for the current candidacy before resetting
             if (
-                len(self.parsed_data) > 0
+                self.parsed_data
                 and self.parsed_data[-1].candidacy == self.current_candidacy
             ):
                 raise ValueError(
@@ -208,7 +219,7 @@ class TextElectionParser:
 
         # Substitutes
         if self.SUPLENTE_RE.match(line):
-            if len(self.parsed_data) == 0:
+            if not self.parsed_data:
                 raise ValueError(
                     "Substitute section found before any candidates were parsed."
                 )
@@ -241,17 +252,22 @@ class TextElectionParser:
                 # It is a candidacy, so we set the candidacy with the pending order and current line
                 self.__set_candidacy(self.pending_order[0], line)
             else:
-                self.__handle_numbered_item(self.pending_order, line, next_line)
+                self.__handle_numbered_item(self.pending_order[0], line, next_line)
             self.pending_order = None
             return
 
         # Numbered items (split-line format)
-        isolated_match = self.ISOLATED_NUMBER_RE.match(line)
+        isolated_match = self.ISOLATED_CANDIDACY_RE.match(line)
+        if not isolated_match:
+            isolated_match = self.ISOLATED_NUMBER_RE.match(line)
         if isolated_match:
             expected_order = int(isolated_match.group(1))
             is_candidacy = "candidatura" in line.lower()
-            if expected_order < 100:  # Arbitrary threshold to avoid false positives
+            if expected_order < 300:  # Threshold to avoid false positives
                 self.pending_order = (expected_order, is_candidacy)
+            logger.debug(
+                f"Detected isolated number {expected_order} on line: {line}. Marked as {'candidacy' if is_candidacy else 'unknown'}."
+            )
             return
 
         if self.NO_SUBSTITUTES_RE.match(line):
@@ -275,25 +291,25 @@ class TextElectionParser:
         self.line_completed = True
 
     def __process_multiple_lines(self, line: str, next_line: str) -> None:
-        sub_lines = self.MULTI_LINE_SPLIT_RE.split(line)
-        prev_line = None
-        for sub_line in sub_lines:
-            if prev_line is None:
-                prev_line = sub_line.strip()
-                continue
-            sub_line = sub_line.strip()
-            self.__process_line(prev_line, sub_line)
-            prev_line = sub_line
+        # Pre-strip and filter empty chunks created by split
+        sub_lines = [
+            s.strip() for s in self.MULTI_LINE_SPLIT_RE.split(line) if s.strip()
+        ]
+        if not sub_lines:
+            return
+
+        for i in range(len(sub_lines) - 1):
+            self.__process_line(sub_lines[i], sub_lines[i + 1])
+
         # Process the last sub-line
-        if prev_line is not None:
-            self.__process_line(prev_line, next_line)
+        self.__process_line(sub_lines[-1], next_line)
 
     def __handle_numbered_item(self, order: int, content: str, next_line: str) -> None:
         """Processes lines that start with a number (either a candidacy or a candidate)."""
         if "disposiciones generales" in content.lower():
             # Skip lines that are part of the general provisions section
             return
-        if order > 100:  # Arbitrary threshold to avoid false positives
+        if order > 300:  # Threshold to avoid false positives
             return
         if (
             order == 1
@@ -302,7 +318,7 @@ class TextElectionParser:
                 not self.is_substitute
                 or (
                     self.is_substitute
-                    and len(self.parsed_data) > 0
+                    and self.parsed_data
                     and self.parsed_data[-1].substitute
                 )
             )
@@ -331,7 +347,7 @@ class TextElectionParser:
             if (
                 (next_number_match and next_number_match.group(1) == "1")
                 or (next_isolated_match and next_isolated_match.group(1) == "1")
-                or re.match(self.NOT_PROCLAMATED_RE, next_line)
+                or self.NOT_PROCLAMATED_RE.match(next_line)
                 or next_line.lower().startswith("titular")
             ):
                 # This is a new candidacy
@@ -349,7 +365,7 @@ class TextElectionParser:
         if (
             order == 1
             and self.is_substitute
-            and len(self.parsed_data) > 0
+            and self.parsed_data
             and not self.parsed_data[-1].substitute
         ):
             # We have switched to substitutes for the current candidacy
@@ -366,11 +382,11 @@ class TextElectionParser:
 
     def __set_candidacy(self, order: int, content: str) -> None:
         """Extracts and sets the current candidacy."""
-        if len(self.parsed_data) == 0 and self.current_candidacy is not None:
+        if not self.parsed_data and self.current_candidacy is not None:
             raise ValueError("Candidacy set before any candidates were parsed.")
         self.__mark_candidacy_as_finished()
         self.candidacy_order = order
-        if re.search(self.NOT_PROCLAMATED_RE, content):
+        if self.NOT_PROCLAMATED_RE.search(content):
             logger.debug(
                 f"Detected 'NO PROCLAMADA' candidacy for order {order}. Skipping candidacy and resetting state."
             )
@@ -410,18 +426,15 @@ class TextElectionParser:
     def __handle_unmatched_line(self, line: str) -> None:
         """Discards headers/footers or appends valid multi-line names."""
         # Append valid continuation to the last recorded candidate
-        if len(self.parsed_data) > 0 and self.candidate_order > 0:
-            if self.parsed_data[-1].full_name.endswith("-") and line[0].islower():
+        if self.parsed_data and self.candidate_order > 0:
+            last_candidate = self.parsed_data[-1]
+            if last_candidate.full_name.endswith("-") and line[0].islower():
                 # Handle hyphenated names that are split across lines
-                new_name = _clean_candidate_name(
-                    self.parsed_data[-1].full_name[:-1] + line
-                )
+                new_name = _clean_candidate_name(last_candidate.full_name[:-1] + line)
             else:
-                new_name = _clean_candidate_name(
-                    self.parsed_data[-1].full_name + " " + line
-                )
+                new_name = _clean_candidate_name(last_candidate.full_name + " " + line)
             self.parsed_data[-1] = replace(
-                self.parsed_data[-1],
+                last_candidate,
                 full_name=prettify_name(new_name),
             )
         elif self.current_candidacy and self.candidate_order == 0:
@@ -438,40 +451,59 @@ class TextElectionParser:
 
     def __validate_candidates_count(self) -> None:
         """Validates that the number of candidates matches the expected count for the previous candidacy."""
+        if not self.parsed_data:
+            raise ValueError("No candidates found to validate.")
+
         expected_candidates = 0
-        previous_candidacy = None
-        for c in self.parsed_data[::-1]:
-            if c.substitute:
-                continue  # Skip substitutes when counting candidates
-            if c.candidacy == self.current_candidacy:
-                expected_candidates += 1
-            else:
-                break
+        idx = len(self.parsed_data) - 1
+
+        # Calculate expected candidates iterating backwards without slicing to save memory allocations
+        while idx >= 0:
+            c = self.parsed_data[idx]
+            if not c.substitute:
+                if c.candidacy == self.current_candidacy:
+                    expected_candidates += 1
+                else:
+                    break
+            idx -= 1
+
         if expected_candidates == 0:
             raise ValueError(
                 f"No candidates found for {self.current_candidacy.name} in {self.current_province}"
             )
-        # Search for the previous candidacy in the parsed data
+
+        previous_candidacy = None
+        previous_province = None
         start_index = expected_candidates
-        for c in self.parsed_data[-expected_candidates - 1 :: -1]:
+
+        # Search for the previous candidacy in the parsed data (mimicking exact slice math for behavioral parity)
+        idx = len(self.parsed_data) - expected_candidates - 1
+        while idx >= 0:
+            c = self.parsed_data[idx]
             if c.candidacy != self.current_candidacy:
                 previous_candidacy = c.candidacy
                 previous_province = c.province
                 break
             start_index += 1
+            idx -= 1
+
         # Calculate the candidates of the previous candidacy to compare with the current one
         if previous_candidacy is None:
             return  # No previous candidacy to compare with
         if previous_province != self.current_province:
             return  # Different province, no need to compare
+
         previous_candidates = 0
-        for c in self.parsed_data[-start_index - 1 :: -1]:
-            if c.substitute:
-                continue  # Skip substitutes when counting candidates
-            if c.candidacy == previous_candidacy:
-                previous_candidates += 1
-            else:
-                break
+        idx = len(self.parsed_data) - start_index - 1
+        while idx >= 0:
+            c = self.parsed_data[idx]
+            if not c.substitute:
+                if c.candidacy == previous_candidacy:
+                    previous_candidates += 1
+                else:
+                    break
+            idx -= 1
+
         if previous_candidates == 0:
             raise ValueError(
                 f"Unexpected 0 candidates found for previous candidacy {previous_candidacy.name} in {self.current_province}"
@@ -490,7 +522,7 @@ class TextElectionParser:
         self.__validate_candidates_count()
         # If we were parsing substitutes, ensure at least one substitute was found for the current candidacy
         if self.is_substitute and (
-            self.parsed_data is None or not self.parsed_data[-1].substitute
+            not self.parsed_data or not self.parsed_data[-1].substitute
         ):
             raise ValueError(
                 f"No substitutes found for {self.current_candidacy.name} in {self.current_province}"
