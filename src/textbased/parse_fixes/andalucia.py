@@ -756,5 +756,5 @@ def fix_andalucia_2015_03(text: str) -> str:
 
 @register_fixer("andalucia", 2018, 12)
 def fix_andalucia_2018_12(text: str) -> str:
-    text = text.replace("'RxD Ángela Gallego Reina", "Ángela Gallego Reina")
+    text = text.replace("�����Ángela Gallego Reina", "Ángela Gallego Reina")
     return text

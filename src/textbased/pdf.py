@@ -9,6 +9,8 @@ from common import logger
 
 from .parse_fixes import PARSE_FIXES
 
+# TODO: Check if encoding is correct
+
 # Threshold for splitting lines with too many consecutive spaces
 _TOO_MANY_SPACES_THRESHOLD = 7
 
@@ -36,18 +38,20 @@ def _find_column_split_x(page: pymupdf.Page, words: list[tuple]) -> float:
     between the leftmost and rightmost text boundaries.
     Ignores headers and footers.
     """
-    default_mid = page.rect.width / 2
+    # default_mid = page.rect.width / 2
 
-    # Define vertical limits to ignore headers and footers
-    header_limit = page.rect.height * 0.10
-    footer_limit = page.rect.height * 0.90
+    # # Define vertical limits to ignore headers and footers
+    # header_limit = page.rect.height * 0.10
+    # footer_limit = page.rect.height * 0.90
 
-    # Filter out words in header/footer boundaries in a single pass
-    valid_words = [w for w in words if header_limit <= w[1] and w[3] <= footer_limit]
+    # # Filter out words in header/footer boundaries in a single pass
+    # valid_words = [w for w in words if header_limit <= w[1] and w[3] <= footer_limit]
 
-    if not valid_words:
-        # Fallback to absolute center of the page if no valid text is found
-        return default_mid
+    # if not valid_words:
+    #     # Fallback to absolute center of the page if no valid text is found
+    #     return default_mid
+
+    valid_words = words  # For now, we are not filtering out headers/footers
 
     # zip(*...) is a highly optimized C-level transpose.
     # x0s = all x0 coords, x1s = all x1 coords.
@@ -146,7 +150,7 @@ class PDFReader:
             return False
 
         ratio = right_column_area / total_area
-        result = ratio > 0.30
+        result = ratio > 0.35
 
         if result:
             logger.debug(

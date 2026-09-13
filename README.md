@@ -21,7 +21,7 @@ El repositorio cubre las candidaturas y candidatos de:
 - Elecciones **generales** (Congreso de los Diputados y Senado)
 - Elecciones **municipales** y de **cabildos insulares** (Canarias)
 - Elecciones al **Parlamento Europeo**
-- Elecciones **autonómicas** (en desarrollo, ver más abajo)
+- Elecciones **autonómicas** y de **Consejo Insular de Baleares** (en desarrollo, ver más abajo)
 
 > :warning: Las elecciones autonómicas no las publica el Ministerio del Interior (son competencia de cada Comunidad Autónoma). Estamos trabajando en incorporarlas, pero de momento no están disponibles.
 

@@ -5,6 +5,25 @@ from common import NAME_WHITELIST_CHARS, NAME_WHITELIST_CHARS_UPPER
 from ._common import number_candidates, register_fixer
 
 
+def _canarias_province_fix(text: str) -> str:
+    suffix = 1
+    text = text.replace("Fuerteventura", f"CAN-{suffix}")
+    text = text.replace("FUERTEVENTURA", f"CAN-{suffix}")
+    text = text.replace("Gran Canaria", f"CAN-{suffix + 1}")
+    text = text.replace("GRAN CANARIA", f"CAN-{suffix + 1}")
+    text = text.replace("La Gomera", f"CAN-{suffix + 2}")
+    text = text.replace("LA GOMERA", f"CAN-{suffix + 2}")
+    text = text.replace("Lanzarote", f"CAN-{suffix + 3}")
+    text = text.replace("LANZAROTE", f"CAN-{suffix + 3}")
+    text = text.replace("La Palma", f"CAN-{suffix + 4}")
+    text = text.replace("LA PALMA", f"CAN-{suffix + 4}")
+    text = text.replace("Tenerife", f"CAN-{suffix + 5}")
+    text = text.replace("TENERIFE", f"CAN-{suffix + 5}")
+    text = text.replace("El Hierro", f"CAN-{suffix + 6}")
+    text = text.replace("EL HIERRO", f"CAN-{suffix + 6}")
+    return text
+
+
 # BOC 88 (err_1) y BOC 91 (err_2), err.pdf.
 # err_1 (Junta Electoral de Santa Cruz, La Palma): candidate nº1 of
 #   INICIATIVAPOR LAPALMA-NUEVACANARIAS (NCa) lacks the "Independiente" label.
@@ -100,20 +119,47 @@ def fix_canarias_2015_05(text: str) -> str:
     return text
 
 
-# BOC 88, err_1 (Junta Electoral de Santa Cruz de Tenerife, BOC nº 82 de 30.4.19):
-#   La Palma, cand. n.º 5 COALICIÓN CANARIA (CCa) was proclaimed with the wrong
-#   denomination; it should be COALICIÓN CANARIA-PARTIDO NACIONALISTA CANARIO
-#   (CCa-PNC). Only err_1 belongs to the 2019 batch (the folder's
-#   candidaturas*.pdf are the 2019 proclamations); err_2/err_3 in this folder
-#   are 2023 corrections for the 2023 batch and target INSULAR
-#   circunscripciones that have no candidaturas file in the repo, so they are
-#   NOT POSSIBLE here (flagged for individual review).
+_CANARIAS_2019_05_LAST_NUMBER = None
+_CANARIAS_2019_05_CANDIDATE_REGEX = re.compile(
+    r"^(?!NO PROCLAMADA)(?:["
+    + NAME_WHITELIST_CHARS_UPPER
+    + r"\.]+ +)+(?:\(["
+    + NAME_WHITELIST_CHARS_UPPER
+    + r"\. ]+\) +)?(?:["
+    + NAME_WHITELIST_CHARS_UPPER
+    + r"\.]+ *)+(?:\(["
+    + NAME_WHITELIST_CHARS
+    + r"\. ]+\))? *$"
+)
+
+
 @register_fixer("canarias", 2019, 5)
 def fix_canarias_2019_05(text: str) -> str:
+    # Errata (err.pdf)
     text = text.replace(
         "CANDIDATURA NÚM.: 5. COALICIÓN CANARIA (CCa)",
         "CANDIDATURA NÚM.: 5. COALICIÓN CANARIA-PARTIDO NACIONALISTA CANARIO (CCa-PNC)",
     )
+    # Facilitate parsing
+    text = text.replace(
+        "AHORA CANARIAS ALTERNATIVA NACIONALISTA CANARIA (ANC) Y UNIDAD\n",
+        "AHORA CANARIAS ALTERNATIVA NACIONALISTA CANARIA (ANC) Y UNIDAD ",
+    )
+    text = text.replace(
+        "AHORA CANARIAS ALTERNATIVA NACIONALISTA CANARIA ANC y UNIDAD\n",
+        "AHORA CANARIAS ALTERNATIVA NACIONALISTA CANARIA ANC y UNIDAD ",
+    )
+    text = text.replace("(PODEMOS\n", "(PODEMOS)\n")
+    text = text.replace("Mª.", "MARÍA")
+    # Fix missing numbers
+    global _CANARIAS_2019_05_LAST_NUMBER
+    text, last_number = number_candidates(
+        text,
+        _CANARIAS_2019_05_CANDIDATE_REGEX,
+        last_number=_CANARIAS_2019_05_LAST_NUMBER,
+    )
+    _CANARIAS_2019_05_LAST_NUMBER = last_number
+    text = _canarias_province_fix(text)
     return text
 
 

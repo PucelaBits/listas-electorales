@@ -71,6 +71,9 @@ def fix_navarra_2015_05(text: str) -> str:
 @register_fixer("navarra", 2019, 5)
 def fix_navarra_2019_05(text: str) -> str:
     text = _navarra_candidacy_fix(text)
+    # Remove concejos
+    if "proceso electoral en los concejos de Navarra" in text:
+        text = text.split("proceso electoral en los concejos de Navarra")[0]
     return text
 
 

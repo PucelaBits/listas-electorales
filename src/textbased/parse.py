@@ -16,7 +16,8 @@ _DATE_RE = re.compile(
     r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+?de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(?:de\s+)?\d{4})?\b\.?"
 )
 _DATE_NUMBER_RE = re.compile(
-    r"\b(?:\d{4}[\-/]\d{2}[\-/]\d{2}|(?:\d{2}[\-/]\d{2}[\-/]\d{4}))\b"
+    r"\b(?:\d{4}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/]\d{2}|\d{2}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/]\d{4})\b",
+    re.IGNORECASE,
 )
 
 # Extract candidacy name and acronym
@@ -85,6 +86,11 @@ def _has_trash_text(line: str) -> bool:
         or "teléfono" in line_lower
         or "boletín oficial" in line_lower
         or "titulares" in line_lower
+        or "elecciones" in line_lower
+        or "candidaturas" in line_lower
+        or "proclamación" in line_lower
+        or "anuncios" in line_lower
+        or "procedimiento" in line_lower
         or _DATE_RE.search(line_lower) is not None
         or _DATE_NUMBER_RE.search(line_lower) is not None
     )
@@ -92,17 +98,17 @@ def _has_trash_text(line: str) -> bool:
 
 class TextElectionParser:
     PROVINCE_RE = re.compile(
-        rf"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?\s+DE\s+|DE\s+LA\s+COMUNIDAD\s+AUT[ÓO]NOMA\s+DE\s+|PROVINCIAL\s+DE\s+|DE\s+ZONA\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL:\s+|PROVINCIA\s+DE\s+)(ASTU\-\d{{1}}|BALE\-\d{{1}}|MUR\-\d{{1}}|{'|'.join(PROVINCES_LIST)})\b",
+        rf"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?\s+DE\s+|ELECTORAU\s+PROVINCIAU\s+DE\s+|DE\s+LA\s+COMUNIDAD\s+AUT[ÓO]NOMA\s+DE\s+|PROVINCIAL\s+DE\s+|DE\s+ZONA\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL:?\s+|PROVINCIA\s+DE\s+)(ASTU\-\d{{1}}|BALE\-\d{{1,2}}|CAN\-\d{{1}}|MUR\-\d{{1}}|{'|'.join(PROVINCES_LIST)})\b",
         re.IGNORECASE,
     )
 
     NOT_PROCLAMATED_RE = re.compile(
-        r"NON?\s+PROCLAMADA",
+        r"(?:CANDIDATURA\s+)?(?:NON?\s+PROCLAMADA|RETIRADA)",
         re.IGNORECASE,
     )
 
     NO_SUBSTITUTES_RE = re.compile(
-        r"\(Sin\s+suplentes?\)",
+        r"\(Sin\s+suplentes?\)|Sin\s+candidatos?",
         re.IGNORECASE,
     )
 
@@ -168,6 +174,8 @@ class TextElectionParser:
                 self.parsed_data[idx] = replace(candidate, province="Asturias")
             elif candidate_province.startswith("bale-"):
                 self.parsed_data[idx] = replace(candidate, province="Baleares")
+            elif candidate_province.startswith("can-"):
+                self.parsed_data[idx] = replace(candidate, province="Canarias")
             elif candidate_province.startswith("mur-"):
                 self.parsed_data[idx] = replace(candidate, province="Murcia")
         return tuple(self.parsed_data)
@@ -175,14 +183,12 @@ class TextElectionParser:
     def __process_line(self, line: str, next_line: str) -> None:
         """Evaluates a single line and routes it to the appropriate state handler."""
         print(f"Processing line: {line}")  # Debugging output
-        if _has_trash_text(line):
-            logger.debug(f"Discarding trash line: {line}")
-            self.line_completed = True
-            return
-
         # Province
         prov_match = self.PROVINCE_RE.search(line)
         if prov_match:
+            new_province = prov_match.group(1).strip().title()
+            if new_province == self.current_province:
+                return
             self.current_province = prov_match.group(1).strip().title()
             logger.debug(f"Detected province: {self.current_province}")
             # Change of province indicates a new candidacy section, so reset candidacy and candidate order
@@ -228,6 +234,11 @@ class TextElectionParser:
             self.line_completed = True
             if self.MULTI_LINE_SPLIT_RE.search(line):
                 self.__process_multiple_lines(line, next_line)
+            return
+
+        if _has_trash_text(line):
+            logger.debug(f"Discarding trash line: {line}")
+            self.line_completed = True
             return
 
         # Numbered items (implicit candidate or candidacy if old format)
@@ -326,16 +337,11 @@ class TextElectionParser:
             raise ValueError(
                 "Unexpected new candidate with order 1 while already parsing candidates."
             )
-        if order == 1 and self.current_candidacy is None:
-            if self.candidacy_order != 0:
-                raise ValueError(
-                    f"Unexpected candidacy order {order} when actually expected {self.candidacy_order} in first candidacy."
-                )
-            # We are starting the first candidacy in the document
-            self.__set_candidacy(order, content)
-            return
-
-        if order == self.candidate_order + 1 and order == self.candidacy_order + 1:
+        if (
+            self.candidate_order > 0
+            and order == self.candidate_order + 1
+            and order == self.candidacy_order + 1
+        ):
             logger.debug(
                 f"Ambiguous order {order} found. This could be either a new candidacy or a candidate for the current candidacy. Next line: {next_line}"
             )
@@ -357,6 +363,11 @@ class TextElectionParser:
                 self.__add_candidate(content, order)
             return
 
+        if self.candidacy_order + 1 == order:
+            # We have switched to a new candidacy
+            self.__set_candidacy(order, content)
+            return
+
         if order == self.candidate_order + 1:
             # We expect to be parsing candidates for the current candidacy
             self.__add_candidate(content, order)
@@ -371,11 +382,6 @@ class TextElectionParser:
             # We have switched to substitutes for the current candidacy
             self.__add_candidate(content, order)
             return
-
-        if self.candidacy_order + 1 == order:
-            # We have switched to a new candidacy
-            self.__set_candidacy(order, content)
-            return
         raise ValueError(
             f"Unexpected order {order} when actually expected candidacy ({self.candidacy_order + 1}) or candidate ({self.candidate_order + 1})."
         )
@@ -384,6 +390,10 @@ class TextElectionParser:
         """Extracts and sets the current candidacy."""
         if not self.parsed_data and self.current_candidacy is not None:
             raise ValueError("Candidacy set before any candidates were parsed.")
+        if order != self.candidacy_order + 1:
+            raise ValueError(
+                f"Unexpected candidacy order {order} when actually expected {self.candidacy_order + 1}."
+            )
         self.__mark_candidacy_as_finished()
         self.candidacy_order = order
         if self.NOT_PROCLAMATED_RE.search(content):
@@ -498,7 +508,10 @@ class TextElectionParser:
         while idx >= 0:
             c = self.parsed_data[idx]
             if not c.substitute:
-                if c.candidacy == previous_candidacy:
+                if (
+                    c.candidacy == previous_candidacy
+                    and c.province == previous_province
+                ):
                     previous_candidates += 1
                 else:
                     break

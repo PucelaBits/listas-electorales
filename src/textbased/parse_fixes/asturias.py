@@ -14,6 +14,12 @@ def _asturias_province_fix(text: str) -> str:
     return text
 
 
+@register_fixer("asturias", 2019, 5)
+def fix_asturias_2019_05(text: str) -> str:
+    text = _asturias_province_fix(text)
+    return text
+
+
 @register_fixer("asturias", 2023, 5)
 def fix_asturias_2023_05(text: str) -> str:
     text = _asturias_province_fix(text)

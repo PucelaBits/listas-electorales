@@ -4,10 +4,18 @@ from ._common import register_fixer
 
 
 def _baleares_province_fix(text: str) -> str:
-    text = text.replace("PALMA DE MALLORCA", "BALE-1")
-    text = text.replace("IBIZA", "BALE-2")
-    text = text.replace("MENORCA", "BALE-3")
-    text = text.replace("FORMENTERA", "BALE-4")
+    suffix = 1
+    if "consejos insulares" in text.lower():
+        suffix = 10
+    text = text.replace("Mallorca", f"BALE-{suffix}")
+    text = text.replace("Ibiza", f"BALE-{suffix + 1}")
+    text = text.replace("Eivissa", f"BALE-{suffix + 1}")
+    text = text.replace("Menorca", f"BALE-{suffix + 2}")
+    text = text.replace("Formentera", f"BALE-{suffix + 3}")
+    text = text.replace("Sant Antoni de Portmany", f"BALE-{suffix + 4}")
+    text = text.replace("Sant Josep de sa Talaia", f"BALE-{suffix + 5}")
+    text = text.replace("Sant Joan de Labritja", f"BALE-{suffix + 6}")
+    text = text.replace("Santa Eulària des Riu", f"BALE-{suffix + 7}")
     return text
 
 
@@ -56,6 +64,18 @@ def fix_baleares_2011_05(text: str) -> str:
         "1.\nSra. ELISA CRESPI ORELL\n2.\nSr. FRANCISCO FERNANDEZ OCHOA",
         "1.\nSr. FRANCISCO FERNANDEZ OCHOA\n2.\nSra. ELISA CRESPI ORELL",
     )
+    return text
+
+
+@register_fixer("baleares", 2019, 5)
+def fix_baleares_2019_05(text: str) -> str:
+    # Remove zero-width space characters (U+200B)
+    text = text.replace('\u200b', '')
+    text = text.replace("Fascículo 89 - Sec. V. - Pág. 17702", "Fascículo 89 - Sec. V. - Pág. 17702\nElecciones a los Consejos Insulares de 2019")
+    text = text.replace("Fascículo 89 - Sec. V. - Pág. 17737", "Fascículo 89 - Sec. V. - Pág. 17737\nElecciones a los Consejos Insulares de 2019")
+    text = _baleares_province_fix(text)
+    # Fix error
+    text = text.replace("4. JUAN FRANCISCO TORRES SERRA", "3. JUAN FRANCISCO TORRES SERRA")
     return text
 
 

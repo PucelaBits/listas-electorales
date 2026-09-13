@@ -67,13 +67,34 @@ def fix_madrid_2019_05(text: str) -> str:
 
 @register_fixer("madrid", 2021, 5)
 def fix_madrid_2021_05(text: str) -> str:
-    print(text)
     text = _madrid_inverse_candidacy_fix(text)
+    if "Isabel Natividad Díaz Ayuso" in text:
+        # Remove excluded candidates
+        text = text.replace("5. Toni Cantó García del Moral (Independiente)\n", "")
+        text = text.replace("23. Agustín Conde Bajén\n", "")
+
+        # Shift numbering for candidates originally placed 24 to 73 (shift down by 2)
+        # Iterating in descending order to avoid overwriting numbers we just updated
+        for i in range(73, 23, -1):
+            text = text.replace(f"{i}. ", f"{i - 2}. ", 1)
+
+        # Shift numbering for candidates originally placed 6 to 22 (shift down by 1)
+        for i in range(22, 5, -1):
+            text = text.replace(f"{i}. ", f"{i - 1}. ", 1)
+    elif "Ignacio Catalá Martínez" in text:
+        # Shift numbering for candidates originally placed 72 to 136 (shift down by 2)
+        # Iterating in descending order to avoid overwriting numbers we just updated
+        for i in range(136, 71, -1):
+            text = text.replace(f"{i}. ", f"{i - 2}. ", 1)
+        # Restructure the Suplentes section into the main list
+        text = text.replace(
+            "Suplentes\n1. Inés Espada Sanchís\n2. Alfonso Javier Muñoz Casares\n3. Natalia Rey Riveiro",
+            "135. Inés Espada Sanchís\n136. Alfonso Javier Muñoz Casares\nSuplente\n1. Natalia Rey Riveiro",
+        )
     return text
 
 
 @register_fixer("madrid", 2023, 5)
 def fix_madrid_2023_05(text: str) -> str:
-    print(text)
     text = _madrid_inverse_candidacy_fix(text)
     return text

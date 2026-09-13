@@ -16,6 +16,7 @@ from . import (
     melilla,
     murcia,
     navarra,
+    pais_vasco,
     valencia,
 )
 from ._common import PARSE_FIXES
@@ -39,5 +40,6 @@ __all__ = [
     "melilla",
     "murcia",
     "navarra",
+    "pais_vasco",
     "valencia",
 ]

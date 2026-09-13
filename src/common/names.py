@@ -34,7 +34,7 @@ _PARTICLES_RE = re.compile(
 # Group 3: Matches standalone abbreviations (surrounded by spaces/boundaries)
 # Group 4: Specifically matches standalone "Ma" so it doesn't break names like "Macarena"
 _ABBR_RE = re.compile(
-    r"^((?:D\.|D\.a|D[nñ]a\.?|D[aª]\.?|Don\b|Do[nñ]a\b)\s*)+|"
+    r"^((?:D\.|D\.a|D[nñ]a\.?|D[aª][ \.]|Don\b|Do[nñ]a\b)\s*)+|"
     r"\b(Mª|M\.[aªA]\.?|M[aªA]\.|Fco\.?|F\.co\.?)(?=[A-Za-zÀ-ÿ])|"
     r"\b(Mª|M\.[aªA]\.?|M[aªA]\.|Fco\.?|F\.co\.?)\b|"
     r"\b(Ma)\b",

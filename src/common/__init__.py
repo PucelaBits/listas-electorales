@@ -6,8 +6,8 @@ import requests
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-NAME_WHITELIST_CHARS_UPPER = r"A-ZÂÁÉÍÓÚÀÈÒÏÜÑÇ·'\-"
-NAME_WHITELIST_CHARS_LOWER = r"a-zâáéíóúàèòïüñç·'\-"
+NAME_WHITELIST_CHARS_UPPER = r"A-ZÂÁÉÍÓÚÀÈÒÏÖÜÑÇ·'\-"
+NAME_WHITELIST_CHARS_LOWER = r"a-zâáéíóúàèòïöüñç·'\-"
 NAME_WHITELIST_CHARS = NAME_WHITELIST_CHARS_UPPER + NAME_WHITELIST_CHARS_LOWER
 
 # The order matches the order in the official infoelectoral data

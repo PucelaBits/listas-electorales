@@ -1,6 +1,28 @@
 import re
 
-from ._common import register_fixer
+from common import NAME_WHITELIST_CHARS_LOWER, NAME_WHITELIST_CHARS_UPPER
+
+from ._common import fix_missing_substitutes, register_fixer
+
+_TARRAGONA_CANDIDACY_RE = re.compile(
+    r"(\d+)\s+FORMACIÓN POLÍTICA:\s+(.+)\s+SIGLAS:\s+(.+)$", re.MULTILINE
+)
+
+_TARRAGONA_NOT_PROCLAIMED_CANDIDACY_RE = re.compile(
+    r"N[UÚ]M\.(?:DE +ORDEN)?\s*(\d+)\s+NO PROCLAMADA$", re.MULTILINE | re.IGNORECASE
+)
+
+
+def _fix_tarragona_candidacy_naming(text: str) -> str:
+    for match in _TARRAGONA_CANDIDACY_RE.finditer(text):
+        number, party_name, party_abbr = match.groups()
+        new_line = f"\nCandidatura número: {number}. {party_name} ({party_abbr})\n"
+        text = text.replace(match.group(0), new_line)
+    for match in _TARRAGONA_NOT_PROCLAIMED_CANDIDACY_RE.finditer(text):
+        number = match.group(1)
+        new_line = f"\nCandidatura número: {number}. RELLENO\nNO PROCLAMADA\n"
+        text = text.replace(match.group(0), new_line)
+    return text
 
 
 @register_fixer("cataluna", 1999, 10)
@@ -282,19 +304,59 @@ def fix_cataluna_2010_11(text: str) -> str:
     return text
 
 
+_CATALUNA_2015_09_CANDIDATE_RE = re.compile(
+    rf"(?:[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+ )+[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+$"
+)
+
+
+@register_fixer("cataluna", 2015, 9)
+def fix_cataluna_2015_09(text: str) -> str:
+    text = fix_missing_substitutes(text, _CATALUNA_2015_09_CANDIDATE_RE)
+    text = _fix_tarragona_candidacy_naming(text)
+    # TODO: Fix lleida weird table
+    return text
+
+
+@register_fixer("cataluna", 2017, 12)
+def fix_cataluna_2017_12(text: str) -> str:
+    text = _fix_tarragona_candidacy_naming(text)
+    return text
+
+
 @register_fixer("cataluna", 2021, 2)
 def fix_cataluna_2021_02(text: str) -> str:
+    # Remove preamble
+    text = text.replace(
+        "PER UN MÓN MÉS JUST\nSIGLAS:", "PER UN MÓN MÉS JUST\nSIGLAS:\nPUM+J"
+    )
+    text = _fix_tarragona_candidacy_naming(text)
+    # Remove duplicate in Catalan
+    for page in range(15, 29):
+        if f"{page}/28" in text:
+            return ""
     # Fix missing candidacy
     text = text.replace(
         "6.- JUNTS PER CATALUNYA (JxCat)",
         "Candidatura número: 5. RELLENO\nNO PROCLAMADA\n6.- JUNTS PER CATALUNYA (JxCat)",
     )
     # Fix ambiguous candidacy
-    text = text.replace("11.- VOX (VOX)", "Candidatura número: 11. VOX (VOX)")
+    text = text.replace(
+        "11.- VOX (VOX)",
+        "Candidatura número: 10. RELLENO\nNO PROCLAMADA\nCandidatura número: 11. VOX (VOX)",
+    )
     # Fix missing candidacy
-    text = text.replace("14.- IZQUIERDA EN POSITIVO (IZQP)", "Candidatura número: 13. RELLENO\nNO PROCLAMADA\n14.- IZQUIERDA EN POSITIVO (IZQP)")
-    text = text.replace("18.- MOVIMENT PRIMÀRIES PER LA INDEPENDÈNCIA DE CATALUNYA (MPIC)", "Candidatura número: 15. RELLENO\nNO PROCLAMADA\nCandidatura número: 16. RELLENO\nNO PROCLAMADA\nCandidatura número: 17. RELLENO\nNO PROCLAMADA\n18.- MOVIMENT PRIMÀRIES PER LA INDEPENDÈNCIA DE CATALUNYA (MPIC)")
-    text = text.replace("22. RECORTES CERO-GRUP VERD-MUNICIPALISTES (RECORTES CERO-GV-M)", "Candidatura número: 21. RELLENO\nNO PROCLAMADA\n22. RECORTES CERO-GRUP VERD-MUNICIPALISTES (RECORTES CERO-GV-M)")
+    text = text.replace(
+        "14.- IZQUIERDA EN POSITIVO (IZQP)",
+        "Candidatura número: 13. RELLENO\nNO PROCLAMADA\n14.- IZQUIERDA EN POSITIVO (IZQP)",
+    )
+    text = text.replace(
+        "18.- MOVIMENT PRIMÀRIES PER LA INDEPENDÈNCIA DE CATALUNYA (MPIC)",
+        "Candidatura número: 15. RELLENO\nNO PROCLAMADA\nCandidatura número: 16. RELLENO\nNO PROCLAMADA\nCandidatura número: 17. RELLENO\nNO PROCLAMADA\n18.- MOVIMENT PRIMÀRIES PER LA INDEPENDÈNCIA DE CATALUNYA (MPIC)",
+    )
+    text = text.replace(
+        "22. RECORTES CERO-GRUP VERD-MUNICIPALISTES (RECORTES CERO-GV-M)",
+        "Candidatura número: 21. RELLENO\nNO PROCLAMADA\n22. RECORTES CERO-GRUP VERD-MUNICIPALISTES (RECORTES CERO-GV-M)",
+    )
     return text
 
 

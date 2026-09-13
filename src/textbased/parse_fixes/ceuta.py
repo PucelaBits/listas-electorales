@@ -37,6 +37,15 @@ def fix_ceuta_2015_05(text: str) -> str:
         lambda m: CEUTA_2015_05_REPLACEMENTS[m.group(0)], text
     )
 
+
+@register_fixer("ceuta", 2019, 5)
+def fix_ceuta_2019_05(text: str) -> str:
+    # Remove preamble
+    if "HACE PÚBLICO:" in text:
+        return ""
+    return text
+
+
 @register_fixer("ceuta", 2023, 5)
 def fix_ceuta_2023_05(text: str) -> str:
     # Remove preamble

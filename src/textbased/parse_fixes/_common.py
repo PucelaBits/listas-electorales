@@ -86,7 +86,7 @@ def clean_ocr_numbers(text: str) -> str:
 _HAS_NUMBER_RE = re.compile(r"^(\d+)\.")
 
 
-def autofill_missing_numbers(text: str) -> str:
+def autofill_intermediate_numbers(text: str) -> str:
     """
     Automatically fills in missing numbers in a list of candidates.
     It look at the line before and after without a number to determine the missing number.

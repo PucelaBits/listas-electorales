@@ -227,62 +227,29 @@ def fix_castilla_y_leon_2011_05(text: str) -> str:
 
 @register_fixer("castilla_y_leon", 2026, 3)
 def fix_castilla_y_leon_2026_03(text: str) -> str:
-    """Aplica las dos correcciones de errores (err_1 = BOC n.º 34, 19-feb-2026,
-    y err_2 = BOC n.º 35, 20-feb-2026) del texto de candidaturas publicado en
-    el BOC n.º 32 (17-feb-2026) — Decreto 1/2026, de 19 de enero.
-
-    Candidaturas.pdf es el BOC 32 completo; la capa de texto es limpia.
-    Corrigen: PALENCIA (cand. 3 y 7 "España Vaciada"/VOX, cand. 10
-    Mundo+Justo, cand. 14 SALF), LEÓN (cand. 16 SALF) y VALLADOLID (cand. 7
-    PACMA). Todas las líneas diana son únicas en el documento.
-
-      1. PALENCIA: "Candidatura núm.: 3. ESPAÑA VACIADA (ESPAÑA VACIADA)"
-         -> "…(EV)" (el acrónimo repetía el nombre).
-      2. PALENCIA VOX: "4.\t Doña MARÍA DEL PILAR JUNCO NAVASCUES"
-         -> "…NAVASCUÉS" (acentos).
-      3. PALENCIA Mundo+Justo: "2.\t Don AMADOR PARIS CAMINERO"
-         -> "…PARÍS CAMINERO".
-      4. PALENCIA SALF: "4.\t Doña NOEMI DORADO MARTINEZ"
-         -> "4.\t Doña NOEMÍ DORADO MARTÍNEZ".
-      5. LEÓN SALF: "12.\tDoña ALISSON PLET TEJADA HERRERA"
-         -> "12.\tDoña ALISSON POLET TEJADA HERRERA".
-      6. VALLADOLID PACMA: "Candidatura núm.: 7. PARTIDO ANIMALISTA CONTRA EL
-         MALTRATO ANIMAL \n(PACMA)" -> "…PARTIDO ANIMALISTA CON EL MEDIO AMBIENTE
-         \n(PACMA)". Se conserva el bloque de dos líneas (nombre con espacio
-         final + "(PACMA)" en su propia línea, como en el archivo) y el
-         "(PACMA)" — el "debe decir" de la errata se corta antes del
-         acrónimo pero lo que cambia es el nombre. (Nota: en este BOC 32 el
-         resto de candidaturas PACMA ya figuran como "…CON EL MEDIO AMBIENTE
-         (PACMA)"; la de Valladolid era la única con el nombre anterior.)
-    Se preservan exactamente los separadores del archivo (tabulación: "4.\t "
-    con espacio vs. "12.\t" sin espacio) y los espacios finales.
-
-    Las "Páginas" de la errata (36, 38, 40, 41, 43, 68) son las del BOC 32
-    impreso; al offset +11 sobre el índice de página del PDF (36→p25,
-    38→p27, 40→p29, 41→p30, 43→p32, 68→p57).
-    """
+    # Errata (err.pdf)
     text = text.replace(
         "Candidatura núm.: 3. ESPAÑA VACIADA (ESPAÑA VACIADA)",
         "Candidatura núm.: 3. ESPAÑA VACIADA (EV)",
     )
     text = text.replace(
-        "4.\t Doña MARÍA DEL PILAR JUNCO NAVASCUES",
-        "4.\t Doña MARÍA DEL PILAR JUNCO NAVASCUÉS",
+        "4. Doña MARÍA DEL PILAR JUNCO NAVASCUES",
+        "4. Doña MARÍA DEL PILAR JUNCO NAVASCUÉS",
     )
     text = text.replace(
-        "2.\t Don AMADOR PARIS CAMINERO",
-        "2.\t Don AMADOR PARÍS CAMINERO",
+        "2. Don AMADOR PARIS CAMINERO",
+        "2. Don AMADOR PARÍS CAMINERO",
     )
     text = text.replace(
-        "4.\t Doña NOEMI DORADO MARTINEZ",
-        "4.\t Doña NOEMÍ DORADO MARTÍNEZ",
+        "4. Doña NOEMI DORADO MARTINEZ",
+        "4. Doña NOEMÍ DORADO MARTÍNEZ",
     )
     text = text.replace(
-        "12.\tDoña ALISSON PLET TEJADA HERRERA",
-        "12.\tDoña ALISSON POLET TEJADA HERRERA",
+        "12.Doña ALISSON PLET TEJADA HERRERA",
+        "12.Doña ALISSON POLET TEJADA HERRERA",
     )
     text = text.replace(
-        "Candidatura núm.: 7. PARTIDO ANIMALISTA CONTRA EL MALTRATO ANIMAL \n(PACMA)",
-        "Candidatura núm.: 7. PARTIDO ANIMALISTA CON EL MEDIO AMBIENTE \n(PACMA)",
+        "Candidatura núm.: 7. PARTIDO ANIMALISTA CONTRA EL MALTRATO ANIMAL\n(PACMA)",
+        "Candidatura núm.: 7. PARTIDO ANIMALISTA CON EL MEDIO AMBIENTE\n(PACMA)",
     )
     return text

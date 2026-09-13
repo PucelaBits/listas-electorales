@@ -3,7 +3,7 @@ import re
 from common import NAME_WHITELIST_CHARS, NAME_WHITELIST_CHARS_UPPER
 
 from ._common import (
-    autofill_missing_numbers,
+    autofill_intermediate_numbers,
     clean_ocr_numbers,
     fill_missing_numbers,
     fix_missing_substitutes,
@@ -98,7 +98,7 @@ def fix_aragon_1991_05(text: str) -> str:
     )
     text = text.replace("Yo 12. Jovita BIEL FLETA-", "12. Jovita BIEL FLETA")
     text = text.replace("13.Custodio ARJONA CAÑADAS", "18. Custodio ARJONA CAÑADAS")
-    text = autofill_missing_numbers(text)
+    text = autofill_intermediate_numbers(text)
     text = text.replace("GOMEZRODRIGUEZ", "GOMEZ RODRIGUEZ")
     text = text.replace("BASCONIDIMENEZ", "BASCON GIMENEZ")
     text = text.replace("AgustínAQUILUE", "Agustín AQUILUE")
@@ -138,7 +138,7 @@ def fix_aragon_1995_05(text: str) -> str:
     text = text.replace("DON CHESUS YUSTE CABELLO", "2. DON CHESUS YUSTE CABELLO")
     text = text.replace("MARCOS.RUBIO SAHUN", "MARCOS RUBIO SAHUN")
     text = clean_ocr_numbers(text)
-    text = autofill_missing_numbers(text)
+    text = autofill_intermediate_numbers(text)
     text = fix_missing_substitutes(text, _ARAGON_1995_05_NAME_REGEX)
     return text
 
