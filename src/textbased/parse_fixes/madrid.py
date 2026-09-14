@@ -5,7 +5,7 @@ from common import NAME_WHITELIST_CHARS
 from ._common import register_fixer
 
 _MADRID_INVERSE_CANDIDACY_REGEX = re.compile(
-    rf"^([{NAME_WHITELIST_CHARS}\d \(\)\+\.’]+)[\r?\n]+(Candidatura número: \d+)$",
+    rf"^([{NAME_WHITELIST_CHARS}\d \(\)\+\.’]+)[\r?\n]+(Candidatura número: \d+\.?)$",
     re.MULTILINE,
 )
 
@@ -55,6 +55,12 @@ def fix_madrid_2011_05(text: str) -> str:
 
 @register_fixer("madrid", 2015, 5)
 def fix_madrid_2015_05(text: str) -> str:
+    # TODO: Errata (err.pdf)
+    text = text.replace(
+        "Don Gonzalo Martín García (DEMOCRACIA NACIONAL)",
+        "Don Gonzalo Martín García (DEMOCRACIA NACIONAL)\n108. Doña Adelina Valverde Zabala (LA FALANGE-FE)\n109. Doña Marta Beatriz Fernández Fernández (LA FALANGE-FE)\n110. Doña Susana Agraz Cazaña (Independiente)\n111. Don Sergio García Rubio (LA FALANGE-FE)\n112. Don Ángel Mañas Pérez (LA FALANGE- FE)\n113. Doña Dolores Magro Martínez (LA FALANGE-FE)\n114. Doña Raquel Vicente-Ruiz Aguilar (Independiente)\n115. Doña Gemma Sainz Bonilla (LA FALANGE-FE)\n116. Don Faustino Fuentes Álvarez (LA FALANGE-FE)\n117. Don Carlos Javier Rodríguez Muñoz (LA FALANGE-FE)\n118. Doña María Magdalena Carbajo Serrano (DEMOCRACIA NACIONAL)\n119. Don Sergio Felipe Benavente (LA FALANGE-FE)\n120. Doña María Alejandra Alonso Pardo (Independiente)\n121. Don Nemesio Cabezuela Varela (LA FALANGE-FE)\n122. Don Camilo Luis Rodríguez Fraile (LA FALANGE-FE)\n123. Don José López García (LA FALANGE-FE)\n124. Doña Carmen Lobo Pérez (LA FALANGE-FE)\n125. Doña Lucía Maroto Cuenca (LA FALANGE-FE)\n126. Don Gonzalo Chicharro Lamamie de Clairac (MOVIMIENTO CATÓLICO ESPAÑOL)\n127. Don Fernando Maqueda Jiménez (LA FALANGE-FE)\n128. Doña Marleny Morales Marichal (LA FALANGE-FE)\n129. Doña María Teresa de Jesús San Román Bachiller (DEMOCRACIA NACIONAL)",
+    )
+    text = text.replace("\xad", "-")
     text = _madrid_inverse_candidacy_fix(text)
     return text
 

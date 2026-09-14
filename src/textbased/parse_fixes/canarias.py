@@ -2,25 +2,25 @@ import re
 
 from common import NAME_WHITELIST_CHARS, NAME_WHITELIST_CHARS_UPPER
 
-from ._common import number_candidates, register_fixer
+from ._common import UPPER_CANDIDATE_REGEX, number_candidates, register_fixer
 
 
 def _canarias_province_fix(text: str) -> str:
     suffix = 1
-    text = text.replace("Fuerteventura", f"CAN-{suffix}")
-    text = text.replace("FUERTEVENTURA", f"CAN-{suffix}")
-    text = text.replace("Gran Canaria", f"CAN-{suffix + 1}")
-    text = text.replace("GRAN CANARIA", f"CAN-{suffix + 1}")
-    text = text.replace("La Gomera", f"CAN-{suffix + 2}")
-    text = text.replace("LA GOMERA", f"CAN-{suffix + 2}")
-    text = text.replace("Lanzarote", f"CAN-{suffix + 3}")
-    text = text.replace("LANZAROTE", f"CAN-{suffix + 3}")
-    text = text.replace("La Palma", f"CAN-{suffix + 4}")
-    text = text.replace("LA PALMA", f"CAN-{suffix + 4}")
-    text = text.replace("Tenerife", f"CAN-{suffix + 5}")
-    text = text.replace("TENERIFE", f"CAN-{suffix + 5}")
-    text = text.replace("El Hierro", f"CAN-{suffix + 6}")
-    text = text.replace("EL HIERRO", f"CAN-{suffix + 6}")
+    text = text.replace("Fuerteventura\n", f"CAN-{suffix}\n")
+    text = text.replace("FUERTEVENTURA\n", f"CAN-{suffix}\n")
+    text = text.replace("Gran Canaria\n", f"CAN-{suffix + 1}\n")
+    text = text.replace("GRAN CANARIA\n", f"CAN-{suffix + 1}\n")
+    text = text.replace("La Gomera\n", f"CAN-{suffix + 2}\n")
+    text = text.replace("LA GOMERA\n", f"CAN-{suffix + 2}\n")
+    text = text.replace("Lanzarote\n", f"CAN-{suffix + 3}\n")
+    text = text.replace("LANZAROTE\n", f"CAN-{suffix + 3}\n")
+    text = text.replace("La Palma\n", f"CAN-{suffix + 4}\n")
+    text = text.replace("LA PALMA\n", f"CAN-{suffix + 4}\n")
+    text = text.replace("Tenerife\n", f"CAN-{suffix + 5}\n")
+    text = text.replace("TENERIFE\n", f"CAN-{suffix + 5}\n")
+    text = text.replace("El Hierro\n", f"CAN-{suffix + 6}\n")
+    text = text.replace("EL HIERRO\n", f"CAN-{suffix + 6}\n")
     return text
 
 
@@ -42,6 +42,7 @@ def fix_canarias_2007_05(text: str) -> str:
     text = text.replace("Pedro Jesús Betancor Machón", "Pedro Jesús Betancor Machín")
     text = text.replace("Germán Briton Martín", "Germán Brito Martín")
     text = text.replace("Félix Andrés Gonzalo Lorenzo", "Félix Andrés González Lorenzo")
+    text = _canarias_province_fix(text)
     return text
 
 
@@ -98,16 +99,16 @@ def fix_canarias_2011_05(text: str) -> str:
         "Anotomía Mª\nVera\nPerera",
         "Antonia Mª\nVera\nPerera",
     )
+    text = _canarias_province_fix(text)
     return text
 
 
-# BOC 82, err.pdf (Junta Electoral de Las Palmas, BOC nº 80 de 28.4.15):
-#   Lanzarote, Candidatura núm.: 10 UNIDOS.
-#   cand. 2 "Francisco Guzman Rodriguez" -> "... Reyes" (missing second surname);
-#   cand. 4 "Natalia Curbelo Cabrero" -> "... Cabrera".
-#   Names are printed uppercase; both full strings are unique in the file.
+_CANARIAS_2015_05_LAST_NUMBER = None
+
+
 @register_fixer("canarias", 2015, 5)
 def fix_canarias_2015_05(text: str) -> str:
+    # Errata (err.pdf)
     text = text.replace(
         "FRANCISCO GUZMAN RODRIGUEZ",
         "FRANCISCO GUZMAN RODRIGUEZ REYES",
@@ -116,21 +117,34 @@ def fix_canarias_2015_05(text: str) -> str:
         "NATALIA CURBELO CABRERO",
         "NATALIA CURBELO CABRERA",
     )
+    # Other fixes to facilitate parsing
+    text = text.replace("M2. ", "MARÍA ")
+    text = text.replace("M2 ", "MARÍA ")
+    text = text.replace("PABLO l. GARCÍA HERNÁNDEZ", "PABLO I. GARCÍA HERNÁNDEZ")
+    text = text.replace(
+        "CANARIAS DECIDE IZQUIERDA UNIDA CANARIA-LOS VERDES-\n",
+        "CANARIAS DECIDE IZQUIERDA UNIDA CANARIA-LOS VERDES-",
+    )
+    text = text.replace(
+        "INICIATIVA POR EL HIERRO-IZQUIERDA UNIDA CANARIA-\n",
+        "INICIATIVA POR EL HIERRO-IZQUIERDA UNIDA CANARIA-",
+    )
+    text = text.replace(
+        "CANARIAS DECIDE IZQUIERDA UNIDA CANARIA-LOS VERDES-UNIDAD DEL\n",
+        "CANARIAS DECIDE IZQUIERDA UNIDA CANARIA-LOS VERDES-UNIDAD DEL ",
+    )
+    text = _canarias_province_fix(text)
+    global _CANARIAS_2015_05_LAST_NUMBER
+    text, last_number = number_candidates(
+        text,
+        UPPER_CANDIDATE_REGEX,
+        last_number=_CANARIAS_2015_05_LAST_NUMBER,
+    )
+    _CANARIAS_2015_05_LAST_NUMBER = last_number
     return text
 
 
 _CANARIAS_2019_05_LAST_NUMBER = None
-_CANARIAS_2019_05_CANDIDATE_REGEX = re.compile(
-    r"^(?!NO PROCLAMADA)(?:["
-    + NAME_WHITELIST_CHARS_UPPER
-    + r"\.]+ +)+(?:\(["
-    + NAME_WHITELIST_CHARS_UPPER
-    + r"\. ]+\) +)?(?:["
-    + NAME_WHITELIST_CHARS_UPPER
-    + r"\.]+ *)+(?:\(["
-    + NAME_WHITELIST_CHARS
-    + r"\. ]+\))? *$"
-)
 
 
 @register_fixer("canarias", 2019, 5)
@@ -155,7 +169,7 @@ def fix_canarias_2019_05(text: str) -> str:
     global _CANARIAS_2019_05_LAST_NUMBER
     text, last_number = number_candidates(
         text,
-        _CANARIAS_2019_05_CANDIDATE_REGEX,
+        UPPER_CANDIDATE_REGEX,
         last_number=_CANARIAS_2019_05_LAST_NUMBER,
     )
     _CANARIAS_2019_05_LAST_NUMBER = last_number
@@ -164,17 +178,6 @@ def fix_canarias_2019_05(text: str) -> str:
 
 
 _CANARIAS_2023_05_LAST_NUMBER = None
-_CANARIAS_2023_05_CANDIDATE_REGEX = re.compile(
-    r"^(?!NO PROCLAMADA)(?:["
-    + NAME_WHITELIST_CHARS_UPPER
-    + r"]+ +)+(?:\(["
-    + NAME_WHITELIST_CHARS_UPPER
-    + r" ]+\) +)?(?:["
-    + NAME_WHITELIST_CHARS_UPPER
-    + r"]+ *)+(?:\(["
-    + NAME_WHITELIST_CHARS
-    + r" ]+\))? *$"
-)
 
 
 @register_fixer("canarias", 2023, 5)
@@ -195,7 +198,7 @@ def fix_canarias_2023_05(text: str) -> str:
     global _CANARIAS_2023_05_LAST_NUMBER
     text, last_number = number_candidates(
         text,
-        _CANARIAS_2023_05_CANDIDATE_REGEX,
+        UPPER_CANDIDATE_REGEX,
         last_number=_CANARIAS_2023_05_LAST_NUMBER,
     )
     _CANARIAS_2023_05_LAST_NUMBER = last_number

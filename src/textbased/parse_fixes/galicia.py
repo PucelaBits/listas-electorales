@@ -144,3 +144,13 @@ def fix_galicia_2009_03(text: str) -> str:
     for pattern, repl in P_GALICIA_2009_03_PATTERNS:
         text = pattern.sub(repl, text)
     return text
+
+
+@register_fixer("galicia", 2012, 10)
+def fix_galicia_2012_10(text: str) -> str:
+    # Facilitate parsing
+    text = text.replace(
+        "I. Relación de candidaturas proclamadas en la circunscripción electoral\n",
+        "I. Relación de candidaturas proclamadas en la circunscripción electoral ",
+    )
+    return text

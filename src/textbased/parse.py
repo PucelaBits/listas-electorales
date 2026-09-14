@@ -98,7 +98,7 @@ def _has_trash_text(line: str) -> bool:
 
 class TextElectionParser:
     PROVINCE_RE = re.compile(
-        rf"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?\s+DE\s+|ELECTORAU\s+PROVINCIAU\s+DE\s+|DE\s+LA\s+COMUNIDAD\s+AUT[ÓO]NOMA\s+DE\s+|PROVINCIAL\s+DE\s+|DE\s+ZONA\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL:?\s+|PROVINCIA\s+DE\s+)(ASTU\-\d{{1}}|BALE\-\d{{1,2}}|CAN\-\d{{1}}|MUR\-\d{{1}}|{'|'.join(PROVINCES_LIST)})\b",
+        rf"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?\s+DE\s+|ELECTORAU\s+PROVINCIAU\s+DE\s+|DE\s+LA\s+COMUNIDAD\s+AUT[ÓO]NOMA\s+DE\s+|PROVINCIAL\s+DE\s+|DE\s+ZONA\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL(?:\:?\s+|\s+DE\s+)?|PROVINCIA\s+DE\s+)(ASTU\-\d{{1}}|BALE\-\d{{1,2}}|CAN\-\d{{1}}|MUR\-\d{{1}}|{'|'.join(PROVINCES_LIST)})\b",
         re.IGNORECASE,
     )
 

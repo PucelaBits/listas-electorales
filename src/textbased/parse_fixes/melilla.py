@@ -1,4 +1,29 @@
-from ._common import register_fixer
+import re
+
+from ._common import number_candidates, register_fixer
+
+_MELILLA_2015_05_LAST_NUMBER = None
+_MELILLA_2015_05_CANDIDATE_REGEX = re.compile(r"^(?:Don|Doña) (.+)$")
+
+
+@register_fixer("melilla", 2015, 5)
+def fix_melilla_2015_05(text: str) -> str:
+    # Remove preamble
+    if "236. CIUDAD AUTÓNOMA" in text:
+        return ""
+    print(text)
+    text = text.replace(
+        "Doña María Fernanda Álvarez De Los Corrales Melgar\n23",
+        "23. Doña María Fernanda Álvarez De Los Corrales Melgar",
+    )
+    global _MELILLA_2015_05_LAST_NUMBER
+    text, last_number = number_candidates(
+        text,
+        _MELILLA_2015_05_CANDIDATE_REGEX,
+        last_number=_MELILLA_2015_05_LAST_NUMBER,
+    )
+    _MELILLA_2015_05_LAST_NUMBER = last_number
+    return text
 
 
 @register_fixer("melilla", 2019, 5)

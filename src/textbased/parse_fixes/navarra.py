@@ -2,13 +2,16 @@ import re
 
 from common import NAME_WHITELIST_CHARS
 
-from ._common import register_fixer
-
-_NAVARRA_CANDIDACY_REGEX = re.compile(
-    r"^([" + NAME_WHITELIST_CHARS + r"\s\(\)\+/]+) +\(R\-(\d+)\)$",
-    re.MULTILINE,
+from ._common import (
+    UPPER_CANDIDATE_REGEX,
+    number_candidates,
+    register_fixer,
 )
 
+_NAVARRA_CANDIDACY_REGEX = re.compile(
+    r"^([" + NAME_WHITELIST_CHARS + r" \(\)\+/]+)\s+\(R\-(\d+)\)$",
+    re.MULTILINE,
+)
 
 def _navarra_candidacy_fix(text: str) -> str:
     for match in re.finditer(_NAVARRA_CANDIDACY_REGEX, text):
@@ -62,9 +65,35 @@ def fix_navarra_2011_05(text: str) -> str:
     return text
 
 
+_NAVARRA_2015_05_LAST_NUMBER = None
+
+
 @register_fixer("navarra", 2015, 5)
 def fix_navarra_2015_05(text: str) -> str:
+    print(text)
+    # Remove preamble
+    text = text.replace("ANEXO\n", "")
+    # Remove concejos
+    if "JUNTA ELECTORAL DE ZONA DE AOIZ" in text:
+        text = text.split("JUNTA ELECTORAL DE ZONA DE AOIZ")[0]
+    text = text.replace("PODEMOS (R-5)", "PODEMOS (R-8)")
+    text = text.replace("(9-11", "(R-11)")
     text = _navarra_candidacy_fix(text)
+    print(text, repr(text))
+    # Fix OCR errors
+    text = text.replace("BS DE\n", "")
+    text = text.replace("FS RRA", "")
+    text = text.replace("u BIKENDI BAREA AIESTARAN", "11. BIKENDI BAREA AIESTARAN")
+    text = text.replace(
+        "JOSE MIGUEL BERNAL HIERRO\n", "JOSE MIGUEL BERNAL HIERRO DE ONA"
+    )
+    text = text.replace("2015\nDE ONA\n", "2015\n")
+    text = text.replace("1OSU", "IOSU")
+    global _NAVARRA_2015_05_LAST_NUMBER
+    text, last_number = number_candidates(
+        text, UPPER_CANDIDATE_REGEX, _NAVARRA_2015_05_LAST_NUMBER
+    )
+    _NAVARRA_2015_05_LAST_NUMBER = last_number
     return text
 
 

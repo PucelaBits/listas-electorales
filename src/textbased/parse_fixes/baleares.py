@@ -66,6 +66,11 @@ def fix_baleares_2011_05(text: str) -> str:
     )
     return text
 
+@register_fixer("baleares", 2015, 5)
+def fix_baleares_2015_05(text: str) -> str:
+    text = _baleares_province_fix(text)
+    return text
+
 
 @register_fixer("baleares", 2019, 5)
 def fix_baleares_2019_05(text: str) -> str:

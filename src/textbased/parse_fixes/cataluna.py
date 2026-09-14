@@ -308,12 +308,28 @@ _CATALUNA_2015_09_CANDIDATE_RE = re.compile(
     rf"(?:[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+ )+[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+$"
 )
 
+_CATALUNA_2015_09_LLEIDA_CANDIDACY_RE = re.compile(
+    rf"^(?:[{NAME_WHITELIST_CHARS_UPPER}]+[ ,]+)+.+[\r?\n]TITULARES", re.MULTILINE
+)
+
+_CATALUNA_2015_09_LLEIDA_CANDIDACY_INDEX = 0
+
 
 @register_fixer("cataluna", 2015, 9)
 def fix_cataluna_2015_09(text: str) -> str:
     text = fix_missing_substitutes(text, _CATALUNA_2015_09_CANDIDATE_RE)
     text = _fix_tarragona_candidacy_naming(text)
-    # TODO: Fix lleida weird table
+    text = text.replace(
+        "NÚM. DE ORDEN\n9\nFORMACIÓN POLÍTICA:\nCATALUNYA SÍ QUE ES POT",
+        "Candidatura número: 9. FORMACIÓN POLÍTICA:\nCATALUNYA SÍ QUE ES POT (CatSíqueesPot)",
+    )
+    global _CATALUNA_2015_09_LLEIDA_CANDIDACY_INDEX
+    for match in _CATALUNA_2015_09_LLEIDA_CANDIDACY_RE.finditer(text):
+        _CATALUNA_2015_09_LLEIDA_CANDIDACY_INDEX += 1
+        text = text.replace(
+            match.group(0),
+            f"Candidatura número: {_CATALUNA_2015_09_LLEIDA_CANDIDACY_INDEX}. {match.group(0)}",
+        )
     return text
 
 

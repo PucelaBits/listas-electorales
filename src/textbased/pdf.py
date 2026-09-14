@@ -107,7 +107,7 @@ class PDFReader:
 
         return False
 
-    def __is_double_column(self, doc: pymupdf.Document) -> bool:
+    def __is_double_column(self, doc: pymupdf.Document, force_page: int = None) -> bool:
         """
         Reads a page in the middle of the document to determine if it uses a two-column layout.
         Returns True if a significant portion of the text area is in the right half,
@@ -116,8 +116,13 @@ class PDFReader:
         if doc.page_count == 0:
             return False
 
-        # Select a page in the middle of the document to avoid title/header pages
-        mid_index = doc.page_count // 2
+        # If a specific page is forced, use it
+        if force_page is not None:
+            mid_index = force_page
+        else:
+            # Select a page in the middle of the document to avoid title/header pages
+            mid_index = doc.page_count // 2
+
         page = doc[mid_index]
 
         midpoint_x = page.rect.width / 2
@@ -153,6 +158,9 @@ class PDFReader:
         result = ratio > 0.35
 
         if result:
+            # If detected double-column, it could be a false positive, try the next page to confirm
+            if mid_index + 1 < doc.page_count:
+                return self.__is_double_column(doc, force_page=mid_index + 1)
             logger.debug(
                 f"Detected double-column layout on page {mid_index} with {right_column_area:.2f}/{total_area:.2f} ({ratio:.2%}) of text area on the right side."
             )

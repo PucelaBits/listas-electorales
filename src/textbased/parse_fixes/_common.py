@@ -5,6 +5,10 @@ from common import NAME_WHITELIST_CHARS, NAME_WHITELIST_CHARS_UPPER
 
 PARSE_FIXES: dict[tuple[str, int, int], Callable[[str], str]] = {}
 
+UPPER_CANDIDATE_REGEX = re.compile(
+    rf"^(?!NO PROCLAMADA)(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ +(?:DE +|LOS +|DEL +|LA +)*){{1,2}}(?:\([{NAME_WHITELIST_CHARS_UPPER}\. ]+\) +(?:DE +|LOS +|DEL +|LA +)*)?(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ *(?:DE +|LOS +|DEL +|LA +)*){{1,3}}(?:\([{NAME_WHITELIST_CHARS}\. ]+\))? *$"
+)
+
 
 def register_fixer(region: str, year: int, month: int):
     """Decorator to register a text-fixing function for a specific batch."""
@@ -83,7 +87,7 @@ def clean_ocr_numbers(text: str) -> str:
     return text
 
 
-_HAS_NUMBER_RE = re.compile(r"^(\d+)\.")
+_HAS_NUMBER_RE = re.compile(r"^(\d+)\.?")
 
 
 def autofill_intermediate_numbers(text: str) -> str:
@@ -260,6 +264,7 @@ def number_candidates(
 ) -> str:
     """
     Automatically numbers candidates in the text, starting from last_number if provided.
+    It overrides numbers in the text if present
     """
     lines = text.split("\n")
     result = []
@@ -269,14 +274,19 @@ def number_candidates(
         stripped_line = line.lstrip()  # Remove leading whitespace for accurate checking
 
         # Check if the line is a candidate name
-        if candidate_regex.match(stripped_line) and counter is not None:
+        number_match = _HAS_NUMBER_RE.match(stripped_line)
+        if number_match and counter is not None:
+            # Override the number with the current counter
+            result.append(f"{counter}. {stripped_line[number_match.end() :].lstrip()}")
+            counter += 1
+        elif candidate_regex.match(stripped_line) and counter is not None:
             # Add the number and increment the counter
             result.append(f"{counter}. {line}")
             counter += 1
         else:
             # Reset the counter if we hit a new list header or the "SUPLENTES" section
             upper_line = stripped_line.upper()
-            if "CANDIDATURA NÚM." in upper_line or "SUPLENTES" in upper_line:
+            if "CANDIDATURA NÚM" in upper_line or "SUPLENTES" in upper_line:
                 counter = 1
 
             # Append the non-candidate line exactly as it was
