@@ -5,6 +5,23 @@
 
 set -euo pipefail
 
+# --- Argument Parsing ---
+FORCE=0
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --force)
+            FORCE=1
+            shift
+            ;;
+        *)
+            echo "Unknown argument: $1" >&2
+            echo "Usage: $0 [--force]" >&2
+            exit 1
+            ;;
+    esac
+done
+# ------------------------
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 CONFIG="${SCRIPT_DIR}/tesseract_config.cfg"
@@ -19,6 +36,13 @@ trap 'rm -f "$FAIL_LOG"' EXIT
 ocr_one() {
     local src="$1"
     local dest="${src/raw_/}"
+    
+    # Skip if file exists and --force was not provided
+    if [[ -f "$dest" && "$FORCE" -eq 0 ]]; then
+        echo "SKIP: $dest already exists (use --force to overwrite)"
+        return 0
+    fi
+
     echo "OCR: $src -> $dest"
     if ! ocrmypdf -l spa --force-ocr --tesseract-pagesegmode 11 --output-type pdf --color-conversion-strategy Gray --continue-on-soft-render-error --tesseract-config "$CONFIG" "$src" "$dest"; then
         echo "ERROR: ocrmypdf failed for $src" >&2
