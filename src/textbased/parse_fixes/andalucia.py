@@ -5,6 +5,7 @@ from common import NAME_WHITELIST_CHARS
 from ._common import (
     clean_ocr_numbers,
     fill_missing_numbers,
+    fix_maria_ocr,
     fix_nine_line_ocr,
     fix_ten_line_ocr,
     register_fixer,
@@ -84,8 +85,7 @@ def fix_andalucia_1982_05(text: str) -> str:
     text = text.replace("N9. ", "Núm 9. ")
     text = text.replace("N9 ", "Núm 9. ")
     text = text.replace("D2. ", ". ")
-    text = text.replace("M2. ", "María ")
-    text = text.replace("M2 ", "María ")
+    text = fix_maria_ocr(text)
     text = text.replace("D2. María Linares Capel.", "María Linares Capel.")
     text = text.replace("11 p Obdulia Vázquez Cabreja", "11. Obdulia Vázquez Cabreja")
     text = text.replace(
@@ -367,7 +367,7 @@ def fix_andalucia_1986_06(text: str) -> str:
     text = text.replace("H M9. ", "1. María ")
     text = text.replace("M9. ", "María ")
     text = text.replace("ó Jorge Luis", "6. Jorge Luis")
-    text = text.replace("M1. ", "María ")
+    text = fix_maria_ocr(text)
     text = text.replace(
         "MA Francisco Medina Fernández", "11. Francisco Medina Fernández"
     )

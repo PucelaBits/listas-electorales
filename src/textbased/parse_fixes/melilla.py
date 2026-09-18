@@ -5,13 +5,18 @@ from ._common import number_candidates, register_fixer
 _MELILLA_2015_05_LAST_NUMBER = None
 _MELILLA_2015_05_CANDIDATE_REGEX = re.compile(r"^(?:Don|Doña) (.+)$")
 
+@register_fixer("melilla", 2011, 5)
+def fix_melilla_2011_05(text: str) -> str:
+    # Remove preamble
+    if "dos de abril (Boletín Oficial del Estado. núm. 80, martes tre" in text:
+        return "Circunscripción electoral de Melilla"
+    return text
 
 @register_fixer("melilla", 2015, 5)
 def fix_melilla_2015_05(text: str) -> str:
     # Remove preamble
     if "236. CIUDAD AUTÓNOMA" in text:
         return ""
-    print(text)
     text = text.replace(
         "Doña María Fernanda Álvarez De Los Corrales Melgar\n23",
         "23. Doña María Fernanda Álvarez De Los Corrales Melgar",

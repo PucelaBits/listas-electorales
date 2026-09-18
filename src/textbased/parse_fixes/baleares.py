@@ -51,19 +51,17 @@ def fix_baleares_1991_05(text: str) -> str:
     return text
 
 
-# BOIB 67, err.pdf (Num. 9832): PLIE (candidatura nº 18) Parlament list.
-# Erratum: Elisa Crespi Orell is printed in position 1 and Francisco
-# Fernández Ochoa in position 2, but the two are swapped (Crespi -> 2,
-# Fernández -> 1). The Consell Insular PLIE list in the other file also
-# starts with "1. Sra. ELISA CRESPI ORELL", but its position 2 is a
-# different name (Antonio Ramos López), so the 4-line anchor holding the
-# actual names of positions 1 and 2 is unique to the Parlament list.
 @register_fixer("baleares", 2011, 5)
 def fix_baleares_2011_05(text: str) -> str:
+    text = _baleares_province_fix(text)
+    # Errata (err.pdf)
     text = text.replace(
         "1.\nSra. ELISA CRESPI ORELL\n2.\nSr. FRANCISCO FERNANDEZ OCHOA",
         "1.\nSr. FRANCISCO FERNANDEZ OCHOA\n2.\nSra. ELISA CRESPI ORELL",
     )
+    # Remove lines that contain BOIB
+    text = re.sub(r"^.*BOIB.*$", "", text, flags=re.MULTILINE)
+    text = text.replace("Orden Nombre y apellidos", "")
     return text
 
 @register_fixer("baleares", 2015, 5)

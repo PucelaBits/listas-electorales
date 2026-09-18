@@ -1,6 +1,11 @@
 import re
 
-from ._common import register_fixer
+from ._common import (
+    UPPER_DON_CANDIDATE_NAME_REGEX,
+    fix_maria_ocr,
+    number_candidates,
+    register_fixer,
+)
 
 P_CYL_1983_05 = re.compile(r"^COALICION PCOE-PCEU", flags=re.MULTILINE)
 
@@ -163,56 +168,22 @@ def fix_castilla_y_leon_2003_05(text: str) -> str:
     return text
 
 
+_CYL_2011_05_LAST_NUMBER = None
+_CYL_2011_05_CANDIDACY_REGEX = re.compile(r"(\d+)\.\-\s+")
+
+
 @register_fixer("castilla_y_leon", 2011, 5)
 def fix_castilla_y_leon_2011_05(text: str) -> str:
-    """Aplica las erratas del BOC n.º 80 (27-abril-2011) que corrige el BOC
-    n.º 79 (26-abril-2011) — Decreto 1/2011, de 28 de marzo.
-
-    OJO: este candidaturas.pdf tiene la capa de texto PARCIALMENTE garbada por
-    codificación de fuente: los spans de ArialMT son limpios, pero varios
-    titulares (Arial-BoldMT subconjunto) salen con un cifrado César por fuente
-    y los DÍGITOS mapeados a caracteres de control (p. ej. "8.- IZQUIERDA..."
-    aparece como bytes \x18\x11\x10...). Esto limita lo que puede hacerse con
-    un find/replace: SOLO pueden corregirse las líneas cuyo texto sale limpio.
-
-    Aplicadas (todas en spans ArialMT limpios, únicas en el documento):
-      1. SALAMANCA (p. 32052): "Doña JOSEFA GARCÍA CIRAC" -> "Doña Mª JOSEFA
-         GARCÍA CIRAC" (cand. 1 PP).
-      2. SALAMANCA (p. 32054): suplente de Verdes de Salamanca: "Suplentes:\n1.\nDon EMILIO SANZ AIRAS"
-         -> "Suplentes:\n2.\nDon EMILIO SANTOS AIRAS" (bloqueo de 3 líneas para
-         anclar el número "1." que va en línea propia).
-      3. SALAMANCA (p. 32058, PREPAL): "Doña FRANCISCO GARCIA MARTIN" ->
-         "Don FRANCISCO GARCIA MARTIN" (solo cambia el honorífico
-         Doña->Don; se conserva el estilo sans-acentos del "debe decir").
-      4. SALAMANCA (p. 32058, PREPAL): "11. Don MARIA DEL CARMEN COSCARON VILLAR"
-         -> "11. Doña MARIA DEL CARMEN COSCARON VILLAR" (honorífico Don->Doña).
-      5. SEGOVIA (p. 32060, PSOE): "Don ALBERTO SERRA BARRERO (PSOE)" ->
-         "Don ALBERTO SERNA BARRERO (PSOE)".
-      6. SORIA (p. 32064, UCE): "Doña ROSA MARIA TERESA DEL CARMEN
-         CARAMANZANA ARAUJO " -> "Doña ROSA MARÍA TERESA DEL CARMEN
-         CARAMAZANA ARAUJO " (conserva el espacio final del archivo).
-
-    NO POSIBLE (titulares en la capa garbada — no se pueden reproducir los
-    strings limpios de "debe decir" sobre el texto garbado; ver
-    /memories/repo/error_fixes_regex.md, taxonomía de garbled):
-      - SALAMANCA (p. 32053): "4.- FORMACIÓN POLÍTICA: VERDES DE SALAMANCA
-        (9(5'(6)" [garbled] debería ir a "4. VERDES DE SALAMANCA (VERDES)".
-      - SEGOVIA (p. 32060): "4.- SEGOVIA DE IZQUIERDAS" [garbled] debe añadir
-        "(SEGOVIA DE IZQUIERDAS)" al final.
-      - SORIA (p. 32064): "8.- UNIFICACIÓN COMUNISTA DE ESPAÑA (UCE)" [garbled:
-        "817$..." -> con acento en la A de UNIFICACIÓN].
-    """
-    text = text.replace("Doña JOSEFA GARCÍA CIRAC", "Doña Mª JOSEFA GARCÍA CIRAC")
-    # El número del suplente "1." va en línea propia; se ancla a las
-    # 3 líneas para que sea único (hay muchos "1." aislados).
+    # Errata (err.pdf)
+    text = text.replace("Doña JOSEFA GARCÍA CIRAC", "Doña MARÍA JOSEFA GARCÍA CIRAC")
     text = text.replace(
         "Suplentes:\n1.\nDon EMILIO SANZ AIRAS",
         "Suplentes:\n2.\nDon EMILIO SANTOS AIRAS",
     )
     text = text.replace("Doña FRANCISCO GARCIA MARTIN", "Don FRANCISCO GARCIA MARTIN")
     text = text.replace(
-        "11. Don MARIA DEL CARMEN COSCARON VILLAR",
-        "11. Doña MARIA DEL CARMEN COSCARON VILLAR",
+        "Don MARIA DEL CARMEN COSCARON VILLAR",
+        "Doña MARIA DEL CARMEN COSCARON VILLAR",
     )
     text = text.replace(
         "Don ALBERTO SERRA BARRERO (PSOE)",
@@ -222,6 +193,19 @@ def fix_castilla_y_leon_2011_05(text: str) -> str:
         "Doña ROSA MARIA TERESA DEL CARMEN CARAMANZANA ARAUJO ",
         "Doña ROSA MARÍA TERESA DEL CARMEN CARAMAZANA ARAUJO ",
     )
+    # Fix OCR
+    text = text.replace("JAlONE", "JAIONE")
+    text = fix_maria_ocr(text, upper=True)
+    text = _CYL_2011_05_CANDIDACY_REGEX.sub(r"Candidatura núm.: \1. ", text)
+    # Fix missing candidacy
+    text = text.replace("Candidatura núm.: 15. PARTIDO DE CASTILLAY LEON (PCAL)", "Candidatura núm.: 14. RELLENO\nNO PROCLAMADA\nCandidatura núm.: 15. PARTIDO DE CASTILLAY LEON (PCAL)")
+    global _CYL_2011_05_LAST_NUMBER
+    text, last_number = number_candidates(
+        text,
+        UPPER_DON_CANDIDATE_NAME_REGEX,
+        last_number=_CYL_2011_05_LAST_NUMBER,
+    )
+    _CYL_2011_05_LAST_NUMBER = last_number
     return text
 
 

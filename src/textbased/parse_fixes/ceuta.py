@@ -1,6 +1,15 @@
 from ._common import register_fixer
 
 
+@register_fixer("ceuta", 2011, 5)
+def fix_ceuta_2011_05(text: str) -> str:
+    # Remove preamble
+    text = text.replace("9.- DOÑA LOURDES", "")
+    # Remove footer
+    if "Las tarifas vigentes, según acuerdo plenario de " in text:
+        return ""
+    return text
+
 @register_fixer("ceuta", 2015, 5)
 def fix_ceuta_2015_05(text: str) -> str:
     # Remove preamble

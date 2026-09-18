@@ -9,7 +9,7 @@ from ._common import (
 )
 
 _NAVARRA_CANDIDACY_REGEX = re.compile(
-    r"^([" + NAME_WHITELIST_CHARS + r" \(\)\+/]+)\s+\(R\-(\d+)\)$",
+    rf"^([{NAME_WHITELIST_CHARS} \d\+/]+(?:\s+\(.+\))?)\s+\(R\-(\d+)\)$",
     re.MULTILINE,
 )
 
@@ -61,6 +61,9 @@ def fix_navarra_2007_05(text: str) -> str:
 
 @register_fixer("navarra", 2011, 5)
 def fix_navarra_2011_05(text: str) -> str:
+    # Remove concejos
+    if "JUNTA ELECTORAL DE ZONA DE AOIZ" in text:
+        text = text.split("JUNTA ELECTORAL DE ZONA DE AOIZ")[0]
     text = _navarra_candidacy_fix(text)
     return text
 
@@ -70,7 +73,6 @@ _NAVARRA_2015_05_LAST_NUMBER = None
 
 @register_fixer("navarra", 2015, 5)
 def fix_navarra_2015_05(text: str) -> str:
-    print(text)
     # Remove preamble
     text = text.replace("ANEXO\n", "")
     # Remove concejos
@@ -79,7 +81,6 @@ def fix_navarra_2015_05(text: str) -> str:
     text = text.replace("PODEMOS (R-5)", "PODEMOS (R-8)")
     text = text.replace("(9-11", "(R-11)")
     text = _navarra_candidacy_fix(text)
-    print(text, repr(text))
     # Fix OCR errors
     text = text.replace("BS DE\n", "")
     text = text.replace("FS RRA", "")
@@ -87,6 +88,7 @@ def fix_navarra_2015_05(text: str) -> str:
     text = text.replace(
         "JOSE MIGUEL BERNAL HIERRO\n", "JOSE MIGUEL BERNAL HIERRO DE ONA"
     )
+    text = text.replace("PATRICIA DE PEDRO APARI:", "PATRICIA DE PEDRO APARICIO")
     text = text.replace("2015\nDE ONA\n", "2015\n")
     text = text.replace("1OSU", "IOSU")
     global _NAVARRA_2015_05_LAST_NUMBER

@@ -19,3 +19,8 @@ def fix_cantabria_2007_05(text: str) -> str:
         "37. D. IVAN MARTÍNEZ FERNÁNDEZ - (INDEPENDIENTE)",
     )
     return text
+
+@register_fixer("cantabria", 2011, 5)
+def fix_cantabria_2011_05(text: str) -> str:
+    text = text.replace("Orden Nombre y Apellidos\n", "")
+    return text

@@ -1,6 +1,10 @@
 import re
 
-from ._common import register_fixer
+from ._common import (
+    LOWER_DON_CANDIDATE_NAME_REGEX,
+    fix_missing_substitutes,
+    register_fixer,
+)
 
 P_GALICIA_1997_10_PATTERNS = [
     (
@@ -153,4 +157,5 @@ def fix_galicia_2012_10(text: str) -> str:
         "I. Relación de candidaturas proclamadas en la circunscripción electoral\n",
         "I. Relación de candidaturas proclamadas en la circunscripción electoral ",
     )
+    text = fix_missing_substitutes(text, LOWER_DON_CANDIDATE_NAME_REGEX)
     return text

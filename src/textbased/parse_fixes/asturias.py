@@ -3,10 +3,16 @@ from ._common import register_fixer
 
 def _asturias_province_fix(text: str) -> str:
     text = text.replace("ORIENTE\n", "Astu-1\n")
+    text = text.replace("ORIENTAL\n", "Astu-1\n")
+    text = text.replace("ORIENTAL.\n", "Astu-1\n")
     text = text.replace("Oriente\n", "Astu-1\n")
     text = text.replace("OCCIDENTE\n", "Astu-2\n")
+    text = text.replace("OCCIDENTAL\n", "Astu-2\n")
+    text = text.replace("OCCIDENTAL.\n", "Astu-2\n")
     text = text.replace("Occidente\n", "Astu-2\n")
     text = text.replace("CENTRO\n", "Astu-3\n")
+    text = text.replace("CENTRAL\n", "Astu-3\n")
+    text = text.replace("CENTRAL.\n", "Astu-3\n")
     text = text.replace("Centro\n", "Astu-3\n")
     return text
 
@@ -55,12 +61,16 @@ def fix_asturias_2007_05(text: str) -> str:
 
 @register_fixer("asturias", 2011, 5)
 def fix_asturias_2011_05(text: str) -> str:
+    text = text.replace("Candidatos:\n", "")
+    text = text.replace("CIRCUNSCRIPCIÓN ", "CIRCUNSCRIPCIÓN ELECTORAL ")
     text = _asturias_province_fix(text)
     return text
 
 
 @register_fixer("asturias", 2012, 3)
 def fix_asturias_2012_03(text: str) -> str:
+    text = text.replace("Candidatos\n", "")
+    text = text.replace("CIRCUNSCRIPCIÓN ", "CIRCUNSCRIPCIÓN ELECTORAL ")
     text = _asturias_province_fix(text)
     return text
 

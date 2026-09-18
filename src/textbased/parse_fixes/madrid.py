@@ -5,7 +5,7 @@ from common import NAME_WHITELIST_CHARS
 from ._common import register_fixer
 
 _MADRID_INVERSE_CANDIDACY_REGEX = re.compile(
-    rf"^([{NAME_WHITELIST_CHARS}\d \(\)\+\.’]+)[\r?\n]+(Candidatura número: \d+\.?)$",
+    rf"^([{NAME_WHITELIST_CHARS}\d \(\)\+\.’]+)[\r?\n]+(Candidatura número[:|\.]? \d+\.?)$",
     re.MULTILINE,
 )
 
@@ -49,6 +49,9 @@ def fix_madrid_2007_05(text: str) -> str:
 
 @register_fixer("madrid", 2011, 5)
 def fix_madrid_2011_05(text: str) -> str:
+    # Remove header
+    if "Candidaturas proclamadas por los diversos partidos políticos y coaliciones que" in text:
+        return "Circunscripción electoral de Madrid"
     text = _madrid_inverse_candidacy_fix(text)
     return text
 

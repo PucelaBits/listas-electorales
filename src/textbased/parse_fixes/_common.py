@@ -1,14 +1,54 @@
 import re
 from collections.abc import Callable
 
-from common import NAME_WHITELIST_CHARS, NAME_WHITELIST_CHARS_UPPER
+from common import (
+    NAME_WHITELIST_CHARS,
+    NAME_WHITELIST_CHARS_LOWER,
+    NAME_WHITELIST_CHARS_UPPER,
+)
 
 PARSE_FIXES: dict[tuple[str, int, int], Callable[[str], str]] = {}
 
 UPPER_CANDIDATE_REGEX = re.compile(
     rf"^(?!NO PROCLAMADA)(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ +(?:DE +|LOS +|DEL +|LA +)*){{1,2}}(?:\([{NAME_WHITELIST_CHARS_UPPER}\. ]+\) +(?:DE +|LOS +|DEL +|LA +)*)?(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ *(?:DE +|LOS +|DEL +|LA +)*){{1,3}}(?:\([{NAME_WHITELIST_CHARS}\. ]+\))? *$"
 )
+UPPER_DON_CANDIDATE_NAME_REGEX = re.compile(
+    rf"^(?:DON|DOÑA|Don|Doña)\s+(?:[{NAME_WHITELIST_CHARS_UPPER}]+|FCO\.)(?:\s+[{NAME_WHITELIST_CHARS_UPPER}]+|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.|\s+FCO\.|\s+\(.+\))+$"
+)
+LOWER_DON_CANDIDATE_NAME_REGEX = re.compile(
+    rf"^(?:Don|Doña)\s+[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+(?:(?:\s+|\-)[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|\s+del|\s+las?|\s+de|\s+los|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.)+$"
+)
 
+_MULTILINE_CANDIDACY_RE = re.compile(
+    r"(\d+)\s+(?:FORMACIÓN POLÍTICA:|DENOMINACIÓN:?)\s+(.+)\s+SIGLAS:?\s*(.+)$", re.MULTILINE | re.IGNORECASE
+)
+
+_MULTILINE_NOT_PROCLAIMED_CANDIDACY_RE = re.compile(
+    r"N[UÚ]M\.(?:DE +ORDEN)?\s*(\d+)\s+NO PROCLAMADA$", re.MULTILINE | re.IGNORECASE
+)
+
+def fix_maria_ocr(text: str, upper: bool = False) -> str:
+    replace_text = "María" if not upper else "MARÍA"
+    text = text.replace("M1. ", f"{replace_text} ")
+    text = text.replace("M1 ", f"{replace_text} ")
+    text = text.replace("M2. ", f"{replace_text} ")
+    text = text.replace("M2 ", f"{replace_text} ")
+    text = text.replace("Mª.", f"{replace_text}")
+    text = text.replace("M.2", f"{replace_text}")
+    text = text.replace(" M ", f" {replace_text} ")
+    return text
+
+
+def fix_multiline_candidacy_naming(text: str) -> str:
+    for match in _MULTILINE_CANDIDACY_RE.finditer(text):
+        number, party_name, party_abbr = match.groups()
+        new_line = f"\nCandidatura número: {number}. {party_name} ({party_abbr})\n"
+        text = text.replace(match.group(0), new_line)
+    for match in _MULTILINE_NOT_PROCLAIMED_CANDIDACY_RE.finditer(text):
+        number = match.group(1)
+        new_line = f"\nCandidatura número: {number}. RELLENO\nNO PROCLAMADA\n"
+        text = text.replace(match.group(0), new_line)
+    return text
 
 def register_fixer(region: str, year: int, month: int):
     """Decorator to register a text-fixing function for a specific batch."""

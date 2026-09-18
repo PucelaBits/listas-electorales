@@ -24,6 +24,11 @@ _PUA_REGEX = re.compile(r"[\uF000-\uF0FF]")
 _PUA_TRANSLATION_TABLE = {i: i - 0xF000 for i in range(0xF000, 0xF100)}
 
 
+HARCODED_DOUBLE_PAGE_FIX = {
+    ("cantabria", 2011, 5): False,
+}
+
+
 def _fix_mupdf_pua_text(text: str) -> str:
     """
     Shifts characters mapped to the Private Use Area (U+F000 - U+F0FF)
@@ -32,25 +37,12 @@ def _fix_mupdf_pua_text(text: str) -> str:
     return text.translate(_PUA_TRANSLATION_TABLE)
 
 
-def _find_column_split_x(page: pymupdf.Page, words: list[tuple]) -> float:
+def _find_column_split_x(words: list[tuple]) -> float:
     """
     Calculates the center between two columns using the midpoint
     between the leftmost and rightmost text boundaries.
     Ignores headers and footers.
     """
-    # default_mid = page.rect.width / 2
-
-    # # Define vertical limits to ignore headers and footers
-    # header_limit = page.rect.height * 0.10
-    # footer_limit = page.rect.height * 0.90
-
-    # # Filter out words in header/footer boundaries in a single pass
-    # valid_words = [w for w in words if header_limit <= w[1] and w[3] <= footer_limit]
-
-    # if not valid_words:
-    #     # Fallback to absolute center of the page if no valid text is found
-    #     return default_mid
-
     valid_words = words  # For now, we are not filtering out headers/footers
 
     # zip(*...) is a highly optimized C-level transpose.
@@ -78,6 +70,9 @@ class PDFReader:
     def __init__(self, folderpath: str, region: str, year: int, month: int):
         self.folderpath = folderpath
         self.fix_text = PARSE_FIXES.get((region, year, month), None)
+        self.fix_double_page = HARCODED_DOUBLE_PAGE_FIX.get(
+            (region, year, month), None
+        )
 
     def parse(self) -> Generator[str, None, None]:
         pdf_files = glob.glob(f"{self.folderpath}/candidaturas*.pdf")
@@ -237,7 +232,8 @@ class PDFReader:
     ) -> str:
         """Handles text extraction for a two-column layout page."""
         words = page.get_text("words", flags=0)
-        split_x = _find_column_split_x(page, words)
+        # split_x = _find_column_split_x(words)
+        split_x = page.rect.width / 2
 
         left_words = []
         right_words = []
@@ -256,7 +252,10 @@ class PDFReader:
 
     def __parse_single_file(self, pdf_path: str) -> Generator[str, None, None]:
         doc = pymupdf.open(pdf_path)
-        is_double_col = self.__is_double_column(doc)
+        if self.fix_double_page is not None:
+            is_double_col = self.fix_double_page
+        else:
+            is_double_col = self.__is_double_column(doc)
         needs_pua_fix = self.__has_pua_text(doc)
 
         for page in doc:

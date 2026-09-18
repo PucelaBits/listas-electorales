@@ -1,6 +1,19 @@
 from ._common import fill_missing_numbers, register_fixer
 
 
+@register_fixer("pais_vasco", 2012, 10)
+def fix_pais_vasco_2012_10(text: str) -> str:
+    # TODO: err.pdf
+    # Fix missing candidacies
+    text = text.replace(
+        "14.– BIDEZKO MUNDURANTZ",
+        "Candidatura núm. 13: RELLENO\nNO PROCLAMADA\n14.– BIDEZKO MUNDURANTZ",
+    )
+    # Facilitate parsing
+    text = text.replace("UNIÓN PROGRESO Y DEMOCRACIA\n", "UNIÓN PROGRESO Y DEMOCRACIA ")
+    return text
+
+
 @register_fixer("pais_vasco", 2016, 9)
 def fix_pais_vasco_2016_09(text: str) -> str:
     if "NATALIA ROJO SOLANA" in text:

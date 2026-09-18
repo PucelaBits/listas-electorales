@@ -3,7 +3,7 @@ import re
 from ._common import register_fixer
 
 
-def _valencia_dedouble_fix(text: str) -> str:
+def _fix_valencia_dedouble(text: str) -> str:
     """
     Some of Valencia BO documents are half in Valencian and half in Spanish.
     We remove the Valencian part, which is always first, and keep the Spanish part, which is always second.
@@ -23,74 +23,99 @@ def _valencia_dedouble_fix(text: str) -> str:
     return text
 
 
+_VALENCIA_PROVINCE_REGEX = re.compile(
+    r"(?i)\b(?:alacant\s*/\s*alicante|alicante\s*/\s*alacant|"
+    r"castell[óo]\s*/\s*castell[óo]n|castell[óo]n\s*/\s*castell[óo]|"
+    r"val[èe]ncia\s*/\s*valencia|valencia\s*/\s*val[èe]ncia)\b"
+)
+
+
 def _fix_valencia_province(text: str) -> str:
-    text = text.replace("València/Valencia", "Valencia")
-    return text
+    def replacement(match):
+        matched_str = match.group(0).upper()
+
+        # Check which province was matched and return the corresponding string
+        if "ALICANTE" in matched_str:
+            return "Circunscripción electoral: ALICANTE"
+        if "CASTELL" in matched_str:
+            return "Circunscripción electoral: CASTELLÓN"
+        if "VALEN" in matched_str:
+            return "Circunscripción electoral: VALENCIA"
+
+        return match.group(0)
+
+    return re.sub(_VALENCIA_PROVINCE_REGEX, replacement, text)
 
 
-def _fix_valencia_all(text: str) -> str:
+@register_fixer("valencia", 1983, 5)
+def fix_valencia_1983_05(text: str) -> str:
     text = _fix_valencia_province(text)
-    text = _valencia_dedouble_fix(text)
     return text
 
 
 @register_fixer("valencia", 1987, 6)
 def fix_valencia_1987_06(text: str) -> str:
-    text = _fix_valencia_all(text)
+    text = _fix_valencia_province(text)
     return text
 
 
 @register_fixer("valencia", 1991, 5)
 def fix_valencia_1991_05(text: str) -> str:
-    text = _fix_valencia_all(text)
+    text = _fix_valencia_province(text)
     return text
 
 
 @register_fixer("valencia", 1995, 5)
 def fix_valencia_1995_05(text: str) -> str:
-    text = _fix_valencia_all(text)
+    text = _fix_valencia_province(text)
     return text
 
 
 @register_fixer("valencia", 1999, 6)
 def fix_valencia_1999_06(text: str) -> str:
-    text = _fix_valencia_all(text)
+    text = _fix_valencia_province(text)
     return text
 
 
 @register_fixer("valencia", 2003, 5)
 def fix_valencia_2003_05(text: str) -> str:
-    text = _fix_valencia_all(text)
+    text = _fix_valencia_province(text)
     return text
 
 
 @register_fixer("valencia", 2007, 5)
 def fix_valencia_2007_05(text: str) -> str:
-    text = _fix_valencia_all(text)
+    text = _fix_valencia_province(text)
     return text
 
 
 @register_fixer("valencia", 2011, 5)
 def fix_valencia_2011_05(text: str) -> str:
-    text = _fix_valencia_all(text)
+    # TODO: err.pdf
+    text = _fix_valencia_province(text)
+    text = text.replace("Núm. Ord. Pres.", "Candidatura núm.")
+    text = text.replace("Nº Ord. Pres:", "Candidatura núm.")
     return text
 
 
 @register_fixer("valencia", 2015, 5)
 def fix_valencia_2015_05(text: str) -> str:
-    text = _fix_valencia_all(text)
+    text = _fix_valencia_province(text)
+    text = _fix_valencia_dedouble(text)
     return text
 
 
 @register_fixer("valencia", 2019, 4)
 def fix_valencia_2019_04(text: str) -> str:
-    text = _fix_valencia_all(text)
+    text = _fix_valencia_province(text)
+    text = _fix_valencia_dedouble(text)
     return text
 
 
 @register_fixer("valencia", 2023, 5)
 def fix_valencia_2023_05(text: str) -> str:
-    text = _fix_valencia_all(text)
+    text = _fix_valencia_province(text)
+    text = _fix_valencia_dedouble(text)
     if "MARÍA AMPARO GINER LOZANO" in text:
         # Replace all XX, with XX.
         text = re.sub(r"(\d+),", r"\1.", text)

@@ -13,7 +13,7 @@ _CANDIDATE_TRAILING_CHARS_RE = re.compile(
 _CANDIDATE_BEGINNING_CHARS_RE = re.compile(rf"^\b[{NAME_WHITELIST_CHARS}]{{1}}\b")
 _CANDIDATE_WHITELIST_RE = re.compile(rf"[^{NAME_WHITELIST_CHARS}]+")
 _DATE_RE = re.compile(
-    r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+?de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(?:de\s+)?\d{4})?\b\.?"
+    r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+(?:de\s+|d')(enero|gener|febrero|febrer|marzo|març|abril|mayo|maig|junio|juny|julio|juliol|agosto|agost|septiembre|setembre|octubre|noviembre|novembre|diciembre|desembre)(?:\s+(?:de\s+)?\d{4})?\b\.?"
 )
 _DATE_NUMBER_RE = re.compile(
     r"\b(?:\d{4}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/]\d{2}|\d{2}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/]\d{4})\b",
@@ -40,6 +40,8 @@ def _extract_candidacy(content: str) -> tuple[str, str]:
     # PARTIDO COMUNISTA DE ESPAÑA (MARXISTA-LENINISTA) P.C. (M-L)
     # TODO: Handle dots like
     # PARTIDO SOCIALISTA.
+    # TODO: Handle siglas in
+    # PARTIDO ANTITAURINO CONTRA EL MALTRATO ANIMAL, Siglas: PACMA
 
     if match:
         # Strip string again to catch any edge-case punctuation at the boundaries
@@ -90,7 +92,10 @@ def _has_trash_text(line: str) -> bool:
         or "candidaturas" in line_lower
         or "proclamación" in line_lower
         or "anuncios" in line_lower
+        or "anuncis" in line_lower
         or "procedimiento" in line_lower
+        or "disposiciones" in line_lower
+        or "disposicions" in line_lower
         or _DATE_RE.search(line_lower) is not None
         or _DATE_NUMBER_RE.search(line_lower) is not None
     )
@@ -98,7 +103,7 @@ def _has_trash_text(line: str) -> bool:
 
 class TextElectionParser:
     PROVINCE_RE = re.compile(
-        rf"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?\s+DE\s+|ELECTORAU\s+PROVINCIAU\s+DE\s+|DE\s+LA\s+COMUNIDAD\s+AUT[ÓO]NOMA\s+DE\s+|PROVINCIAL\s+DE\s+|DE\s+ZONA\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL(?:\:?\s+|\s+DE\s+)?|PROVINCIA\s+DE\s+)(ASTU\-\d{{1}}|BALE\-\d{{1,2}}|CAN\-\d{{1}}|MUR\-\d{{1}}|{'|'.join(PROVINCES_LIST)})\b",
+        rf"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?\s+DE\s+|ELECTORAU\s+PROVINCIAU\s+DE\s+|DE\s+LA\s+COMUNIDAD\s+AUT[ÓO]NOMA\s+DE\s+|PROVINCIAL\s+DE\s+|DE\s+ZONA\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL(?:\s*\:?\s*|\s+DE\s+)?|PROVINCIA\s+DE\s+)(ASTU\-\d{{1}}|BALE\-\d{{1,2}}|CAN\-\d{{1}}|MUR\-\d{{1}}|{'|'.join(PROVINCES_LIST)})\b",
         re.IGNORECASE,
     )
 
@@ -114,7 +119,7 @@ class TextElectionParser:
 
     # Extract explicit candidacy headers
     EXPLICIT_CANDIDACY_RE = re.compile(
-        r"^Candidatura\s+n[úu]m(?:ero)?\.? *:? *(\d+)(?:[\.\-\–\—~:] *| +)(.+)$",
+        r"^Candidatura\s+(?:n[úu]m(?:ero)?\.?|Nº) *:? *(\d+)(?:[\.\-\–\—~:] *| +)(.+)$",
         re.IGNORECASE,
     )
 
@@ -345,14 +350,41 @@ class TextElectionParser:
             logger.debug(
                 f"Ambiguous order {order} found. This could be either a new candidacy or a candidate for the current candidacy. Next line: {next_line}"
             )
+            # If the previous candidacy is the same province as the current one, we can assume they will have the same number of candidates
+            if not self.is_substitute:
+                previous_candidacy_candidates_count = 0
+                previous_candidacy = None
+                for c in reversed(self.parsed_data):
+                    if c.candidacy == self.current_candidacy:
+                        continue
+                    if c.province != self.current_province:
+                        break
+                    if previous_candidacy is None:
+                        previous_candidacy = c.candidacy
+                    elif previous_candidacy != c.candidacy:
+                        break
+                    if c.substitute:
+                        continue
+                    if c.candidacy == previous_candidacy:
+                        previous_candidacy_candidates_count += 1
+                if (
+                    previous_candidacy_candidates_count > 0
+                    and previous_candidacy_candidates_count > order
+                ):
+                    logger.debug(
+                        f"Previous candidacy ({previous_candidacy.name}) had {previous_candidacy_candidates_count} candidates, which is more than the current order {order}. Assuming this is a candidate for the current candidacy."
+                    )
+                    self.__add_candidate(content, order)
+                    return
+
             # This is either a candidate or a new candidacy
             # Look at the start of the next line to determine if it's a candidate or a new candidacy
             # There could be still other stuff that messes with the parsing, so we manually fix those
             next_number_match = self.NUMBERED_ITEM_RE.match(next_line)
             next_isolated_match = self.ISOLATED_NUMBER_RE.match(next_line)
             if (
-                (next_number_match and next_number_match.group(1) == "1")
-                or (next_isolated_match and next_isolated_match.group(1) == "1")
+                (next_number_match and int(next_number_match.group(1)) == 1)
+                or (next_isolated_match and int(next_isolated_match.group(1)) == 1)
                 or self.NOT_PROCLAMATED_RE.match(next_line)
                 or next_line.lower().startswith("titular")
             ):
@@ -394,6 +426,8 @@ class TextElectionParser:
             raise ValueError(
                 f"Unexpected candidacy order {order} when actually expected {self.candidacy_order + 1}."
             )
+        if not self.current_province:
+            raise ValueError("Candidacy found before any province was detected.")
         self.__mark_candidacy_as_finished()
         self.candidacy_order = order
         if self.NOT_PROCLAMATED_RE.search(content):

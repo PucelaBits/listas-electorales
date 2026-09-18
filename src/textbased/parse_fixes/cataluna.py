@@ -2,27 +2,11 @@ import re
 
 from common import NAME_WHITELIST_CHARS_LOWER, NAME_WHITELIST_CHARS_UPPER
 
-from ._common import fix_missing_substitutes, register_fixer
-
-_TARRAGONA_CANDIDACY_RE = re.compile(
-    r"(\d+)\s+FORMACIÓN POLÍTICA:\s+(.+)\s+SIGLAS:\s+(.+)$", re.MULTILINE
+from ._common import (
+    fix_missing_substitutes,
+    fix_multiline_candidacy_naming,
+    register_fixer,
 )
-
-_TARRAGONA_NOT_PROCLAIMED_CANDIDACY_RE = re.compile(
-    r"N[UÚ]M\.(?:DE +ORDEN)?\s*(\d+)\s+NO PROCLAMADA$", re.MULTILINE | re.IGNORECASE
-)
-
-
-def _fix_tarragona_candidacy_naming(text: str) -> str:
-    for match in _TARRAGONA_CANDIDACY_RE.finditer(text):
-        number, party_name, party_abbr = match.groups()
-        new_line = f"\nCandidatura número: {number}. {party_name} ({party_abbr})\n"
-        text = text.replace(match.group(0), new_line)
-    for match in _TARRAGONA_NOT_PROCLAIMED_CANDIDACY_RE.finditer(text):
-        number = match.group(1)
-        new_line = f"\nCandidatura número: {number}. RELLENO\nNO PROCLAMADA\n"
-        text = text.replace(match.group(0), new_line)
-    return text
 
 
 @register_fixer("cataluna", 1999, 10)
@@ -318,7 +302,7 @@ _CATALUNA_2015_09_LLEIDA_CANDIDACY_INDEX = 0
 @register_fixer("cataluna", 2015, 9)
 def fix_cataluna_2015_09(text: str) -> str:
     text = fix_missing_substitutes(text, _CATALUNA_2015_09_CANDIDATE_RE)
-    text = _fix_tarragona_candidacy_naming(text)
+    text = fix_multiline_candidacy_naming(text)
     text = text.replace(
         "NÚM. DE ORDEN\n9\nFORMACIÓN POLÍTICA:\nCATALUNYA SÍ QUE ES POT",
         "Candidatura número: 9. FORMACIÓN POLÍTICA:\nCATALUNYA SÍ QUE ES POT (CatSíqueesPot)",
@@ -335,7 +319,7 @@ def fix_cataluna_2015_09(text: str) -> str:
 
 @register_fixer("cataluna", 2017, 12)
 def fix_cataluna_2017_12(text: str) -> str:
-    text = _fix_tarragona_candidacy_naming(text)
+    text = fix_multiline_candidacy_naming(text)
     return text
 
 
@@ -345,7 +329,7 @@ def fix_cataluna_2021_02(text: str) -> str:
     text = text.replace(
         "PER UN MÓN MÉS JUST\nSIGLAS:", "PER UN MÓN MÉS JUST\nSIGLAS:\nPUM+J"
     )
-    text = _fix_tarragona_candidacy_naming(text)
+    text = fix_multiline_candidacy_naming(text)
     # Remove duplicate in Catalan
     for page in range(15, 29):
         if f"{page}/28" in text:
