@@ -37,14 +37,22 @@ ocr_one() {
     local src="$1"
     local dest="${src/raw_/}"
     
-    # Skip if file exists and --force was not provided
+    # Skip if file exists and --force was not provided, or if dest is up-to-date
     if [[ -f "$dest" && "$FORCE" -eq 0 ]]; then
-        echo "SKIP: $dest already exists (use --force to overwrite)"
-        return 0
+        if [[ "$src" -ot "$dest" ]]; then
+            echo "SKIP: $dest is up to date"
+            return 0
+        else
+            echo "UPDATE: $src is newer than $dest"
+        fi
     fi
 
     echo "OCR: $src -> $dest"
-    if ! ocrmypdf -l spa --force-ocr --tesseract-pagesegmode 11 --output-type pdf --color-conversion-strategy Gray --continue-on-soft-render-error --tesseract-config "$CONFIG" "$src" "$dest"; then
+    
+    # Freeze generation timestamp and Document ID determinism
+    local fixed_epoch=1700000000
+
+    if ! SOURCE_DATE_EPOCH=$fixed_epoch ocrmypdf -l spa --force-ocr --tesseract-pagesegmode 11 --output-type pdf --color-conversion-strategy Gray --continue-on-soft-render-error --tesseract-config "$CONFIG" "$src" "$dest"; then
         echo "ERROR: ocrmypdf failed for $src" >&2
         echo "$src" >> "$FAIL_LOG"
         return 1
