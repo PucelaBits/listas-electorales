@@ -167,6 +167,14 @@ def fix_castilla_y_leon_2003_05(text: str) -> str:
     )
     return text
 
+@register_fixer("castilla_y_leon", 2007, 5)
+def fix_castilla_y_leon_2007_05(text: str) -> str:
+    # Remove header
+    text = text.replace("Martes, ", "")
+    # Facilitate parsing
+    text = text.replace("\n4.–", "\nCandidatura núm.: 4.")
+    text = text.replace("Suplentes: ------", "")
+    return text
 
 _CYL_2011_05_LAST_NUMBER = None
 _CYL_2011_05_CANDIDACY_REGEX = re.compile(r"(\d+)\.\-\s+")
@@ -194,6 +202,7 @@ def fix_castilla_y_leon_2011_05(text: str) -> str:
         "Doña ROSA MARÍA TERESA DEL CARMEN CARAMAZANA ARAUJO ",
     )
     # Fix OCR
+    text = text.replace("FDEZ.DEL", "FERNANDEZ DEL")
     text = text.replace("JAlONE", "JAIONE")
     text = fix_maria_ocr(text, upper=True)
     text = _CYL_2011_05_CANDIDACY_REGEX.sub(r"Candidatura núm.: \1. ", text)

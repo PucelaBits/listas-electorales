@@ -55,6 +55,16 @@ def fix_navarra_2003_05(text: str) -> str:
 
 @register_fixer("navarra", 2007, 5)
 def fix_navarra_2007_05(text: str) -> str:
+    # Fix wrong numbering
+    text = text.replace("(R-21)", "(R-1)")
+    text = text.replace("(R-67)", "(R-2)")
+    text = text.replace("(R-109)", "(R-3)")
+    text = text.replace("(R-242)", "(R-4)")
+    text = text.replace("(R-511)", "(R-5)")
+    text = text.replace("(R-606)", "(R-6)")
+    text = text.replace("(R-603)", "(R-7)")
+    text = text.replace("(R-736)", "(R-8)")
+    text = text.replace("(R-785)", "(R-9)")
     text = _navarra_candidacy_fix(text)
     return text
 
@@ -82,8 +92,14 @@ def fix_navarra_2015_05(text: str) -> str:
     text = text.replace("(9-11", "(R-11)")
     text = _navarra_candidacy_fix(text)
     # Fix OCR errors
+    text = text.replace("lOS", "IOS")
+    text = text.replace(":OIO", "GOIO")
+    text = text.replace("PORRA:", "PORRAS")
+    text = text.replace("IÑAKI)", "IÑAKI")
+    text = text.replace("'OLESEA DONTU Di", "OLESEA DONTU DONTU")
     text = text.replace("BS DE\n", "")
     text = text.replace("FS RRA", "")
+    text = text.replace("4u RAFAEL", "RAFAEL")
     text = text.replace("u BIKENDI BAREA AIESTARAN", "11. BIKENDI BAREA AIESTARAN")
     text = text.replace(
         "JOSE MIGUEL BERNAL HIERRO\n", "JOSE MIGUEL BERNAL HIERRO DE ONA"

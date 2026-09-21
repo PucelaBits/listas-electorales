@@ -55,7 +55,14 @@ def fix_asturias_2003_05(text: str) -> str:
 
 @register_fixer("asturias", 2007, 5)
 def fix_asturias_2007_05(text: str) -> str:
+    text = text.replace("Candidatos\n", "")
+    text = text.replace("CIRCUNSCRIPCION\n", "CIRCUNSCRIPCION ELECTORAL ")
     text = _asturias_province_fix(text)
+    # Fix missing candidacy
+    text = text.replace(
+        "11. Convergencia Democrática Asturiana (CDAS)",
+        "Candidatura número 10. RELLENO\nNO PROCLAMADA\n11. Convergencia Democrática Asturiana (CDAS)",
+    )
     return text
 
 

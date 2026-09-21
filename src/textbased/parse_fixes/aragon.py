@@ -1,26 +1,11 @@
-import re
-
-from common import NAME_WHITELIST_CHARS, NAME_WHITELIST_CHARS_UPPER
-
 from ._common import (
+    UPPER_DON_CANDIDATE_NAME_REGEX,
     autofill_intermediate_numbers,
     clean_ocr_numbers,
     fill_missing_numbers,
     fix_missing_substitutes,
     number_candidates,
     register_fixer,
-)
-
-_ARAGON_1983_05_NAME_REGEX = re.compile(
-    r"^(?:D\.?a?)\s+["
-    + NAME_WHITELIST_CHARS_UPPER
-    + r"]["
-    + NAME_WHITELIST_CHARS
-    + r"]+(?:\s*["
-    + NAME_WHITELIST_CHARS_UPPER
-    + r"]["
-    + NAME_WHITELIST_CHARS
-    + r"]+)+"
 )
 
 
@@ -35,7 +20,7 @@ def fix_aragon_1983_05(text: str) -> str:
     # Manually fix missing "SUPLENTES"
     if "Sixto Luis Agudo" in text or "Javier Escartín Orús" in text:
         text = text.replace("19.", "\nSUPLENTES\n19.")
-    text = fix_missing_substitutes(text, _ARAGON_1983_05_NAME_REGEX)
+    text = fix_missing_substitutes(text, UPPER_DON_CANDIDATE_NAME_REGEX)
     return text
 
 
@@ -107,15 +92,6 @@ def fix_aragon_1991_05(text: str) -> str:
     return text
 
 
-_ARAGON_1995_05_NAME_REGEX = re.compile(
-    r"^(?:DON|DOÑA)\s+["
-    + NAME_WHITELIST_CHARS_UPPER
-    + r"]+(?:\s+["
-    + NAME_WHITELIST_CHARS_UPPER
-    + r"]+)+$"
-)
-
-
 @register_fixer("aragon", 1995, 5)
 def fix_aragon_1995_05(text: str) -> str:
     # Errata (err.pdf)
@@ -139,7 +115,7 @@ def fix_aragon_1995_05(text: str) -> str:
     text = text.replace("MARCOS.RUBIO SAHUN", "MARCOS RUBIO SAHUN")
     text = clean_ocr_numbers(text)
     text = autofill_intermediate_numbers(text)
-    text = fix_missing_substitutes(text, _ARAGON_1995_05_NAME_REGEX)
+    text = fix_missing_substitutes(text, UPPER_DON_CANDIDATE_NAME_REGEX)
     return text
 
 
@@ -167,7 +143,6 @@ def fix_aragon_2003_05(text: str) -> str:
 
 
 _ARAGON_2007_05_LAST_NUMBER = None
-_ARAGON_2007_05_CANDIDATE_REGEX = re.compile(r"^(?:DON|DOÑA) (.+)$")
 
 
 @register_fixer("aragon", 2007, 5)
@@ -187,8 +162,16 @@ def fix_aragon_2007_05(text: str) -> str:
     )
     # Fill missing numbers
     global _ARAGON_2007_05_LAST_NUMBER
-    text, last_number = number_candidates(
-        text, _ARAGON_2007_05_CANDIDATE_REGEX, last_number=_ARAGON_2007_05_LAST_NUMBER
-    )
-    _ARAGON_2007_05_LAST_NUMBER = last_number
+    if "Electoral Provincial de Huesca" in text:
+        text, last_number = number_candidates(
+            text, UPPER_DON_CANDIDATE_NAME_REGEX, last_number=_ARAGON_2007_05_LAST_NUMBER
+        )
+        _ARAGON_2007_05_LAST_NUMBER = last_number
+    elif "Junta Electoral Provincial de Teruel" in text:
+        huesca_text, teruel_text = text.split("Junta Electoral Provincial de Teruel")
+        huesca_text, last_number = number_candidates(
+            huesca_text, UPPER_DON_CANDIDATE_NAME_REGEX, last_number=_ARAGON_2007_05_LAST_NUMBER
+        )
+        _ARAGON_2007_05_LAST_NUMBER = last_number
+        text = huesca_text + "Junta Electoral Provincial de Teruel" + teruel_text
     return text

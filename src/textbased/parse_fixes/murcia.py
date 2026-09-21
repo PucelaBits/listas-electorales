@@ -5,14 +5,19 @@ def _murcia_province_fix(text: str) -> str:
     suffix = 1
     text = text.replace("Primera\n", f"MUR-{suffix}\n")
     text = text.replace("PRIMERA\n", f"MUR-{suffix}\n")
+    text = text.replace("CIRCUNSCRIPCIÓN N.º 1\n", f"CIRCUNSCRIPCIÓN MUR-{suffix}\n")
     text = text.replace("Segunda\n", f"MUR-{suffix + 1}\n")
     text = text.replace("SEGUNDA\n", f"MUR-{suffix + 1}\n")
+    text = text.replace("CIRCUNSCRIPCIÓN N.º 2\n", f"CIRCUNSCRIPCIÓN MUR-{suffix + 1}\n")
     text = text.replace("Tercera\n", f"MUR-{suffix + 2}\n")
     text = text.replace("TERCERA\n", f"MUR-{suffix + 2}\n")
+    text = text.replace("CIRCUNSCRIPCIÓN N.º 3\n", f"CIRCUNSCRIPCIÓN MUR-{suffix + 2}\n")
     text = text.replace("Cuarta\n", f"MUR-{suffix + 3}\n")
     text = text.replace("CUARTA\n", f"MUR-{suffix + 3}\n")
+    text = text.replace("CIRCUNSCRIPCIÓN N.º 4\n", f"CIRCUNSCRIPCIÓN MUR-{suffix + 3}\n")
     text = text.replace("Quinta\n", f"MUR-{suffix + 4}\n")
     text = text.replace("QUINTA\n", f"MUR-{suffix + 4}\n")
+    text = text.replace("CIRCUNSCRIPCIÓN N.º 5\n", f"CIRCUNSCRIPCIÓN MUR-{suffix + 4}\n")
     return text
 
 
@@ -55,6 +60,11 @@ def fix_murcia_2003_05(text: str) -> str:
 @register_fixer("murcia", 2007, 5)
 def fix_murcia_2007_05(text: str) -> str:
     text = _murcia_province_fix(text)
+    # Facilitate parsing
+    text = text.replace("CANDIDATOS\n", "")
+    # Remove footer
+    if "Electoral de Zona de Caravaca de la Cruz" in text:
+        text = text.split("Electoral de Zona de Caravaca de la Cruz")[0]
     return text
 
 

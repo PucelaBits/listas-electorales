@@ -1,5 +1,14 @@
-from ._common import register_fixer
+from ._common import clean_ocr_numbers, register_fixer
 
+
+@register_fixer("ceuta", 2007, 5)
+def fix_ceuta_2007_05(text: str) -> str:
+    # Remove preamble
+    if "SUMARIO" in text:
+        return ""
+    # Fix OCR
+    text = clean_ocr_numbers(text)
+    return text
 
 @register_fixer("ceuta", 2011, 5)
 def fix_ceuta_2011_05(text: str) -> str:

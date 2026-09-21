@@ -85,7 +85,13 @@ def fix_valencia_2003_05(text: str) -> str:
 
 @register_fixer("valencia", 2007, 5)
 def fix_valencia_2007_05(text: str) -> str:
+    # Remove preamble
+    if "Anuncio del Ministerio de Fomento" in text:
+        return ""
     text = _fix_valencia_province(text)
+    text = text.replace("CADIDATURA", "CANDIDATURA")
+    text = text.replace("N.º orden presentación", "Candidatura núm.")
+    # TODO: Remove location at the end of the names
     return text
 
 

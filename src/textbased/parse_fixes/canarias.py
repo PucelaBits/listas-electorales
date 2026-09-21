@@ -15,6 +15,7 @@ def _canarias_province_fix(text: str) -> str:
     text = text.replace("Fuerteventura\n", f"CAN-{suffix}\n")
     text = text.replace("FUERTEVENTURA\n", f"CAN-{suffix}\n")
     text = text.replace("Gran Canaria\n", f"CAN-{suffix + 1}\n")
+    text = text.replace("Gran Canaria.\n", f"CAN-{suffix + 1}\n")
     text = text.replace("GRAN CANARIA\n", f"CAN-{suffix + 1}\n")
     text = text.replace("La Gomera\n", f"CAN-{suffix + 2}\n")
     text = text.replace("LA GOMERA\n", f"CAN-{suffix + 2}\n")
@@ -30,17 +31,16 @@ def _canarias_province_fix(text: str) -> str:
     return text
 
 
-# BOC 88 (err_1) y BOC 91 (err_2), err.pdf.
-# err_1 (Junta Electoral de Santa Cruz, La Palma): candidate nº1 of
-#   INICIATIVAPOR LAPALMA-NUEVACANARIAS (NCa) lacks the "Independiente" label.
-# err_2 (Junta Electoral de Las Palmas, Lanzarote PIL-CCN cand. 7):
-#   cand. 8 "Pedro Jesús Betancor Machón" -> "Machín"; supl. 1 "Briton" -> "Brito".
-# err_2 (Santa Cruz, La Palma PSOE): candidate 5 "Félix Andrés Gonzalo Lorenzo" -> "González Lorenzo".
-# The Lanzarote names appear in both candidaturas_1.pdf and candidaturas_2.pdf
-# (duplicated publication of the same proclamation); the global substitution
-# fixes both copies.
+_CANARIAS_2007_05_CANDIDACY_REGEX = re.compile(
+    r"^SIGLAS:\s*(.+)[\n\r]PART/FED/AGRUP:\s*(.+\s*.+)[\n\r]CANDIDATURA Nº:\s*(\d+)\.?$",
+    re.MULTILINE,
+)
+
+
 @register_fixer("canarias", 2007, 5)
 def fix_canarias_2007_05(text: str) -> str:
+    # TODO: err_3.pdf
+    # Errata (err.pdf)
     text = text.replace(
         "D. Juan Carlos Navarro Pérez",
         "D. Juan Carlos Navarro Pérez (Independiente)",
@@ -48,7 +48,11 @@ def fix_canarias_2007_05(text: str) -> str:
     text = text.replace("Pedro Jesús Betancor Machón", "Pedro Jesús Betancor Machín")
     text = text.replace("Germán Briton Martín", "Germán Brito Martín")
     text = text.replace("Félix Andrés Gonzalo Lorenzo", "Félix Andrés González Lorenzo")
+    # Fixes for parsing
+    text = _CANARIAS_2007_05_CANDIDACY_REGEX.sub(r"Candidatura núm. \3: \2 (\1)", text)
     text = _canarias_province_fix(text)
+    text = text.replace("Nº Nombre y apellidos Partido o\nFederación", "")
+    text = text.replace("NACIONALISTA\n", "NACIONALISTA ")
     return text
 
 
@@ -90,14 +94,41 @@ def fix_canarias_2011_05(text: str) -> str:
     text = text.replace("Nleves", "Nieves")
     text = text.replace("lone", "Ione")
     text = text.replace("PinoGonzález", "Pino González")
-    text = text.replace("Doña Patricia 1. García Reyes", "Doña Patricia I. García Reyes")
+    text = text.replace("JoséCruz", "José Cruz")
+    text = text.replace("JOSé", "José")
+    text = text.replace(
+        "Doña Patricia 1. García Reyes", "Doña Patricia I. García Reyes"
+    )
+    text = text.replace(
+        "Doña Maria del Rosario WMarl Saro Hernández González",
+        "Doña Maria del Rosario Hernández González",
+    )
+    text = text.replace("don Antonio F", "Don Antonio F")
+    text = text.replace(
+        "Doña Magdalena de la A Cabrera", "Doña Magdalena de la A. Cabrera"
+    )
     text = fix_maria_ocr(text)
     text = text.replace("7\nCandidatura número:\n", "Candidatura número: 7\n")
-    text = text.replace("Don David Peñas López\nCandidatura número:\nDenominación: LOS VERDES", "Don David Peñas López\nCandidatura número: 5\nDenominación: LOS VERDES")
-    text = text.replace("ES\nCandidatura número:\nDenominación: LOS VERDES", "ES\nCandidatura número: 5\nDenominación: LOS VERDES")
-    text = text.replace("ES\nCandidatura número:\nDenominación: NUEVA CANARIAS", "ES\nCandidatura número: 7\nDenominación: NUEVA CANARIAS")
-    text = text.replace("Candidatura número:\nDenominación: LOS VERDES", "Candidatura número: 4\nDenominación: LOS VERDES")
-    text = text.replace("Candidatura número:\nDenominación: PARTIDO POPULAR", "Candidatura número: 2\nDenominación: PARTIDO POPULAR")
+    text = text.replace(
+        "Don David Peñas López\nCandidatura número:\nDenominación: LOS VERDES",
+        "Don David Peñas López\nCandidatura número: 5\nDenominación: LOS VERDES",
+    )
+    text = text.replace(
+        "ES\nCandidatura número:\nDenominación: LOS VERDES",
+        "ES\nCandidatura número: 5\nDenominación: LOS VERDES",
+    )
+    text = text.replace(
+        "ES\nCandidatura número:\nDenominación: NUEVA CANARIAS",
+        "ES\nCandidatura número: 7\nDenominación: NUEVA CANARIAS",
+    )
+    text = text.replace(
+        "Candidatura número:\nDenominación: LOS VERDES",
+        "Candidatura número: 4\nDenominación: LOS VERDES",
+    )
+    text = text.replace(
+        "Candidatura número:\nDenominación: PARTIDO POPULAR",
+        "Candidatura número: 2\nDenominación: PARTIDO POPULAR",
+    )
     text = text.replace(
         "ASAMBLEAS MUNICIPALES DE FUERTEVENTURA-NUEVA FUERTEVENTURA\n",
         "ASAMBLEAS MUNICIPALES DE FUERTEVENTURA-NUEVA FUERTEVENTURA ",

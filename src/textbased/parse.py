@@ -12,11 +12,13 @@ _CANDIDATE_TRAILING_CHARS_RE = re.compile(
 )
 _CANDIDATE_BEGINNING_CHARS_RE = re.compile(rf"^\b[{NAME_WHITELIST_CHARS}]{{1}}\b")
 _CANDIDATE_WHITELIST_RE = re.compile(rf"[^{NAME_WHITELIST_CHARS}]+")
+_MONTHS = r"enero|gener|febrero|febrer|marzo|març|abril|mayo|maig|junio|juny|julio|juliol|agosto|agost|septiembre|setembre|octubre|noviembre|novembre|diciembre|desembre"
 _DATE_RE = re.compile(
-    r"(?i)\b(0?[1-9]|[12][0-9]|3[01])\s+(?:de\s+|d')(enero|gener|febrero|febrer|marzo|març|abril|mayo|maig|junio|juny|julio|juliol|agosto|agost|septiembre|setembre|octubre|noviembre|novembre|diciembre|desembre)(?:\s+(?:de\s+)?\d{4})?\b\.?"
+    rf"\b(?:0?[1-9]|[12][0-9]|3[01])\s+(?:(?:de\s+|d')(?:{_MONTHS})(?:\s+(?:de\s+)?\d{{4}})?|(?:{_MONTHS})\s+(?:de\s+)?\d{{4}})\b\.?",
+    re.IGNORECASE,
 )
 _DATE_NUMBER_RE = re.compile(
-    r"\b(?:\d{4}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/]\d{2}|\d{2}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/]\d{4})\b",
+    r"\b(?:\d{4}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/]\d{2}|\d{1,2}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/]\d{4})\b",
     re.IGNORECASE,
 )
 
@@ -103,7 +105,7 @@ def _has_trash_text(line: str) -> bool:
 
 class TextElectionParser:
     PROVINCE_RE = re.compile(
-        rf"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?\s+DE\s+|ELECTORAU\s+PROVINCIAU\s+DE\s+|DE\s+LA\s+COMUNIDAD\s+AUT[ÓO]NOMA\s+DE\s+|PROVINCIAL\s+DE\s+|DE\s+ZONA\s+DE\s+)|CIRCUNSCRIPCI[ÓO]N\s+ELECTORAL(?:\s*\:?\s*|\s+DE\s+)?|PROVINCIA\s+DE\s+)(ASTU\-\d{{1}}|BALE\-\d{{1,2}}|CAN\-\d{{1}}|MUR\-\d{{1}}|{'|'.join(PROVINCES_LIST)})\b",
+        rf"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?\s+DE\s+|ELECTORAU\s+PROVINCIAU\s+DE\s+|DE\s+LA\s+COMUNIDAD\s+AUT[ÓO]NOMA\s+DE\s+|PROVINCIAL\s+DE\s+|DE\s+ZONA\s+(?:Y\s+PROVINCIAL\s+)?(?:DE\s+|D’))|CIRCU[NM]SCRIPCI[ÓO]N?(?:\s+ELECTORAL)?(?:\s*\:?\s*|\s+DE\s+|\s+D’)?|PROVINCIA\s+DE\s+)(ASTU\-\d{{1}}|BALE\-\d{{1,2}}|CAN\-\d{{1}}|MUR\-\d{{1}}|{'|'.join(PROVINCES_LIST)})\b",
         re.IGNORECASE,
     )
 
@@ -119,26 +121,27 @@ class TextElectionParser:
 
     # Extract explicit candidacy headers
     EXPLICIT_CANDIDACY_RE = re.compile(
-        r"^Candidatura\s+(?:n[úu]m(?:ero)?\.?|Nº) *:? *(\d+)(?:[\.\-\–\—~:] *| +)(.+)$",
+        r"^Candidatura\s+(?:n[úu]m(?:ero)?\.?|N\.?º) *:? *(\d+)(?:[\.\-\–\—~:] *| +)(.+)$",
         re.IGNORECASE,
     )
 
     # Numbered items
     NUMBERED_ITEM_RE = re.compile(
-        rf"^[\s\.\-\–\—~]?\s*(?:Nº\s*|No\s+|N\s+|N\.O?\s*|Núm[\.:]\s*|Num[\.:]\s*)?(\d+)\s?[\s\.\-\–\—~:]+\s*([{NAME_WHITELIST_CHARS}]+.+)$",
+        rf"^[\s\.\-\–\—~]?\s*(?:Nº\s*|No\s+|N\s+|N\.O?\s*|Núm[\.:]\s*|Num[\.:]\s*)?(\d+)\s?[\s\.\-\–\—~:º\)]+\s*([{NAME_WHITELIST_CHARS}]+.+)$",
         re.IGNORECASE,
     )
 
     # Catch isolated numbers sitting on their own line
     ISOLATED_CANDIDACY_RE = re.compile(
-        r"^Candidatura\s+n[úu]m(?:ero)?\.? *:? *(\d+)[\.\-\–\—~:]*$", re.IGNORECASE
+        r"^(?:[-\–\—~] )?Candidatura\s+(?:n[úu]m(?:ero)?\.?|N\.?º) *:? *(\d+)[\.\-\–\—~: ]*$",
+        re.IGNORECASE,
     )
     ISOLATED_NUMBER_RE = re.compile(r"^(\d+)[\.\-\–\—~]+$", re.IGNORECASE)
 
     # Catch lines that have multiple numbers and names separated by whitespace
     MULTI_LINE_SPLIT_RE = re.compile(r"\s+(?=\d+[ \.\-\–\—~:]+\s+)")
 
-    SUPLENTE_RE = re.compile(r"^Suplente?s?:?", re.IGNORECASE)
+    SUPLENTE_RE = re.compile(r"^\-?Suplente?s?:?", re.IGNORECASE)
 
     def __init__(self, text_reader: PDFReader):
         self.text_reader = text_reader

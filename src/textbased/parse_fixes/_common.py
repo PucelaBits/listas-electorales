@@ -7,25 +7,43 @@ from common import (
     NAME_WHITELIST_CHARS_UPPER,
 )
 
+NUMBER_MAP = {
+    "UNO": "1",
+    "DOS": "2",
+    "TRES": "3",
+    "CUATRO": "4",
+    "CINCO": "5",
+    "SEIS": "6",
+    "SIETE": "7",
+    "OCHO": "8",
+    "NUEVE": "9",
+    "DIEZ": "10",
+}
+
 PARSE_FIXES: dict[tuple[str, int, int], Callable[[str], str]] = {}
 
 UPPER_CANDIDATE_REGEX = re.compile(
-    rf"^(?!NO PROCLAMADA)(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ +(?:DE +|LOS +|DEL +|LA +)*){{1,2}}(?:\([{NAME_WHITELIST_CHARS_UPPER}\. ]+\) +(?:DE +|LOS +|DEL +|LA +)*)?(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ *(?:DE +|LOS +|DEL +|LA +)*){{1,3}}(?:\([{NAME_WHITELIST_CHARS}\. ]+\))? *$"
+    rf"^(?!NO PROCLAMADA)(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ +(?:DE +|LOS +|DEL +|LA +)*){{1,2}}(?:\([{NAME_WHITELIST_CHARS_UPPER}\. ]+\) +(?:DE +|LOS +|DEL +|LA +)*)?(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ *(?:DE +|LOS +|DEL +|LA +)*){{1,3}}(?:\([{NAME_WHITELIST_CHARS}\. ]+\))? *\.?$"
+)
+LOWER_CANDIDATE_REGEX = re.compile(
+    rf"^(?!NO PROCLAMADA)(?:[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+ +(?:de +|los +|del +|la +)*){{1,2}}(?:\([{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER} ]+\) +(?:de +|los +|del +|la +)*)?(?:[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+ *(?:de +|los +|del +|la +)*){{1,3}}(?:\([{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER} ]+\))? *\.?$"
 )
 UPPER_DON_CANDIDATE_NAME_REGEX = re.compile(
-    rf"^(?:DON|DOÑA|Don|Doña)\s+(?:[{NAME_WHITELIST_CHARS_UPPER}]+|FCO\.)(?:\s+[{NAME_WHITELIST_CHARS_UPPER}]+|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.|\s+FCO\.|\s+\(.+\))+$"
+    rf"^(?:DON|DOÑA|Don|Doña)\s+(?:[{NAME_WHITELIST_CHARS_UPPER}]+|FCO\.)(?:\s+[{NAME_WHITELIST_CHARS_UPPER}]+|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.|\s+FCO\.|\s+\(.+\))+\.?$"
 )
 LOWER_DON_CANDIDATE_NAME_REGEX = re.compile(
-    rf"^(?:Don|Doña)\s+[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+(?:(?:\s+|\-)[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|\s+del|\s+las?|\s+de|\s+los|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.)+$"
+    rf"^(?:Don|Doña)\s+[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+(?:(?:\s+|\s?\-\s?)[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|\s+y|\s+del|\s+las?|\s+de|\s+los|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.)+\.?$"
 )
 
 _MULTILINE_CANDIDACY_RE = re.compile(
-    r"(\d+)\s+(?:FORMACIÓN POLÍTICA:|DENOMINACIÓN:?)\s+(.+)\s+SIGLAS:?\s*(.+)$", re.MULTILINE | re.IGNORECASE
+    r"(\d+)\s+(?:FORMACIÓN POLÍTICA:|DENOMINACIÓN:?)\s+(.+)\s+SIGLAS:?\s*(.+)$",
+    re.MULTILINE | re.IGNORECASE,
 )
 
 _MULTILINE_NOT_PROCLAIMED_CANDIDACY_RE = re.compile(
     r"N[UÚ]M\.(?:DE +ORDEN)?\s*(\d+)\s+NO PROCLAMADA$", re.MULTILINE | re.IGNORECASE
 )
+
 
 def fix_maria_ocr(text: str, upper: bool = False) -> str:
     replace_text = "María" if not upper else "MARÍA"
@@ -35,7 +53,10 @@ def fix_maria_ocr(text: str, upper: bool = False) -> str:
     text = text.replace("M2 ", f"{replace_text} ")
     text = text.replace("Mª.", f"{replace_text}")
     text = text.replace("M.2", f"{replace_text}")
+    text = text.replace(" M . ", f" {replace_text} ")
     text = text.replace(" M ", f" {replace_text} ")
+    text = text.replace(" M. ", f" {replace_text} ")
+    text = text.replace(" MI ", f" {replace_text} ")
     return text
 
 
@@ -49,6 +70,7 @@ def fix_multiline_candidacy_naming(text: str) -> str:
         new_line = f"\nCandidatura número: {number}. RELLENO\nNO PROCLAMADA\n"
         text = text.replace(match.group(0), new_line)
     return text
+
 
 def register_fixer(region: str, year: int, month: int):
     """Decorator to register a text-fixing function for a specific batch."""
@@ -81,22 +103,21 @@ def clean_ocr_numbers(text: str) -> str:
     # This could be dangerous, that's why we require the dot at the end
     text = text.replace("ll.", "11.")
     text = text.replace("IO.", "10.")
-    text = re.sub(r"^l\.", "1.", text, flags=re.MULTILINE)
+    text = re.sub(r"^l[\.|:]", "1.", text, flags=re.MULTILINE)
     text = re.sub(r"^S\.", "5.", text, flags=re.MULTILINE)
-    # Clean up "Núm" variations (e.g., "Núm.-", "Núm.- ", "Núm ")
-    text = re.sub(r"Núm[\.\-\s'\"]+", "Núm. ", text)
-    # Replaces the N2 {number} with Núm. {number}
-    text = re.sub(r"N(?:\.2|\ 2|[2\.])[\ -]+(\d+)", r"\1", text)
+    # Fixes candidacies Nº
+    text = re.sub(
+        r"Candidatura\.? +[\w'\.]{1,4} (\d+)+ *\.?",
+        r"Candidatura número: \1.",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    # Replaces the stuff before a number with the number
+    text = re.sub(r"^[\w\.']{1,3} +(\d+)\.?", r"\1.", text, flags=re.MULTILINE)
     # Remove stray quotes around numbers and dots
     text = re.sub(r"['´`\"](?=\d)", "", text)
     text = re.sub(r"(?<=\d)['´`\"]", "", text)
     text = re.sub(r"(?<=\d\.)['´`\"]", "", text)
-
-    # Fix SINGLE colons and exclamation marks after numbers (e.g., "11:" -> "11.")
-    text = re.sub(r"\b(\d+)[:!•]", r"\1.", text)
-
-    # Fix spaces between the number and the dot (e.g., "11 . " -> "11. ")
-    text = re.sub(r"\b(\d+)\s+\.\ *", r"\1. ", text)
 
     # Fix CLUSTERS of messy punctuation (dots, dashes, commas, colons, exclamation marks)
     text = re.sub(r"\b(\d+)\s*[\.\-\,:\!•'·;\"]{2,}\s*", r"\1. ", text)
@@ -110,17 +131,6 @@ def clean_ocr_numbers(text: str) -> str:
         r"\1. ",
         text,
     )
-    # Add missing dots after numbers preceding names/entities (e.g., "10 Don" -> "10. Don" or "10Rosa" -> "10. Rosa")
-    text = re.sub(
-        r"\b(\d+)\ *(?=["
-        + NAME_WHITELIST_CHARS_UPPER
-        + r"]["
-        + NAME_WHITELIST_CHARS
-        + r"]+)",
-        r"\1. ",
-        text,
-    )
-
     # Remove stray single letters surrounded by dots after numbers (e.g., "3.x. " -> "3. ")
     text = re.sub(r"\b(\d+)\.[a-zA-Z]\.\s*", r"\1. ", text)
 
@@ -312,24 +322,37 @@ def number_candidates(
 
     for line in lines:
         stripped_line = line.lstrip()  # Remove leading whitespace for accurate checking
+        upper_line = stripped_line.upper()
 
+        # Reset the counter if we hit a new list header or the "SUPLENTES" section
+        if (
+            "CANDIDATURA NÚM" in upper_line
+            or "SUPLENTES" in upper_line
+            or "JUNTA ELECTORAL" in upper_line
+        ):
+            counter = 1
+            result.append(line)
+            continue
         # Check if the line is a candidate name
         number_match = _HAS_NUMBER_RE.match(stripped_line)
         if number_match and counter is not None:
-            # Override the number with the current counter
-            result.append(f"{counter}. {stripped_line[number_match.end() :].lstrip()}")
-            counter += 1
-        elif candidate_regex.match(stripped_line) and counter is not None:
+            # Override the number with the current counter if the line is a candidate name
+            candidate_name = stripped_line[number_match.end() :].lstrip()
+            if candidate_regex.match(candidate_name):
+                result.append(
+                    f"{counter}. {stripped_line[number_match.end() :].lstrip()}"
+                )
+                counter += 1
+            else:
+                result.append(line)  # Not a candidate name, keep the line as is
+            continue
+        if candidate_regex.match(stripped_line) and counter is not None:
             # Add the number and increment the counter
             result.append(f"{counter}. {line}")
             counter += 1
-        else:
-            # Reset the counter if we hit a new list header or the "SUPLENTES" section
-            upper_line = stripped_line.upper()
-            if "CANDIDATURA NÚM" in upper_line or "SUPLENTES" in upper_line:
-                counter = 1
+            continue
 
-            # Append the non-candidate line exactly as it was
-            result.append(line)
+        # Append the non-candidate line exactly as it was
+        result.append(line)
 
     return "\n".join(result), counter

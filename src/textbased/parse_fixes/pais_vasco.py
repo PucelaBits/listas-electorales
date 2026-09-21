@@ -1,6 +1,22 @@
 from ._common import fill_missing_numbers, register_fixer
 
 
+@register_fixer("pais_vasco", 2009, 3)
+def fix_pais_vasco_2009_03(text: str) -> str:
+    text = text.replace("00.– ALFREDO PARTE GUTIÉRREZ", "10.– ALFREDO PARTE GUTIÉRREZ")
+    text = text.replace("ORDEZKOAK/SUPLENTES", "SUPLENTES")
+    text = text.replace("ORDEZKOAK/ SUPLENTES", "SUPLENTES")
+    text = text.replace("ORDEZKOAK / SUPLENTES", "SUPLENTES")
+    text = text.replace("ORDEZKOAK /SUPLENTES", "SUPLENTES")
+    # Facilitate parsing
+    text = text.replace(
+        "GIPUZKOAKO KONDAIRA-LURRALDEKO JUNTA ELECTORAL DEL TERRITORIO",
+        "JUNTA ELECTORAL DEL TERRITORIO HISTÓRICO DE GIPUZKOA",
+    )
+    text = text.replace("\n(", " (")
+    return text
+
+
 @register_fixer("pais_vasco", 2012, 10)
 def fix_pais_vasco_2012_10(text: str) -> str:
     # TODO: err.pdf
