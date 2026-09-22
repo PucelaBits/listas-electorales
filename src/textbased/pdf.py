@@ -17,15 +17,12 @@ _TOO_MANY_SPACES_THRESHOLD = 7
 # Pre-compile regex for spaces to handle exact or greater threshold optimally
 _MANY_SPACES_REGEX = re.compile(rf" {{{_TOO_MANY_SPACES_THRESHOLD},}}")
 
-# Regex to detect if a string contains any PUA characters in our target range
-_PUA_REGEX = re.compile(r"[\uF000-\uF0FF]")
-
-
 HARCODED_COLUMN_FIX = {
     ("cataluna", 1988, 5): 3,
     ("cataluna", 1992, 3): 3,
     ("cataluna", 1995, 11): 3,
     ("cataluna", 1999, 10): 3,
+    ("murcia", 2003, 5): 2,
     ("cataluna", 2003, 11): 3,
     ("cataluna", 2006, 11): 3,
     ("castilla_la_mancha", 2007, 5): 3,

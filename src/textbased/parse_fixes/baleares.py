@@ -1,6 +1,6 @@
 import re
 
-from ._common import LOWER_CANDIDATE_REGEX, fix_missing_substitutes, register_fixer
+from ._common import LOWER_CANDIDATE_REGEX, fix_missing_substitute_numbers, register_fixer
 
 _BOIB_REGEX = re.compile(r"^.*BOIB.*$", re.MULTILINE)
 
@@ -134,7 +134,7 @@ def fix_baleares_2003_05(text: str) -> str:
     )
     text = text.replace("14 Miquel Pons Victori", "Suplentes\n14 Miquel Pons Victori")
     text = text.replace("5 Eduvigis Sánchez Meroño", "3 Eduvigis Sánchez Meroño")
-    text = fix_missing_substitutes(text, LOWER_CANDIDATE_REGEX)
+    text = fix_missing_substitute_numbers(text, LOWER_CANDIDATE_REGEX)
     return text
 
 

@@ -47,6 +47,20 @@ def _fix_valencia_province(text: str) -> str:
     return re.sub(_VALENCIA_PROVINCE_REGEX, replacement, text)
 
 
+def _fix_valencia_substitutes(text: str) -> str:
+    text = text.replace("\nS1", "\nSUPLENTES\n1.")
+    text = text.replace("\nS2", "\nSUPLENTES\n2.")
+    text = text.replace("\nS3", "\nSUPLENTES\n3.")
+    text = text.replace("\nS4", "\nSUPLENTES\n4.")
+    text = text.replace("\nS5", "\nSUPLENTES\n5.")
+    text = text.replace("\nS6", "\nSUPLENTES\n6.")
+    text = text.replace("\nS7", "\nSUPLENTES\n7.")
+    text = text.replace("\nS8", "\nSUPLENTES\n8.")
+    text = text.replace("\nS9", "\nSUPLENTES\n9.")
+    text = text.replace("\nS10", "\nSUPLENTES\n10.")
+    return text
+
+
 @register_fixer("valencia", 1983, 5)
 def fix_valencia_1983_05(text: str) -> str:
     text = _fix_valencia_province(text)
@@ -80,6 +94,7 @@ def fix_valencia_1999_06(text: str) -> str:
 @register_fixer("valencia", 2003, 5)
 def fix_valencia_2003_05(text: str) -> str:
     text = _fix_valencia_province(text)
+    text = _fix_valencia_substitutes(text)
     return text
 
 
@@ -89,14 +104,9 @@ def fix_valencia_2007_05(text: str) -> str:
     if "Anuncio del Ministerio de Fomento" in text:
         return ""
     text = _fix_valencia_province(text)
+    text = _fix_valencia_substitutes(text)
     text = text.replace("CADIDATURA", "CANDIDATURA")
     text = text.replace("N.º orden presentación", "Candidatura núm.")
-    text = text.replace("\nS1.", "\nSUPLENTES\n1.")
-    text = text.replace("\nS2.", "\nSUPLENTES\n2.")
-    text = text.replace("\nS3.", "\nSUPLENTES\n3.")
-    text = text.replace("\nS4.", "\nSUPLENTES\n4.")
-    text = text.replace("\nS5.", "\nSUPLENTES\n5.")
-    text = text.replace("\nS6.", "\nSUPLENTES\n6.")
     # TODO: Remove location at the end of the names
     return text
 
@@ -107,6 +117,7 @@ def fix_valencia_2011_05(text: str) -> str:
     text = _fix_valencia_province(text)
     text = text.replace("Núm. Ord. Pres.", "Candidatura núm.")
     text = text.replace("Nº Ord. Pres:", "Candidatura núm.")
+    text = _fix_valencia_substitutes(text)
     return text
 
 

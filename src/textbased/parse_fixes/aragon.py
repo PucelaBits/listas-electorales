@@ -3,7 +3,7 @@ from ._common import (
     autofill_intermediate_numbers,
     clean_ocr_numbers,
     fill_missing_numbers,
-    fix_missing_substitutes,
+    fix_missing_substitute_numbers,
     number_candidates,
     register_fixer,
 )
@@ -20,7 +20,7 @@ def fix_aragon_1983_05(text: str) -> str:
     # Manually fix missing "SUPLENTES"
     if "Sixto Luis Agudo" in text or "Javier Escartín Orús" in text:
         text = text.replace("19.", "\nSUPLENTES\n19.")
-    text = fix_missing_substitutes(text, UPPER_DON_CANDIDATE_NAME_REGEX)
+    text = fix_missing_substitute_numbers(text, UPPER_DON_CANDIDATE_NAME_REGEX)
     return text
 
 
@@ -115,7 +115,7 @@ def fix_aragon_1995_05(text: str) -> str:
     text = text.replace("MARCOS.RUBIO SAHUN", "MARCOS RUBIO SAHUN")
     text = clean_ocr_numbers(text)
     text = autofill_intermediate_numbers(text)
-    text = fix_missing_substitutes(text, UPPER_DON_CANDIDATE_NAME_REGEX)
+    text = fix_missing_substitute_numbers(text, UPPER_DON_CANDIDATE_NAME_REGEX)
     return text
 
 

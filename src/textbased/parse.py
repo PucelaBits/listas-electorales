@@ -125,19 +125,19 @@ class TextElectionParser:
 
     # Extract explicit candidacy headers
     EXPLICIT_CANDIDACY_RE = re.compile(
-        r"^Candidatura\s+(?:n[úu]m(?:ero)?\.?|N\.?º) *:? *(\d+)(?:[\.\-\–\—~:] *| +)(.+)$",
+        r"^Candidatura\s+(?:n[úu]m(?:ero)?\.?|N\.?º[\.:]?) *:? *(\d+)(?:[\.\-\–\—~:] *| +)(.+)$",
         re.IGNORECASE,
     )
 
     # Numbered items
     NUMBERED_ITEM_RE = re.compile(
-        rf"^[\s\.\-\–\—~]?\s*(?:N\.?º\s*|No\s+|N\s+|N\.O?\s*|Núm[\.:]\s*|Num[\.:]\s*)?(\d+)\s?[\s\.\-\–\—~:º\)]+\s*([{NAME_WHITELIST_CHARS}]+.+)$",
+        rf"^[\s\.\-\–\—~]?\s*(?:N\.?º[\.:]?\s*|No\s+|N\s+|N\.O?\s*|Núm[\.:]\s*|Num[\.:]\s*)?(\d+)\s?[\s\.\-\–\—~:º\)]+\s*([{NAME_WHITELIST_CHARS}]+.+)$",
         re.IGNORECASE,
     )
 
     # Catch isolated numbers sitting on their own line
     ISOLATED_CANDIDACY_RE = re.compile(
-        r"^(?:[-\–\—~] )?Candidatura\s+(?:n[úu]m(?:ero)?\.?|N\.?º) *:? *(\d+)[\.\-\–\—~: ]*$",
+        r"^(?:[-\–\—~] )?Candidatura\s+(?:n[úu]m(?:ero)?\.?|N\.?º[\.:]?) *:? *(\d+)[\.\-\–\—~: ]*$",
         re.IGNORECASE,
     )
     ISOLATED_NUMBER_RE = re.compile(r"^(\d+)[\.\-\–\—~]+$", re.IGNORECASE)

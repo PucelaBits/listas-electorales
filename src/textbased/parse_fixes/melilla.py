@@ -1,15 +1,27 @@
-import re
+from ._common import (
+    LOWER_DON_CANDIDATE_NAME_REGEX,
+    NUMBER_MAP,
+    number_candidates,
+    register_fixer,
+)
 
-from ._common import NUMBER_MAP, number_candidates, register_fixer
 
-_MELILLA_2015_05_LAST_NUMBER = None
-_MELILLA_2015_05_CANDIDATE_REGEX = re.compile(r"^(?:Don|Doña) (.+)$")
+@register_fixer("melilla", 2003, 5)
+def fix_melilla_2003_05(text: str) -> str:
+    # Remove preamble
+    text = text.replace("9.- Don Ruperto Manuel García Hernández", "")
+    # Facilitate parse
+    text = text.replace("JUNTA ELECTORAL DE ZONA\n", "JUNTA ELECTORAL DE ZONA DE MELILLA\n")
+    text = text.replace("S U P L E N T E S", "Suplentes")
+    return text
 
 
 @register_fixer("melilla", 2007, 5)
 def fix_melilla_2007_05(text: str) -> str:
     # Remove preamble
-    text = text.replace("16.- D. FERNANDO CAVA GARCÍA, Secretario de la Junta Electoral.", "")
+    text = text.replace(
+        "16.- D. FERNANDO CAVA GARCÍA, Secretario de la Junta Electoral.", ""
+    )
     # Facilitate parse
     for number_text, number in NUMBER_MAP.items():
         text = text.replace(
@@ -26,6 +38,9 @@ def fix_melilla_2011_05(text: str) -> str:
     return text
 
 
+_MELILLA_2015_05_LAST_NUMBER = None
+
+
 @register_fixer("melilla", 2015, 5)
 def fix_melilla_2015_05(text: str) -> str:
     # Remove preamble
@@ -38,7 +53,7 @@ def fix_melilla_2015_05(text: str) -> str:
     global _MELILLA_2015_05_LAST_NUMBER
     text, last_number = number_candidates(
         text,
-        _MELILLA_2015_05_CANDIDATE_REGEX,
+        LOWER_DON_CANDIDATE_NAME_REGEX,
         last_number=_MELILLA_2015_05_LAST_NUMBER,
     )
     _MELILLA_2015_05_LAST_NUMBER = last_number

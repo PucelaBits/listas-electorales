@@ -2,10 +2,10 @@ import re
 
 from common import NAME_WHITELIST_CHARS
 
-from ._common import LOWER_CANDIDATE_REGEX, fix_missing_substitutes, register_fixer
+from ._common import LOWER_CANDIDATE_REGEX, fix_missing_substitute_numbers, register_fixer
 
 _MADRID_INVERSE_CANDIDACY_REGEX = re.compile(
-    rf"^([{NAME_WHITELIST_CHARS}\d \(\)\+\.’]+)[\r?\n]+(Candidatura número[:|\.]? \d+\.?)$",
+    rf"^([{NAME_WHITELIST_CHARS}\d \(\)\+\.’“”]+)[\r?\n]+(Candidatura número[:|\.]? \d+\.?)$",
     re.MULTILINE,
 )
 
@@ -32,13 +32,16 @@ def fix_madrid_1999_06(text: str) -> str:
 @register_fixer("madrid", 2003, 5)
 def fix_madrid_2003_05(text: str) -> str:
     text = _madrid_inverse_candidacy_fix(text)
+    text = fix_missing_substitute_numbers(text, LOWER_CANDIDATE_REGEX)
+    # Fix missing candidacies
+    text = text.replace("Candidatura número 19.", "Candidatura número 18. RELLENO\nNO PROCLAMADA\nCandidatura número 19.")
     return text
 
 
 @register_fixer("madrid", 2003, 10)
 def fix_madrid_2003_10(text: str) -> str:
     text = _madrid_inverse_candidacy_fix(text)
-    text = fix_missing_substitutes(text, LOWER_CANDIDATE_REGEX)
+    text = fix_missing_substitute_numbers(text, LOWER_CANDIDATE_REGEX)
     return text
 
 
@@ -46,7 +49,7 @@ def fix_madrid_2003_10(text: str) -> str:
 def fix_madrid_2007_05(text: str) -> str:
     text = _madrid_inverse_candidacy_fix(text)
     text = text.replace("PROVINCIAL DE MADRID", "JUNTA ELECTORAL PROVINCIAL DE MADRID")
-    text = fix_missing_substitutes(text, LOWER_CANDIDATE_REGEX)
+    text = fix_missing_substitute_numbers(text, LOWER_CANDIDATE_REGEX)
     return text
 
 

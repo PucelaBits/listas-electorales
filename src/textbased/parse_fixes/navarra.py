@@ -50,6 +50,12 @@ def fix_navarra_1999_06(text: str) -> str:
 @register_fixer("navarra", 2003, 5)
 def fix_navarra_2003_05(text: str) -> str:
     text = _navarra_candidacy_fix(text)
+    # Remove preamble
+    if "Junta Electoral de Zona de Pamplona, Vicente Ager Iciz" in text:
+        text = text.split("Junta Electoral de Zona de Pamplona, Vicente Ager Iciz")[-1]
+    # Remove footer
+    if "JUNTA ELECTORAL DE ZONA DE AOIZ" in text:
+        text = text.split("JUNTA ELECTORAL DE ZONA DE AOIZ")[0]
     return text
 
 

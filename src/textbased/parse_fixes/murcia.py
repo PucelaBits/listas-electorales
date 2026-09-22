@@ -54,6 +54,11 @@ def fix_murcia_1999_06(text: str) -> str:
 @register_fixer("murcia", 2003, 5)
 def fix_murcia_2003_05(text: str) -> str:
     text = _murcia_province_fix(text)
+    # Facilitate parsing
+    text = text.replace("\n(", " (")
+    # Remove footer
+    if "Electoral de Zona de Caravaca de la Cruz" in text:
+        text = text.split("Electoral de Zona de Caravaca de la Cruz")[0]
     return text
 
 

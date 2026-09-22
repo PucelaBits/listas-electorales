@@ -36,7 +36,7 @@ LOWER_DON_CANDIDATE_NAME_REGEX = re.compile(
 )
 
 _MULTILINE_CANDIDACY_RE = re.compile(
-    r"(\d+)\s+(?:FORMACIÓN POLÍTICA:|DENOMINACIÓN:?)\s+(.+)\s+SIGLAS:?\s*(.+)$",
+    r"(\d+)\s+(?:FORMACIÓN POLÍTICA:|DENOMINACIÓN:?|PARTIDO:)\s+(.+)\s+SIGLAS?:?\s*(.+)$",
     re.MULTILINE | re.IGNORECASE,
 )
 _MULTILINE_INVERSE_CANDIDACY_RE = re.compile(
@@ -212,7 +212,7 @@ def remove_single_letter_lines(text: str) -> str:
     return re.sub(pattern, "", text, flags=re.MULTILINE)
 
 
-def fix_missing_substitutes(text: str, name_regex: re.Pattern) -> str:
+def fix_missing_substitute_numbers(text: str, name_regex: re.Pattern) -> str:
     """
     Fixes missing substitutes in the text.
     This function looks for specific patterns in the text where substitutes numbers are missing

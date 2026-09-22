@@ -2,7 +2,7 @@ import re
 
 from ._common import (
     LOWER_DON_CANDIDATE_NAME_REGEX,
-    fix_missing_substitutes,
+    fix_missing_substitute_numbers,
     register_fixer,
 )
 
@@ -85,5 +85,5 @@ def fix_galicia_2012_10(text: str) -> str:
         "I. Relación de candidaturas proclamadas en la circunscripción electoral\n",
         "I. Relación de candidaturas proclamadas en la circunscripción electoral ",
     )
-    text = fix_missing_substitutes(text, LOWER_DON_CANDIDATE_NAME_REGEX)
+    text = fix_missing_substitute_numbers(text, LOWER_DON_CANDIDATE_NAME_REGEX)
     return text

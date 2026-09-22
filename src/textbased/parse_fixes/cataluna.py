@@ -3,7 +3,7 @@ import re
 from common import NAME_WHITELIST_CHARS_LOWER, NAME_WHITELIST_CHARS_UPPER
 
 from ._common import (
-    fix_missing_substitutes,
+    fix_missing_substitute_numbers,
     fix_multiline_candidacy_naming,
     register_fixer,
 )
@@ -171,7 +171,7 @@ _CATALUNA_2015_09_LLEIDA_CANDIDACY_INDEX = 0
 
 @register_fixer("cataluna", 2015, 9)
 def fix_cataluna_2015_09(text: str) -> str:
-    text = fix_missing_substitutes(text, _CATALUNA_2015_09_CANDIDATE_RE)
+    text = fix_missing_substitute_numbers(text, _CATALUNA_2015_09_CANDIDATE_RE)
     text = fix_multiline_candidacy_naming(text)
     text = text.replace(
         "NÚM. DE ORDEN\n9\nFORMACIÓN POLÍTICA:\nCATALUNYA SÍ QUE ES POT",
