@@ -50,6 +50,19 @@ def fix_asturias_1999_06(text: str) -> str:
 @register_fixer("asturias", 2003, 5)
 def fix_asturias_2003_05(text: str) -> str:
     text = _asturias_province_fix(text)
+    text = text.replace("Candidatos\n", "")
+    text = text.replace("CIRCUNSCRIPCION\n", "CIRCUNSCRIPCIÓN ")
+    # Fix OCR
+    text = text.replace("9, ", "9. ")
+    text = text.replace("25, ", "25. ")
+    text = text.replace("1, ", "1. ")
+    text = text.replace("I .", "1. ")
+    text = text.replace("I.", "1. ")
+    text = text.replace("23, ", "23. ")
+    # Fix candidates
+    text = text.replace("2. Encarnación González Martínez", "3. Encarnación González Martínez")
+    # Remove unexpected candidate
+    text = text.replace("21. Nelly Azucena Carabajo Rivas", "")
     return text
 
 

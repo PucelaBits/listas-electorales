@@ -91,6 +91,12 @@ def fix_valencia_2007_05(text: str) -> str:
     text = _fix_valencia_province(text)
     text = text.replace("CADIDATURA", "CANDIDATURA")
     text = text.replace("N.º orden presentación", "Candidatura núm.")
+    text = text.replace("\nS1.", "\nSUPLENTES\n1.")
+    text = text.replace("\nS2.", "\nSUPLENTES\n2.")
+    text = text.replace("\nS3.", "\nSUPLENTES\n3.")
+    text = text.replace("\nS4.", "\nSUPLENTES\n4.")
+    text = text.replace("\nS5.", "\nSUPLENTES\n5.")
+    text = text.replace("\nS6.", "\nSUPLENTES\n6.")
     # TODO: Remove location at the end of the names
     return text
 

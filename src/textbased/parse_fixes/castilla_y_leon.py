@@ -131,32 +131,12 @@ def fix_castilla_y_leon_1999_06(text: str) -> str:
     )
 
 
+_CYL_2003_05_LAST_NUMBER = 1
+
+
 @register_fixer("castilla_y_leon", 2003, 5)
 def fix_castilla_y_leon_2003_05(text: str) -> str:
-    """Aplica las erratas del BOC n.º 88 (12-mayo-2003) que corrige el
-    Suplemento al BOC n.º 80 (29-abril-2003) — Decreto 1/2003, de 31 de marzo,
-    del Presidente de la Junta de Castilla y León.
-
-    La errata (JEP BURGOS) deja sin efecto la proclamación de la candidatura
-    de Izquierda Unida de Castilla y León de 28-abril-2003 y la vuelve a
-    proclamar, en ejecución de la sentencia del Tribunal Constitucional en el
-    recurso de amparo n.º 2.602/03. Comparando la lista reproclamada con la
-    publicada, solo difieren dos cosas (el resto de nombres y suplentes son
-    idénticos):
-      1. Los dos primeros candidatos estaban intercambiados: el archivo dice
-         "1.º CASTO GARCÍA GONZÁLEZ / 2.º LUIS CASTRO BERROJO" pero debe ser
-         "1.º LUIS GARCÍA SANZ / 2.º CASTO GARCÍA GONZÁLEZ". Se sustituye el
-         bloque de dos líneas (único en todo el documento) por el orden
-         correcto.
-      2. "Dª MIREN JAIONE AVILA ESTEFANÍA" debe ser "…AVILA… con tilde:
-         ÁVILA" — "Jaione Ávila Estefanía" (único en el documento).
-    Nota: la errata escribe los nombres en el estilo propio del BOC 88
-    ("D.ª", finales con punto); se conserva el estilo del propio archivo
-    ("Dª", sin punto final) y solo se corrigieron las dos diferencias
-    sustantivas. El resto de candidaturas IU-CyL de otras provincias (p. e.
-    LEÓN p.2/3, SALAMANCA p.6, SEGOVIA p.8, SORIA p.9, ZAMORA p.11) son
-    distintas y quedan intactas.
-    """
+    # Errata (err.pdf)
     text = text.replace(
         "D. CASTO GARCÍA GONZÁLEZ\nD. LUIS CASTRO BERROJO",
         "D. LUIS GARCÍA SANZ\nD. CASTO GARCÍA GONZÁLEZ",
@@ -165,7 +145,21 @@ def fix_castilla_y_leon_2003_05(text: str) -> str:
         "Dª MIREN JAIONE AVILA ESTEFANÍA",
         "Dª MIREN JAIONE ÁVILA ESTEFANÍA",
     )
+    # Remove header
+    text = text.replace("Martes, ", "")
+    # Facilitate parsing
+    text = text.replace("PARTIDO\n", "PARTIDO ")
+    text = re.sub(r"(\d+)\.–", r"Candidatura núm.: \1.", text)
+    text = fix_maria_ocr(text, upper=True)
+    text = text.replace("J U N TA ELECTORAL PROVINCIAL DE VA L L A D O L I D", "JUNTA ELECTORAL PROVINCIAL DE VALLADOLID")
+    global _CYL_2003_05_LAST_NUMBER
+    text, _CYL_2003_05_LAST_NUMBER = number_candidates(
+        text,
+        UPPER_DON_CANDIDATE_NAME_REGEX,
+        last_number=_CYL_2003_05_LAST_NUMBER,
+    )
     return text
+
 
 @register_fixer("castilla_y_leon", 2007, 5)
 def fix_castilla_y_leon_2007_05(text: str) -> str:
@@ -174,7 +168,9 @@ def fix_castilla_y_leon_2007_05(text: str) -> str:
     # Facilitate parsing
     text = text.replace("\n4.–", "\nCandidatura núm.: 4.")
     text = text.replace("Suplentes: ------", "")
+    text = text.replace("N.º 83", "")
     return text
+
 
 _CYL_2011_05_LAST_NUMBER = None
 _CYL_2011_05_CANDIDACY_REGEX = re.compile(r"(\d+)\.\-\s+")
@@ -207,7 +203,10 @@ def fix_castilla_y_leon_2011_05(text: str) -> str:
     text = fix_maria_ocr(text, upper=True)
     text = _CYL_2011_05_CANDIDACY_REGEX.sub(r"Candidatura núm.: \1. ", text)
     # Fix missing candidacy
-    text = text.replace("Candidatura núm.: 15. PARTIDO DE CASTILLAY LEON (PCAL)", "Candidatura núm.: 14. RELLENO\nNO PROCLAMADA\nCandidatura núm.: 15. PARTIDO DE CASTILLAY LEON (PCAL)")
+    text = text.replace(
+        "Candidatura núm.: 15. PARTIDO DE CASTILLAY LEON (PCAL)",
+        "Candidatura núm.: 14. RELLENO\nNO PROCLAMADA\nCandidatura núm.: 15. PARTIDO DE CASTILLAY LEON (PCAL)",
+    )
     global _CYL_2011_05_LAST_NUMBER
     text, last_number = number_candidates(
         text,

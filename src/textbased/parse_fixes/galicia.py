@@ -35,6 +35,16 @@ def fix_galicia_1997_10(text: str) -> str:
     return text
 
 
+@register_fixer("galicia", 2005, 6)
+def fix_galicia_2005_06(text: str) -> str:
+    # Remove preamble
+    if "cunscripciones para las elecciones al Parlamento de" in text:
+        text = text.split("cunscripciones para las elecciones al Parlamento de")[-1]
+    # Facilitate parsing
+    text = text.replace("Candidatos:\n", "")
+    return text
+
+
 _GALICIA_2009_03_CANDIDACY_REGEX = re.compile(r"^\*\s*(\d+)[\.|\s]?", re.MULTILINE)
 
 

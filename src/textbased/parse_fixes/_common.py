@@ -23,23 +23,26 @@ NUMBER_MAP = {
 PARSE_FIXES: dict[tuple[str, int, int], Callable[[str], str]] = {}
 
 UPPER_CANDIDATE_REGEX = re.compile(
-    rf"^(?!NO PROCLAMADA)(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ +(?:DE +|LOS +|DEL +|LA +)*){{1,2}}(?:\([{NAME_WHITELIST_CHARS_UPPER}\. ]+\) +(?:DE +|LOS +|DEL +|LA +)*)?(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ *(?:DE +|LOS +|DEL +|LA +)*){{1,3}}(?:\([{NAME_WHITELIST_CHARS}\. ]+\))? *\.?$"
+    rf"^(?!NO PROCLAMADA)(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ +(?:DE +|LOS +|DEL +|LA +)*){{1,2}}(?:\([{NAME_WHITELIST_CHARS_UPPER}\. ]+\) +(?:DE +|LOS +|DEL +|LA +)*)?(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ *(?:DE +|LOS +|DEL +|LA +)*){{1,4}}(?:\([{NAME_WHITELIST_CHARS}\. ]+\))? *\.?$"
 )
 LOWER_CANDIDATE_REGEX = re.compile(
     rf"^(?!NO PROCLAMADA)(?:[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+ +(?:de +|los +|del +|la +)*){{1,2}}(?:\([{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER} ]+\) +(?:de +|los +|del +|la +)*)?(?:[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+ *(?:de +|los +|del +|la +)*){{1,3}}(?:\([{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER} ]+\))? *\.?$"
 )
 UPPER_DON_CANDIDATE_NAME_REGEX = re.compile(
-    rf"^(?:DON|DOÑA|Don|Doña)\s+(?:[{NAME_WHITELIST_CHARS_UPPER}]+|FCO\.)(?:\s+[{NAME_WHITELIST_CHARS_UPPER}]+|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.|\s+FCO\.|\s+\(.+\))+\.?$"
+    rf"^(?:DON|DOÑA|Don|Doña|D.|Dª)\s+(?:[{NAME_WHITELIST_CHARS_UPPER}]+|FCO\.)(?:\s+[{NAME_WHITELIST_CHARS_UPPER}]+|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.|\s+FCO\.|\s+\(.+\))+\.?$"
 )
 LOWER_DON_CANDIDATE_NAME_REGEX = re.compile(
-    rf"^(?:Don|Doña)\s+[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+(?:(?:\s+|\s?\-\s?)[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|\s+y|\s+del|\s+las?|\s+de|\s+los|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.)+\.?$"
+    rf"^(?:Don|Doña|D.|Dª)\s+[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+(?:(?:\s+|\s?\-\s?)[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|\s+y|\s+del|\s+las?|\s+de|\s+los|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.)+\.?$"
 )
 
 _MULTILINE_CANDIDACY_RE = re.compile(
     r"(\d+)\s+(?:FORMACIÓN POLÍTICA:|DENOMINACIÓN:?)\s+(.+)\s+SIGLAS:?\s*(.+)$",
     re.MULTILINE | re.IGNORECASE,
 )
-
+_MULTILINE_INVERSE_CANDIDACY_RE = re.compile(
+    r"^SIGLAS:\s*(.*)[\n\r]PART/FED(?:ER)?/AGRUP:\s*(.+\s*.+)[\n\r]CANDIDATURA Nº:?\s*(\d+)\.?$",
+    re.MULTILINE | re.IGNORECASE,
+)
 _MULTILINE_NOT_PROCLAIMED_CANDIDACY_RE = re.compile(
     r"N[UÚ]M\.(?:DE +ORDEN)?\s*(\d+)\s+NO PROCLAMADA$", re.MULTILINE | re.IGNORECASE
 )
@@ -52,6 +55,7 @@ def fix_maria_ocr(text: str, upper: bool = False) -> str:
     text = text.replace("M2. ", f"{replace_text} ")
     text = text.replace("M2 ", f"{replace_text} ")
     text = text.replace("Mª.", f"{replace_text}")
+    text = text.replace("M.ª", f"{replace_text}")
     text = text.replace("M.2", f"{replace_text}")
     text = text.replace(" M . ", f" {replace_text} ")
     text = text.replace(" M ", f" {replace_text} ")
@@ -61,14 +65,11 @@ def fix_maria_ocr(text: str, upper: bool = False) -> str:
 
 
 def fix_multiline_candidacy_naming(text: str) -> str:
-    for match in _MULTILINE_CANDIDACY_RE.finditer(text):
-        number, party_name, party_abbr = match.groups()
-        new_line = f"\nCandidatura número: {number}. {party_name} ({party_abbr})\n"
-        text = text.replace(match.group(0), new_line)
-    for match in _MULTILINE_NOT_PROCLAIMED_CANDIDACY_RE.finditer(text):
-        number = match.group(1)
-        new_line = f"\nCandidatura número: {number}. RELLENO\nNO PROCLAMADA\n"
-        text = text.replace(match.group(0), new_line)
+    text = _MULTILINE_CANDIDACY_RE.sub(r"\1: \2 (\3)", text)
+    text = _MULTILINE_INVERSE_CANDIDACY_RE.sub(r"Candidatura núm. \3: \2 (\1)", text)
+    text = _MULTILINE_NOT_PROCLAIMED_CANDIDACY_RE.sub(
+        r"Candidatura núm. \1: RELLENO\nNO PROCLAMADA", text
+    )
     return text
 
 
@@ -202,73 +203,6 @@ def fill_missing_numbers(
     return text[:start_pos] + "".join(block_lines) + text[end_pos:]
 
 
-_TEN_LINE_OCR_RE = re.compile(
-    r"^(?P<L1>[^\d\n].*?)\r?\n"
-    r"(?P<L2>[^\d\n].*?)\r?\n"
-    r"(?P<L3>[^\d\n].*?)\r?\n"
-    r"(?P<L4>[^\d\n].*?)\r?\n"
-    r"(?P<L5>[^\d\n].*?)\r?\n"
-    r"(?P<L6>[^\d\n].*?)\r?\n"
-    r"(?P<L7>[^\d\n].*?)\r?\n"
-    r"(?P<L8>[^\d\n].*?)\r?\n"
-    r"(?P<L9>[^\d\n].*?)\r?\n"
-    r"(?P<L10>10\..*?)$",
-    re.MULTILINE,
-)
-
-
-def fix_ten_line_ocr(text: str) -> str:
-    # Match 9 lines that don't start with a digit, followed by the 10th line
-    # Replace using the captured groups and prepending the numbers
-    return _TEN_LINE_OCR_RE.sub(
-        (
-            r"1. \g<L1>\n"
-            r"2. \g<L2>\n"
-            r"3. \g<L3>\n"
-            r"4. \g<L4>\n"
-            r"5. \g<L5>\n"
-            r"6. \g<L6>\n"
-            r"7. \g<L7>\n"
-            r"8. \g<L8>\n"
-            r"9. \g<L9>\n"
-            r"\g<L10>"
-        ),
-        text,
-    )
-
-
-_NINE_LINE_OCR_RE = re.compile(
-    r"^(?P<L1>[^\d\n].*?)\r?\n"
-    r"(?P<L2>[^\d\n].*?)\r?\n"
-    r"(?P<L3>[^\d\n].*?)\r?\n"
-    r"(?P<L4>[^\d\n].*?)\r?\n"
-    r"(?P<L5>[^\d\n].*?)\r?\n"
-    r"(?P<L6>[^\d\n].*?)\r?\n"
-    r"(?P<L7>[^\d\n].*?)\r?\n"
-    r"(?P<L8>[^\d\n].*?)\r?\n"
-    r"(?P<L9>9\..*?)$",
-    re.MULTILINE,
-)
-
-
-def fix_nine_line_ocr(text: str) -> str:
-    # Match 8 lines that don't start with a digit, followed by the 9th line
-    return _NINE_LINE_OCR_RE.sub(
-        (
-            r"1. \g<L1>\n"
-            r"2. \g<L2>\n"
-            r"3. \g<L3>\n"
-            r"4. \g<L4>\n"
-            r"5. \g<L5>\n"
-            r"6. \g<L6>\n"
-            r"7. \g<L7>\n"
-            r"8. \g<L8>\n"
-            r"\g<L9>"
-        ),
-        text,
-    )
-
-
 def remove_single_letter_lines(text: str) -> str:
     """
     Removes lines that consist of a single letter (A-Z, a-z) or multiple single
@@ -328,7 +262,8 @@ def number_candidates(
         if (
             "CANDIDATURA NÚM" in upper_line
             or "SUPLENTES" in upper_line
-            or "JUNTA ELECTORAL" in upper_line
+            or "ELECTORAL" in upper_line
+            or "SECRETARIO " in upper_line
         ):
             counter = 1
             result.append(line)

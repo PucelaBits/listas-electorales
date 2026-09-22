@@ -31,10 +31,51 @@ def _canarias_province_fix(text: str) -> str:
     return text
 
 
-_CANARIAS_2007_05_CANDIDACY_REGEX = re.compile(
-    r"^SIGLAS:\s*(.+)[\n\r]PART/FED/AGRUP:\s*(.+\s*.+)[\n\r]CANDIDATURA Nº:\s*(\d+)\.?$",
-    re.MULTILINE,
-)
+@register_fixer("canarias", 1983, 5)
+def fix_canarias_1983_05(text: str) -> str:
+    text = _canarias_province_fix(text)
+    return text
+
+
+@register_fixer("canarias", 1987, 6)
+def fix_canarias_1987_06(text: str) -> str:
+    text = _canarias_province_fix(text)
+    return text
+
+
+@register_fixer("canarias", 1991, 6)
+def fix_canarias_1991_06(text: str) -> str:
+    text = _canarias_province_fix(text)
+    return text
+
+
+@register_fixer("canarias", 1995, 5)
+def fix_canarias_1995_05(text: str) -> str:
+    text = _canarias_province_fix(text)
+    return text
+
+
+@register_fixer("canarias", 1999, 6)
+def fix_canarias_1999_06(text: str) -> str:
+    text = _canarias_province_fix(text)
+    return text
+
+
+@register_fixer("canarias", 2003, 5)
+def fix_canarias_2003_05(text: str) -> str:
+    # TODO: Errata (err.pdf) and "Errores cometidos por esta Junta en la publicación"
+    # Remove preamble
+    if "que no trasciendan del ámbito de este Centro" in text:
+        return ""
+    # Remove footer
+    if "Errores cometidos por esta Junta en la publicación" in text:
+        text = text.split("Errores cometidos por esta Junta en la publicación")[0]
+    text = _canarias_province_fix(text)
+    # Fixes for parsing
+    text = fix_multiline_candidacy_naming(text)
+    # Fix missing candidacy
+    text = text.replace("Candidatura núm. 11: PARTIDO", "Candidatura núm. 10: RELLENO\nNO PROCLAMADA\nCandidatura núm. 11: PARTIDO")
+    return text
 
 
 @register_fixer("canarias", 2007, 5)
@@ -49,7 +90,7 @@ def fix_canarias_2007_05(text: str) -> str:
     text = text.replace("Germán Briton Martín", "Germán Brito Martín")
     text = text.replace("Félix Andrés Gonzalo Lorenzo", "Félix Andrés González Lorenzo")
     # Fixes for parsing
-    text = _CANARIAS_2007_05_CANDIDACY_REGEX.sub(r"Candidatura núm. \3: \2 (\1)", text)
+    text = fix_multiline_candidacy_naming(text)
     text = _canarias_province_fix(text)
     text = text.replace("Nº Nombre y apellidos Partido o\nFederación", "")
     text = text.replace("NACIONALISTA\n", "NACIONALISTA ")

@@ -22,8 +22,14 @@ _PUA_REGEX = re.compile(r"[\uF000-\uF0FF]")
 
 
 HARCODED_COLUMN_FIX = {
-    ("cantabria", 2011, 5): 1,
+    ("cataluna", 1988, 5): 3,
+    ("cataluna", 1992, 3): 3,
+    ("cataluna", 1995, 11): 3,
+    ("cataluna", 1999, 10): 3,
+    ("cataluna", 2003, 11): 3,
+    ("cataluna", 2006, 11): 3,
     ("castilla_la_mancha", 2007, 5): 3,
+    ("cantabria", 2011, 5): 1,
 }
 
 

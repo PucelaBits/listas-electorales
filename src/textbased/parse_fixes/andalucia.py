@@ -6,8 +6,6 @@ from ._common import (
     clean_ocr_numbers,
     fill_missing_numbers,
     fix_maria_ocr,
-    fix_nine_line_ocr,
-    fix_ten_line_ocr,
     register_fixer,
     remove_single_letter_lines,
 )
@@ -342,7 +340,6 @@ def fix_andalucia_1986_06(text: str) -> str:
         "JUNTA ELECTORAL PROVINCIAL DE CADIZ\nCENTRO DEMOCRATICO Y SOCIAL (C.D.S.)",
         "JUNTA ELECTORAL PROVINCIAL DE CADIZ\n1. CENTRO DEMOCRATICO Y SOCIAL (C.D.S.)",
     )
-    text = re.sub(_ANDALUCIA_MISSING_DOT_RE, r"\1.", text)
     text = text.replace("nO. ", "10. ")
     text = text.replace("vo. ", "10. ")
     text = text.replace("TO ", "10. ")

@@ -1,6 +1,24 @@
 from ._common import clean_ocr_numbers, register_fixer
 
 
+@register_fixer("ceuta", 1995, 5)
+def fix_ceuta_1995_05(text: str) -> str:
+    # Remove preamble
+    if "SUMARIO" in text:
+        return ""
+    return text
+
+
+@register_fixer("ceuta", 2003, 5)
+def fix_ceuta_2003_05(text: str) -> str:
+    # Remove preamble
+    if "SUMARIO" in text:
+        return ""
+    text = text.replace("15.- En cumplimiento", "JUNTA ELECTORAL DE CEUTA\nEn cumplimiento")
+    text = text.replace("15 B. O.", "")
+    return text
+
+
 @register_fixer("ceuta", 2007, 5)
 def fix_ceuta_2007_05(text: str) -> str:
     # Remove preamble
@@ -10,6 +28,7 @@ def fix_ceuta_2007_05(text: str) -> str:
     text = clean_ocr_numbers(text)
     return text
 
+
 @register_fixer("ceuta", 2011, 5)
 def fix_ceuta_2011_05(text: str) -> str:
     # Remove preamble
@@ -18,6 +37,7 @@ def fix_ceuta_2011_05(text: str) -> str:
     if "Las tarifas vigentes, según acuerdo plenario de " in text:
         return ""
     return text
+
 
 @register_fixer("ceuta", 2015, 5)
 def fix_ceuta_2015_05(text: str) -> str:

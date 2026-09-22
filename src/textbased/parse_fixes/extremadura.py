@@ -19,3 +19,13 @@ def fix_extremadura_1995_05(text: str) -> str:
     """
     return P_EXTREMADURA_1995_05.sub("JOSE VAZQUEZ ALVAREZ", text)
 
+
+@register_fixer("extremadura", 2003, 5)
+def fix_extremadura_2003_05(text: str) -> str:
+    # Remove preamble
+    if "ampliación al acuerdo de la Junta Electoral" in text:
+        text = (
+            "JUNTA ELECTORAL DE BADAJOZ"
+            + text.split("ampliación al acuerdo de la Junta Electoral")[-1]
+        )
+    return text

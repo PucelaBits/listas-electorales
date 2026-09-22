@@ -38,6 +38,7 @@ def fix_madrid_2003_05(text: str) -> str:
 @register_fixer("madrid", 2003, 10)
 def fix_madrid_2003_10(text: str) -> str:
     text = _madrid_inverse_candidacy_fix(text)
+    text = fix_missing_substitutes(text, LOWER_CANDIDATE_REGEX)
     return text
 
 

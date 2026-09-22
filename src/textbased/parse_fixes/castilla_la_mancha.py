@@ -1,4 +1,52 @@
-from ._common import NUMBER_MAP, clean_ocr_numbers, register_fixer
+import re
+
+from ._common import (
+    NUMBER_MAP,
+    UPPER_CANDIDATE_REGEX,
+    clean_ocr_numbers,
+    number_candidates,
+    register_fixer,
+)
+
+_CASTILLA_LA_MANCHA_2003_05_LAST_NUMBER = 1
+
+
+@register_fixer("castilla_la_mancha", 2003, 5)
+def fix_castilla_la_mancha_2003_05(text: str) -> str:
+    # Remove footer
+    if "Y para que así co" in text:
+        text = text.split("Y para que así co")[0]
+    for number_text, number in NUMBER_MAP.items():
+        text = text.replace(
+            f"CANDIDATURA NÚMERO {number_text}:\n", f"CANDIDATURA NÚM. {number}:"
+        )
+        text = text.replace(
+            f"CANDIDATURA NÚMERO {number_text}\n", f"CANDIDATURA NÚM. {number}:\n"
+        )
+    # Facilitate parsing
+    text = text.replace("IZQUIERDA UNIDA - IZ IERDA D ILLA- MANCHA\n(1.U.)", "Candidatura núm. 3: IZQUIERDA UNIDA - IZQUIERDA DE CASTILLA-LA MANCHA (I.U.)")
+    text = text.replace("IERRA COMUNERA-PARTID IONALIST", "Candidatura núm. 6: TIERRA COMUNERA-PARTIDO NACIONALISTA CASTELLANO")
+    # Fix OCR
+    text = text.replace("23 de diciembre Electoral", "")
+    text = text.replace("N9 3. .- Adolfo Suárez lllana.", "1. Adolfo Suárez Illana.")
+    global _CASTILLA_LA_MANCHA_2003_05_LAST_NUMBER
+    # Ciudad Real fix
+    for page in range(6373, 6379 + 1):
+        if str(page) in text:
+            text = text.replace("1.- PARTIDO POPULAR", "Candidatura núm. 1: PARTIDO POPULAR")
+            text = text.replace("2.- PARTIDO SOCIALISTA OBRERO ESPAÑOL (PSOE", "Candidatura núm. 2: PARTIDO SOCIALISTA OBRERO ESPAÑOL (PSOE")
+            text = text.replace("3.- LAFALANGE", "Candidatura núm. 3: LA FALANGE")
+            text = text.replace("4.- TIERRA COMUNERA", "Candidatura núm. 4: TIERRA COMUNERA")
+            text = text.replace("5.- UNIDAD", "Candidatura núm. 5: UNIDAD")
+            text = text.replace("IZQUIERDA UNIDA - IZQUIERDA DE CASTILLA-LA MANCHA", "Candidatura núm. 6: IZQUIERDA UNIDA - IZQUIERDA DE CASTILLA-LA MANCHA")
+            text = text.replace("7.- IZQUIERDA", "Candidatura núm. 7: IZQUIERDA")
+            text, _CASTILLA_LA_MANCHA_2003_05_LAST_NUMBER = number_candidates(
+                text,
+                UPPER_CANDIDATE_REGEX,
+                last_number=_CASTILLA_LA_MANCHA_2003_05_LAST_NUMBER,
+            )
+    text = clean_ocr_numbers(text)
+    return text
 
 
 @register_fixer("castilla_la_mancha", 2007, 5)

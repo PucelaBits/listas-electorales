@@ -1,13 +1,28 @@
 from ._common import fill_missing_numbers, register_fixer
 
 
-@register_fixer("pais_vasco", 2009, 3)
-def fix_pais_vasco_2009_03(text: str) -> str:
-    text = text.replace("00.– ALFREDO PARTE GUTIÉRREZ", "10.– ALFREDO PARTE GUTIÉRREZ")
+def _fix_substitutes_declaration(text: str) -> str:
     text = text.replace("ORDEZKOAK/SUPLENTES", "SUPLENTES")
+    text = text.replace("ORDEZKAOAK/SUPLENTES", "SUPLENTES")
     text = text.replace("ORDEZKOAK/ SUPLENTES", "SUPLENTES")
     text = text.replace("ORDEZKOAK / SUPLENTES", "SUPLENTES")
     text = text.replace("ORDEZKOAK /SUPLENTES", "SUPLENTES")
+    return text
+
+
+@register_fixer("pais_vasco", 2005, 4)
+def fix_pais_vasco_2005_04(text: str) -> str:
+    text = _fix_substitutes_declaration(text)
+    # Facilitate parsing
+    text = text.replace("BIZKAIKO LURRALDE HISTORIKOKO JUNTA ELECTORAL DEL TERRITORIO", "JUNTA ELECTORAL DEL TERRITORIO HISTÓRICO DE BIZKAIA")
+    text = text.replace("GIPUZKOAKO KONDAIRA-LURRALDEKO JUNTA ELECTORAL DEL TERRITORIO", "JUNTA ELECTORAL DEL TERRITORIO HISTÓRICO DE GIPUZKOA")
+    return text
+
+
+@register_fixer("pais_vasco", 2009, 3)
+def fix_pais_vasco_2009_03(text: str) -> str:
+    text = text.replace("00.– ALFREDO PARTE GUTIÉRREZ", "10.– ALFREDO PARTE GUTIÉRREZ")
+    text = _fix_substitutes_declaration(text)
     # Facilitate parsing
     text = text.replace(
         "GIPUZKOAKO KONDAIRA-LURRALDEKO JUNTA ELECTORAL DEL TERRITORIO",

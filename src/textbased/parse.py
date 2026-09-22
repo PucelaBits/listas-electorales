@@ -22,6 +22,8 @@ _DATE_NUMBER_RE = re.compile(
     re.IGNORECASE,
 )
 
+# TODO: Normalize suplentes order
+
 # Extract candidacy name and acronym
 _CANDIDACY_RE = re.compile(
     r"^(.*?)"
@@ -85,6 +87,7 @@ def _has_trash_text(line: str) -> bool:
         "http" in line_lower
         or "página" in line_lower
         or "apellidos" in line_lower
+        or "llinatges" in line_lower
         or "secretaría" in line_lower
         or "sucursal" in line_lower
         or "teléfono" in line_lower
@@ -98,6 +101,7 @@ def _has_trash_text(line: str) -> bool:
         or "procedimiento" in line_lower
         or "disposiciones" in line_lower
         or "disposicions" in line_lower
+        or "butlletí " in line_lower
         or _DATE_RE.search(line_lower) is not None
         or _DATE_NUMBER_RE.search(line_lower) is not None
     )
@@ -105,7 +109,7 @@ def _has_trash_text(line: str) -> bool:
 
 class TextElectionParser:
     PROVINCE_RE = re.compile(
-        rf"(?:(?:JUNTA )?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO)?\s+DE\s+|ELECTORAU\s+PROVINCIAU\s+DE\s+|DE\s+LA\s+COMUNIDAD\s+AUT[ÓO]NOMA\s+DE\s+|PROVINCIAL\s+DE\s+|DE\s+ZONA\s+(?:Y\s+PROVINCIAL\s+)?(?:DE\s+|D’))|CIRCU[NM]SCRIPCI[ÓO]N?(?:\s+ELECTORAL)?(?:\s*\:?\s*|\s+DE\s+|\s+D’)?|PROVINCIA\s+DE\s+)(ASTU\-\d{{1}}|BALE\-\d{{1,2}}|CAN\-\d{{1}}|MUR\-\d{{1}}|{'|'.join(PROVINCES_LIST)})\b",
+        rf"(?:(?:JUNTA\s+)?ELECTORAL\s+(?:DEL\s+TERRITORIO\s+(?:HIST[OÓ]RICO\s+)?DE\s+|ELECTORAU\s+PROVINCIAU\s+DE\s+|DE\s+LA\s+COMUNIDAD\s+AUT[ÓO]NOMA\s+DE\s+|PROVINCIAL\s+DE\s+|DE\s+ZONA\s+(?:Y\s+PROVINCIAL\s+)?(?:DE\s+|D’)|(?:DE\s+|D’))|CIRCU[NM]SCRIPCI[ÓO]N?(?:\s+ELECTORAL)?(?:\s*\:?\s*|\s+DE\s+|\s+D’)?|PROVINCIA\s+DE\s+)(ASTU\-\d{{1}}|BALE\-\d{{1,2}}|CAN\-\d{{1}}|MUR\-\d{{1}}|{'|'.join(PROVINCES_LIST)})\b",
         re.IGNORECASE,
     )
 
@@ -127,7 +131,7 @@ class TextElectionParser:
 
     # Numbered items
     NUMBERED_ITEM_RE = re.compile(
-        rf"^[\s\.\-\–\—~]?\s*(?:Nº\s*|No\s+|N\s+|N\.O?\s*|Núm[\.:]\s*|Num[\.:]\s*)?(\d+)\s?[\s\.\-\–\—~:º\)]+\s*([{NAME_WHITELIST_CHARS}]+.+)$",
+        rf"^[\s\.\-\–\—~]?\s*(?:N\.?º\s*|No\s+|N\s+|N\.O?\s*|Núm[\.:]\s*|Num[\.:]\s*)?(\d+)\s?[\s\.\-\–\—~:º\)]+\s*([{NAME_WHITELIST_CHARS}]+.+)$",
         re.IGNORECASE,
     )
 
