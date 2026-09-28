@@ -4,7 +4,6 @@ from common import NAME_WHITELIST_CHARS
 
 from ._common import (
     clean_ocr_numbers,
-    fill_missing_numbers,
     fix_maria_ocr,
     register_fixer,
     remove_single_letter_lines,
@@ -134,76 +133,6 @@ def fix_andalucia_1982_05(text: str) -> str:
         "José Rodríguez de la Borbolla\n", "José Rodríguez de la Borbolla "
     )
     text = text.replace("Salvador lgnacio Bustamante\n", "Salvador Ignacio Bustamante ")
-    text = fix_ten_line_ocr(text)
-    text = fix_nine_line_ocr(text)
-    if "D. Angel Gómez Fuentes." in text:
-        start_line = "D. Angel Gómez Fuentes."
-        end_line = "D. Fernando Carrasco Miras."
-        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
-    elif "Alfonso Perales Pizarro" in text:
-        start_line = "Alfonso Perales Pizarro."
-        end_line = "Serafín Núñez Sánchez."
-        text = fill_missing_numbers(text, start_line, end_line, start_number=2)
-    elif "José María Fontiberio Carrasco" in text:
-        start_line = "José María Fontiberio Carrasco."
-        end_line = "José Ruiz Betanzos."
-        text = fill_missing_numbers(text, start_line, end_line, start_number=2)
-    elif "Manuel Pino Cruz." in text:
-        start_line = "Manuel Pino Cruz."
-        end_line = "José María Oteros Moros."
-        text = fill_missing_numbers(text, start_line, end_line, start_number=3)
-        # Manually fix missing "SUPLENTES"
-        text = text.replace("\n13. ", "\nSUPLENTES\n13. ")
-    elif "Luis Bugella Gómez." in text:
-        start_line = "Luis Bugella Gómez."
-        end_line = "José Angel Castro Molina."
-        text = fill_missing_numbers(text, start_line, end_line, start_number=3)
-        start_line = "D. José Sánchez Paba."
-        end_line = "D. Juan Santaella Porras."
-        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
-    elif "Juan Pérez Ramón" in text:
-        # Manually fix missing "SUPLENTES"
-        text = text.replace("\n14. ", "\nSUPLENTES\n14. ")
-        start_line = "Francisco Bustamante Morales (Indep.)"
-        end_line = "D2 María Manuela Lorite Rascón (Indep.)"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=2)
-    elif "Rosa M López López" in text:
-        start_line = "D Rosa M López López"
-        end_line = "D. Ramón Soler de la Fuente"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
-    elif "D. ManuelAnguita Peragon." in text:
-        start_line = "D. ManuelAnguita Peragon."
-        end_line = "D. Carlos Exposito Lozano."
-        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
-    elif "Miguel Lendinez Lendinez" in text:
-        start_line = "Miguel Lendinez Lendinez"
-        end_line = "Juan Catena Viedma"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
-        start_line = "Carlos Borja Herrera"
-        end_line = "D. Germán Rodríguez Hesles"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
-    elif "Joaquín Jiménez Hidalgo." in text:
-        start_line = "Joaquín Jiménez Hidalgo."
-        end_line = "Francisco García Jaén."
-        text = fill_missing_numbers(text, start_line, end_line, start_number=2)
-        start_line = "D Nuria Gutiérrez de Madariaga."
-        end_line = "Antonio Domínguez Ballester."
-        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
-    elif "Rafael Durán Gónzalez" in text:
-        # Manually fix missing "SUPLENTES"
-        text = text.replace("\n16. ", "\nSUPLENTES\n16. ")
-    elif "Manuel Góngora Canela." in text:
-        start_line = "Manuel Góngora Canela."
-        end_line = "Rafael Bernal Villa."
-        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
-    elif "Leonarda Espada Rodríguez" in text:
-        start_line = "D. Juan José Gil Arauz"
-        end_line = "D. José Luna Martínez"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
-    elif "D María del Carmen García Martín" in text:
-        start_line = "D María del Carmen García Martín."
-        end_line = "D José Ramón García Bernal."
-        text = fill_missing_numbers(text, start_line, end_line, start_number=5)
     # Fix substitutes
     text = text.replace(
         "12. Antonio Santacruz Fernández.",
@@ -340,27 +269,6 @@ def fix_andalucia_1986_06(text: str) -> str:
         "JUNTA ELECTORAL PROVINCIAL DE CADIZ\nCENTRO DEMOCRATICO Y SOCIAL (C.D.S.)",
         "JUNTA ELECTORAL PROVINCIAL DE CADIZ\n1. CENTRO DEMOCRATICO Y SOCIAL (C.D.S.)",
     )
-    text = text.replace("nO. ", "10. ")
-    text = text.replace("vo. ", "10. ")
-    text = text.replace("TO ", "10. ")
-    text = text.replace("yO. ", "10. ")
-    text = text.replace("m1. ", "11. ")
-    text = text.replace("IT. ", "11. ")
-    text = text.replace("tl.", "11.")
-    text = text.replace("nm. ", "11. ")
-    text = text.replace("n. ", "11. ")
-    text = text.replace("mM. ", "11. ")
-    text = text.replace("Mn ", "11. ")
-    text = text.replace("mn ", "11. ")
-    text = text.replace("m11. ", "11. ")
-    text = text.replace("M11. ", "11. ")
-    text = text.replace("m3. ", "13. ")
-    text = text.replace("Y. ", "1. ")
-    text = text.replace("T. ", "1. ")
-    text = text.replace("l. ", "1. ")
-    text = text.replace("l.. ", "1. ")
-    text = text.replace("lt. ", "1. ")
-    text = text.replace("). ", "1. ")
     text = text.replace("H M9. ", "1. María ")
     text = text.replace("M9. ", "María ")
     text = text.replace("ó Jorge Luis", "6. Jorge Luis")
@@ -369,19 +277,7 @@ def fix_andalucia_1986_06(text: str) -> str:
         "MA Francisco Medina Fernández", "11. Francisco Medina Fernández"
     )
     text = text.replace("EuladioF. Martín Cano", "Euladio F. Martín Cano")
-    text = text.replace(". Antonio García Terrada", "1. Antonio García Terrada")
-    text = text.replace("ó Francisco Mellado Parra", "6. Francisco Mellado Parra")
     text = text.replace("o Enrique Cortes Sánchez", "Enrique Cortes Sánchez")
-    text = text.replace("NA José lópez Benítez", "11. José López Benítez")
-    text = text.replace("n Monuel Pérez García", "11. Manuel Pérez García")
-    text = text.replace(
-        "n Francisca García Caballero", "11. Francisca García Caballero"
-    )
-    text = text.replace(
-        ". Antonio Sánchez Villaverde", "11. Antonio Sánchez Villaverde"
-    )
-    text = text.replace("17. Gabriel Relaño Canales", "11. Gabriel Relaño Canales")
-    text = text.replace("12. Antonio Ruano León", "17. Antonio Ruano León")
     text = text.replace(
         "1. Enrique Sánchez Díaz (P.C.A.-P.C.El",
         "17. Enrique Sánchez Díaz (P.C.A.-P.C.E.)",
@@ -402,47 +298,6 @@ def fix_andalucia_1986_06(text: str) -> str:
     )
     text = text.replace("Antonio 1. Diaz Rodríguez", "Antonio L. Díaz Rodríguez")
     text = _fix_missing_eleven(text)
-    text = fix_ten_line_ocr(text)
-    text = fix_nine_line_ocr(text)
-    if "Domingo Domenech Cruz" in text:
-        start_line = "Domingo Domenech Cruz"
-        end_line = "Francisca Crespo lópez"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=5)
-    elif "José Guerrero Casaus" in text:
-        start_line = "José Guerrero Casaus"
-        end_line = "Juan Carlos Murga Tejada"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=3)
-        start_line = "Manuel Llamas Sanjuan"
-        end_line = "Antonio Luque Prados"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=4)
-    elif "Antonio José Peláez Montalvo" in text:
-        start_line = "Antonio José Peláez Montalvo"
-        end_line = "Daniel Torres Castillo"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=5)
-    elif "Jasé Carlos Espin Ballesta" in text:
-        start_line = "Jasé Carlos Espin Ballesta"
-        end_line = "José Ruiz Higueras"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=4)
-    elif "Francisco Palomo Aragón" in text:
-        start_line = "Francisco Palomo Aragón"
-        end_line = "Juan José Caballero Montilla"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=3)
-    elif "Elisa García Delgado" in text:
-        start_line = "Elisa García Delgado"
-        end_line = "Diego Honorio Moreno Muñoz"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=4)
-    elif "Enrique linde Cirujano" in text:
-        start_line = "Enrique linde Cirujano"
-        end_line = "Francisco Parra Medina"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
-    elif "Antonio Luis Calderón Díaz" in text:
-        start_line = "Antonio Luis Calderón Díaz"
-        end_line = "Euladio F. Martín Cano"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=1)
-    elif "Mariano Barrios Moga" in text:
-        start_line = "Mariano Barrios Moga"
-        end_line = "Francisco López López"
-        text = fill_missing_numbers(text, start_line, end_line, start_number=11)
     text = text.replace("Dovid", "David")
     text = text.replace("Monuel", "Manuel")
     text = remove_single_letter_lines(text)
@@ -680,11 +535,6 @@ def fix_andalucia_2000_03(text: str) -> str:
     if "Instituto Geográfico Nacional" in text:
         # Remove preamble
         return ""
-    # Not proclaimed
-    text = text.replace(
-        "PARTIDO POSITIVISTA CRISTIANO (PPCr)",
-        "PARTIDO POSITIVISTA CRISTIANO (PPCr)\nNO PROCLAMADA",
-    )
     return text
 
 

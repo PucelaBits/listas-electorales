@@ -8,6 +8,12 @@ def fix_ceuta_1995_05(text: str) -> str:
         return ""
     return text
 
+@register_fixer("ceuta", 1999, 6)
+def fix_ceuta_1999_06(text: str) -> str:
+    # Facilitate parsing
+    text = text.replace("Junta Electoral de Zona\n", "JUNTA ELECTORAL DE CEUTA\n")
+    return text
+
 
 @register_fixer("ceuta", 2003, 5)
 def fix_ceuta_2003_05(text: str) -> str:

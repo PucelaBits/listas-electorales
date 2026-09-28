@@ -30,6 +30,15 @@ def fix_cataluna_1999_10(text: str) -> str:
         "Suplentes:\n1\nGerard Gual Gasulla\n2\nMaria Luisa Martos Cerrillo",
         "Suplentes:\n1\nGerard Gual Gasulla\n2\nMaria Lluïsa Martos Cerrillo",
     )
+    # Facilitate parsing
+    text = text.replace("Formación política: ", "")
+    text = text.replace("—4 Partido", "Candidatura núm. 4. Partido")
+    # Add missing candidacy
+    text = text.replace(
+        "Candidatura núm. 7\nPartit dels Socialistes",
+        "Candidatura núm. 6. RELLENO\nNO PROCLAMADA\nCandidatura núm. 7\nPartit dels Socialistes",
+    )
+    text = text.replace("—7 L luita Internacionalista: L I (L IT-CI)", "Candidatura núm. 6. RELLENO\nNO PROCLAMADA\n—7 Lluita Internacionalista: LI (LIT-CI)")
     return text
 
 
@@ -41,24 +50,27 @@ def fix_cataluna_2003_11(text: str) -> str:
     # Errata (err.pdf)
     text = text.replace(
         "Candidatura núm. 3\nFormación política: Partit dels Socialistes de\nCatalunya - Ciutadans pel Canvi (PSC-CpC)",
-        "Candidatura núm. 3\nFormación política: Partit dels Socialistes de\nCatalunya - Ciutadans pel Canvi (PSC (PSC-PSOE) - CpC)"
+        "Candidatura núm. 3\nFormación política: Partit dels Socialistes de\nCatalunya - Ciutadans pel Canvi (PSC (PSC-PSOE) - CpC)",
     )
     text = text.replace(
         "Candidatura núm. 2\nFormación política: Partit dels Socialistes de\nCatalunya - Ciutadans pel Canvi (PSC-CpC)",
-        "Candidatura núm. 2\nFormación política: Partit dels Socialistes de\nCatalunya - Ciutadans pel Canvi (PSC (PSC-PSOE)-CpC)"
+        "Candidatura núm. 2\nFormación política: Partit dels Socialistes de\nCatalunya - Ciutadans pel Canvi (PSC (PSC-PSOE)-CpC)",
     )
     text = text.replace(
         "Candidatura núm. 18\nFormación política: Estat Català\n1\nJordi Miro i Riba",
-        "Candidatura núm. 18\nFormación política: Estat Català (EC)\n1\nJordi Miro i Riba"
+        "Candidatura núm. 18\nFormación política: Estat Català (EC)\n1\nJordi Miro i Riba",
     )
     text = text.replace(
         "16\nMaría Teresa Vinuesa López (Estat Català)",
-        "Suplente:\n1\nMaría Teresa Vinuesa López (Estat Català)"
+        "Suplente:\n1\nMaría Teresa Vinuesa López (Estat Català)",
     )
     # Facilitate parsing
     text = text.replace("Gi-\n", "Gi")
     # Fix substitute declaration
-    text = text.replace("16 María Teresa Vinuesa López (Estat Català)", "SUPLENTES\n1. María Teresa Vinuesa López (Estat Català)")
+    text = text.replace(
+        "16 María Teresa Vinuesa López (Estat Català)",
+        "SUPLENTES\n1. María Teresa Vinuesa López (Estat Català)",
+    )
     return text
 
 

@@ -27,7 +27,7 @@ El repositorio cubre las candidaturas y candidatos de:
 
 Los datos de las elecciones se pueden encontrar en [`data/election_dates.csv`](data/election_dates.csv).
 
-> :warning: Por falta de datos oficiales, no hemos podido incluir los datos de las elecciones europeas de 1985, las elecciones municipales de 1979 y 1983, las elecciones de cabildos insulares de 1979, 1983 y 1999.
+> :warning: Por falta de datos oficiales, no hemos podido incluir los datos de las elecciones europeas de 1985, las elecciones municipales de 1979 y 1983, las elecciones de cabildos insulares de 1979, 1983 y 1999, las elecciones autonómicas de Melilla de 1999.
 
 Los últimos datos generados se encuentran en [`docs/data/electoral_data.csv.gz`](docs/data/electoral_data.csv.gz) (CSV comprimido con GZIP). El CSV contiene las siguientes columnas:
 

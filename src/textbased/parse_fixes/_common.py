@@ -2,7 +2,6 @@ import re
 from collections.abc import Callable
 
 from common import (
-    NAME_WHITELIST_CHARS,
     NAME_WHITELIST_CHARS_LOWER,
     NAME_WHITELIST_CHARS_UPPER,
 )
@@ -22,25 +21,28 @@ NUMBER_MAP = {
 
 PARSE_FIXES: dict[tuple[str, int, int], Callable[[str], str]] = {}
 
-UPPER_CANDIDATE_REGEX = re.compile(
-    rf"^(?!NO PROCLAMADA)(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ +(?:DE +|LOS +|DEL +|LA +)*){{1,2}}(?:\([{NAME_WHITELIST_CHARS_UPPER}\. ]+\) +(?:DE +|LOS +|DEL +|LA +)*)?(?:[{NAME_WHITELIST_CHARS_UPPER}\.]+ *(?:DE +|LOS +|DEL +|LA +)*){{1,4}}(?:\([{NAME_WHITELIST_CHARS}\. ]+\))? *\.?$"
-)
-LOWER_CANDIDATE_REGEX = re.compile(
-    rf"^(?!NO PROCLAMADA)(?:[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+ +(?:de +|los +|del +|la +)*){{1,2}}(?:\([{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER} ]+\) +(?:de +|los +|del +|la +)*)?(?:[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+ *(?:de +|los +|del +|la +)*){{1,3}}(?:\([{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER} ]+\))? *\.?$"
-)
-UPPER_DON_CANDIDATE_NAME_REGEX = re.compile(
-    rf"^(?:DON|DOÑA|Don|Doña|D.|Dª)\s+(?:[{NAME_WHITELIST_CHARS_UPPER}]+|FCO\.)(?:\s+[{NAME_WHITELIST_CHARS_UPPER}]+|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.|\s+FCO\.|\s+\(.+\))+\.?$"
-)
-LOWER_DON_CANDIDATE_NAME_REGEX = re.compile(
-    rf"^(?:Don|Doña|D.|Dª)\s+[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+(?:(?:\s+|\s?\-\s?)[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|\s+y|\s+del|\s+las?|\s+de|\s+los|\s+[{NAME_WHITELIST_CHARS_UPPER}]\.)+\.?$"
-)
+_TITLES_ALL = r"(?:DON|DOÑA|Don|Doña|D\.|Dª|Dña\.)"
+_TITLES_LOWER = r"(?:Don|Doña|D\.|Dª|Dña\.)"
+_CONN_UPPER = r"(?:DE +|LOS +|DEL +|LA +|LAS +|Y +|I +)"
+_CONN_LOWER = r"(?:de +|los +|del +|la +|las +|y +|i +)"
+
+_NAME_UPPER = rf"(?:[{NAME_WHITELIST_CHARS_UPPER}]+|[{NAME_WHITELIST_CHARS_UPPER}]\'[{NAME_WHITELIST_CHARS_UPPER}]+|(?!{_TITLES_ALL})[{NAME_WHITELIST_CHARS_UPPER}]\.|FCO\.)"
+_NAME_LOWER_CAPITALIZED = rf"(?:[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|[{NAME_WHITELIST_CHARS_UPPER}]\'[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|(?!{_TITLES_LOWER})[{NAME_WHITELIST_CHARS_UPPER}]\.|[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+\-[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|Fco\.)"
+
+_FULL_UPPER_NAME = rf"(?:{_NAME_UPPER} +{_CONN_UPPER}*)(?:{_NAME_UPPER} +{_CONN_UPPER}*|\({_NAME_UPPER} +{_CONN_UPPER}*\))*{_NAME_UPPER} *\.?$"
+_FULL_LOWER_NAME = rf"(?:{_NAME_LOWER_CAPITALIZED} +{_CONN_LOWER}*)(?:{_NAME_LOWER_CAPITALIZED} +{_CONN_LOWER}*|\({_NAME_LOWER_CAPITALIZED} +{_CONN_LOWER}*\))*{_NAME_LOWER_CAPITALIZED} *\.?$"
+
+UPPER_CANDIDATE_NAME_REGEX = re.compile(rf"^(?!NO PROCLAMADA){_FULL_UPPER_NAME}")
+LOWER_CANDIDATE_NAME_REGEX = re.compile(rf"^(?!NO PROCLAMADA){_FULL_LOWER_NAME}")
+UPPER_DON_CANDIDATE_NAME_REGEX = re.compile(rf"^{_TITLES_ALL} +{_FULL_UPPER_NAME}")
+LOWER_DON_CANDIDATE_NAME_REGEX = re.compile(rf"^{_TITLES_LOWER} +{_FULL_LOWER_NAME}")
 
 _MULTILINE_CANDIDACY_RE = re.compile(
     r"(\d+)\s+(?:FORMACIÓN POLÍTICA:|DENOMINACIÓN:?|PARTIDO:)\s+(.+)\s+SIGLAS?:?\s*(.+)$",
     re.MULTILINE | re.IGNORECASE,
 )
 _MULTILINE_INVERSE_CANDIDACY_RE = re.compile(
-    r"^SIGLAS:\s*(.*)[\n\r]PART/FED(?:ER)?/AGRUP:\s*(.+\s*.+)[\n\r]CANDIDATURA Nº:?\s*(\d+)\.?$",
+    r"^SIGLAS:\s*(.*)[\n\r]PART\.? ?/?FED(?:ER)? ?\.?/?AGRUP\.?:\s*(.+\s*.+\s*.+)[\n\r]CANDIDATURA (?:Nº?|número):?\s*(\d+)\.?$",
     re.MULTILINE | re.IGNORECASE,
 )
 _MULTILINE_NOT_PROCLAIMED_CANDIDACY_RE = re.compile(
@@ -59,8 +61,24 @@ def fix_maria_ocr(text: str, upper: bool = False) -> str:
     text = text.replace("M.2", f"{replace_text}")
     text = text.replace(" M . ", f" {replace_text} ")
     text = text.replace(" M ", f" {replace_text} ")
+    text = text.replace("-M ", f"-{replace_text} ")
+    text = text.replace("\nM ", f"\n{replace_text} ")
+    text = text.replace(" M' ", f" {replace_text} ")
     text = text.replace(" M. ", f" {replace_text} ")
     text = text.replace(" MI ", f" {replace_text} ")
+    text = text.replace(" Mi ", f" {replace_text} ")
+    text = text.replace("\nMi ", f"\n{replace_text} ")
+    text = text.replace(" MW ", f" {replace_text} ")
+    return text
+
+
+def fix_dona_ocr(text: str, upper: bool = False) -> str:
+    replace_text = "Doña" if not upper else "DOÑA"
+    text = text.replace(" Di.", f" {replace_text}")
+    text = text.replace(" DI.", f" {replace_text}")
+    text = text.replace(" DA.", f" {replace_text}")
+    text = text.replace(" 01.", f" {replace_text}")
+    text = text.replace(".01. ", f".{replace_text} ")
     return text
 
 
@@ -71,6 +89,16 @@ def fix_multiline_candidacy_naming(text: str) -> str:
         r"Candidatura núm. \1: RELLENO\nNO PROCLAMADA", text
     )
     return text
+
+
+_INVERSE_CANDIDACY_REGEX = re.compile(
+    r"^(.+)[\r?\n]+(Candidatura número[:|\.]? \d+\.?)$",
+    re.MULTILINE | re.IGNORECASE,
+)
+
+
+def fix_single_inverse_candidacy_fix(text: str) -> str:
+    return _INVERSE_CANDIDACY_REGEX.sub(r"\2 \1", text)
 
 
 def register_fixer(region: str, year: int, month: int):
@@ -101,44 +129,51 @@ def clean_ocr_numbers(text: str) -> str:
     text = text.replace("l7", "17")
     text = text.replace("l8", "18")
     text = text.replace("l9", "19")
-    # This could be dangerous, that's why we require the dot at the end
-    text = text.replace("ll.", "11.")
-    text = text.replace("IO.", "10.")
-    text = re.sub(r"^l[\.|:]", "1.", text, flags=re.MULTILINE)
-    text = re.sub(r"^S\.", "5.", text, flags=re.MULTILINE)
+    # This could be dangerous, that's why we require new lines before
+    text = text.replace("\nI.", "\n1.")
+    text = text.replace("\nI .", "\n1.")
+    text = text.replace("\nl.", "\n1.")
+    text = text.replace("\nl:", "\n1.")
+    text = text.replace("\nS.", "\n5.")
+    text = text.replace("\nL.", "\n2.")
+    text = text.replace("\nZ.", "\n2.")
+    text = text.replace("\nd.", "\n4.")
+    text = text.replace("\nNS ", "\nN 5.")
+    text = text.replace("\nDs ", "\n5. ")
+    text = text.replace("\nY.", "\n7.")
+    text = text.replace("\nT.", "\n7.")
+    text = text.replace("\nBg.", "\n8.")
+    text = text.replace("\nB.", "\n8.")
+    text = text.replace("\ng ", "\n8 ")
+    text = text.replace("\ng.", "\n8.")
+    text = text.replace("\nIO.", "\n10.")
+    text = text.replace("\nLy.", "\n10.")
+    text = text.replace("\nll.", "\n11.")
+    text = text.replace("\ndl.", "\n11.")
+    text = text.replace("\nLl", "\n11")
+    text = text.replace("\nII.", "\n11.")
+    text = text.replace("\nII .", "\n11.")
+    text = text.replace("\nIS", "\n15")
+    text = text.replace("\niS", "\n15")
     # Fixes candidacies Nº
     text = re.sub(
-        r"Candidatura\.? +[\w'\.]{1,4} (\d+)+ *\.?",
+        r"Candidatura\.? +[\w'\.:]{1,4} (\d+)+ *\.?",
         r"Candidatura número: \1.",
         text,
         flags=re.MULTILINE | re.IGNORECASE,
     )
+    # Fixes candidates Nº
+    text = re.sub(r"^N[Peoº]?(\d+) +", r"\1. ", text, flags=re.MULTILINE)
     # Replaces the stuff before a number with the number
-    text = re.sub(r"^[\w\.']{1,3} +(\d+)\.?", r"\1.", text, flags=re.MULTILINE)
-    # Remove stray quotes around numbers and dots
-    text = re.sub(r"['´`\"](?=\d)", "", text)
-    text = re.sub(r"(?<=\d)['´`\"]", "", text)
-    text = re.sub(r"(?<=\d\.)['´`\"]", "", text)
-
-    # Fix CLUSTERS of messy punctuation (dots, dashes, commas, colons, exclamation marks)
-    text = re.sub(r"\b(\d+)\s*[\.\-\,:\!•'·;\"]{2,}\s*", r"\1. ", text)
-
-    # Fix stray dots before list numbers (e.g., ".13." -> "13.")
     text = re.sub(
-        re.compile(
-            r"^(?:[']*Núm\.?)?\ *[\.\-\,:\!•'·;\"]\ *(\d+)\ *[\.]\ *[\.\-\,:\!•'·;\"]*",
-            re.MULTILINE,
-        ),
-        r"\1. ",
-        text,
+        r"^[\w\.']{1,3} +(\d+)[\.\-\,:\!•'·;\"´`\"]*", r"\1.", text, flags=re.MULTILINE
     )
     # Remove stray single letters surrounded by dots after numbers (e.g., "3.x. " -> "3. ")
-    text = re.sub(r"\b(\d+)\.[a-zA-Z]\.\s*", r"\1. ", text)
-
+    text = re.sub(r"\b(\d+)\.[a-zA-Z]\. *", r"\1. ", text, re.MULTILINE)
     return text
 
 
-_HAS_NUMBER_RE = re.compile(r"^(\d+)\.?")
+_HAS_NUMBER_RE = re.compile(r"^(\d+)[\. -]*")
 
 
 def autofill_intermediate_numbers(text: str) -> str:
@@ -243,6 +278,9 @@ def fix_missing_substitute_numbers(text: str, name_regex: re.Pattern) -> str:
     return "\n".join(fixed_lines)
 
 
+_HAS_OCR_QUASI_NUMBER = re.compile(r"^((?!D\.)[a-záéíóú0-9\(\)]{1,2}[\.: -]* +|\.\.?\-? |\d+)[\.: -]*", re.IGNORECASE)
+
+
 def number_candidates(
     text: str, candidate_regex: re.Pattern, last_number: int | None = None
 ) -> str:
@@ -269,7 +307,7 @@ def number_candidates(
             result.append(line)
             continue
         # Check if the line is a candidate name
-        number_match = _HAS_NUMBER_RE.match(stripped_line)
+        number_match = _HAS_OCR_QUASI_NUMBER.match(stripped_line)
         if number_match and counter is not None:
             # Override the number with the current counter if the line is a candidate name
             candidate_name = stripped_line[number_match.end() :].lstrip()

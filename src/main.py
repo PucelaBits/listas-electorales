@@ -57,6 +57,11 @@ def read_election_data(file_path: str) -> Generator[ElectionData]:
                 ElectionType.MUNICIPALES, None, int(row["year"]), int(row["month"])
             )
         elif row["election_type"] == "autonomicas":
+            if (row["scope"] == "melilla") and (row["year"] == 1999):
+                logger.warning(
+                    f"Skipping {row['year']} autonomic elections in Melilla due to missing data in the source."
+                )
+                continue
             yield ElectionData(
                 ElectionType.AUTONOMICAS,
                 row["scope"],

@@ -3,7 +3,7 @@ import re
 from common import NAME_WHITELIST_CHARS
 
 from ._common import (
-    UPPER_CANDIDATE_REGEX,
+    UPPER_CANDIDATE_NAME_REGEX,
     number_candidates,
     register_fixer,
 )
@@ -115,7 +115,7 @@ def fix_navarra_2015_05(text: str) -> str:
     text = text.replace("1OSU", "IOSU")
     global _NAVARRA_2015_05_LAST_NUMBER
     text, last_number = number_candidates(
-        text, UPPER_CANDIDATE_REGEX, _NAVARRA_2015_05_LAST_NUMBER
+        text, UPPER_CANDIDATE_NAME_REGEX, _NAVARRA_2015_05_LAST_NUMBER
     )
     _NAVARRA_2015_05_LAST_NUMBER = last_number
     return text

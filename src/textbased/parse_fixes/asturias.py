@@ -1,4 +1,4 @@
-from ._common import register_fixer
+from ._common import clean_ocr_numbers, register_fixer
 
 
 def _asturias_province_fix(text: str) -> str:
@@ -44,6 +44,12 @@ def fix_asturias_1995_05(text: str) -> str:
 @register_fixer("asturias", 1999, 6)
 def fix_asturias_1999_06(text: str) -> str:
     text = _asturias_province_fix(text)
+    text = text.replace("Candidatos\n", "")
+    text = text.replace("CIRCUNSCRIPCION\n", "CIRCUNSCRIPCIÓN ")
+    text = text.replace("Stiplentes", "Suplentes")
+    # Fix OCR errors
+    text = text.replace("ServandoFernandezAmado", "Servando Fernández Amado")
+    text = clean_ocr_numbers(text)
     return text
 
 
@@ -56,11 +62,12 @@ def fix_asturias_2003_05(text: str) -> str:
     text = text.replace("9, ", "9. ")
     text = text.replace("25, ", "25. ")
     text = text.replace("1, ", "1. ")
-    text = text.replace("I .", "1. ")
-    text = text.replace("I.", "1. ")
     text = text.replace("23, ", "23. ")
+    text = clean_ocr_numbers(text)
     # Fix candidates
-    text = text.replace("2. Encarnación González Martínez", "3. Encarnación González Martínez")
+    text = text.replace(
+        "2. Encarnación González Martínez", "3. Encarnación González Martínez"
+    )
     # Remove unexpected candidate
     text = text.replace("21. Nelly Azucena Carabajo Rivas", "")
     return text

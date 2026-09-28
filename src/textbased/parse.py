@@ -18,7 +18,7 @@ _DATE_RE = re.compile(
     re.IGNORECASE,
 )
 _DATE_NUMBER_RE = re.compile(
-    r"\b(?:\d{4}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/]\d{2}|\d{1,2}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/]\d{4})\b",
+    r"\b(?:\d{4}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/]\d{2}|\d{1,2}[\-/](?:\d{2}|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)[\-/](?:\d{4}|\d{2}))\b",
     re.IGNORECASE,
 )
 
@@ -102,6 +102,8 @@ def _has_trash_text(line: str) -> bool:
         or "disposiciones" in line_lower
         or "disposicions" in line_lower
         or "butlletí " in line_lower
+        or "gehigarria" in line_lower
+        or "candidatos" in line_lower
         or _DATE_RE.search(line_lower) is not None
         or _DATE_NUMBER_RE.search(line_lower) is not None
     )
@@ -125,7 +127,7 @@ class TextElectionParser:
 
     # Extract explicit candidacy headers
     EXPLICIT_CANDIDACY_RE = re.compile(
-        r"^Candidatura\s+(?:n[úu]m(?:ero)?\.?|N\.?º[\.:]?) *:? *(\d+)(?:[\.\-\–\—~:] *| +)(.+)$",
+        r"^Candidatura\s+(?:n[úuù]m(?:ero)?\.?|N\.?º[\.:]?) *:? *(\d+)(?:[\.\-\–\—~:] *| +)(.+)$",
         re.IGNORECASE,
     )
 
@@ -137,7 +139,7 @@ class TextElectionParser:
 
     # Catch isolated numbers sitting on their own line
     ISOLATED_CANDIDACY_RE = re.compile(
-        r"^(?:[-\–\—~] )?Candidatura\s+(?:n[úu]m(?:ero)?\.?|N\.?º[\.:]?) *:? *(\d+)[\.\-\–\—~: ]*$",
+        r"^(?:[-\–\—~] )?Candidatura\s+(?:n[úuù]m(?:ero)?\.?|N\.?º[\.:]?) *:? *(\d+)[\.\-\–\—~: ]*$",
         re.IGNORECASE,
     )
     ISOLATED_NUMBER_RE = re.compile(r"^(\d+)[\.\-\–\—~]+$", re.IGNORECASE)
@@ -145,7 +147,7 @@ class TextElectionParser:
     # Catch lines that have multiple numbers and names separated by whitespace
     MULTI_LINE_SPLIT_RE = re.compile(r"\s+(?=\d+[ \.\-\–\—~:]+\s+)")
 
-    SUPLENTE_RE = re.compile(r"^\-?Suplente?s?:?", re.IGNORECASE)
+    SUPLENTE_RE = re.compile(r"^(?:Como)?\-? *Suplente?s? *:?", re.IGNORECASE)
 
     def __init__(self, text_reader: PDFReader):
         self.text_reader = text_reader
@@ -219,6 +221,7 @@ class TextElectionParser:
             return
 
         if self.NOT_PROCLAMATED_RE.match(line):
+            print(self.current_candidacy)
             if self.current_candidacy is None:
                 raise ValueError(
                     "Found 'NO PROCLAMADA' line while parsing, but no current candidacy is set."
@@ -246,6 +249,7 @@ class TextElectionParser:
             self.line_completed = True
             if self.MULTI_LINE_SPLIT_RE.search(line):
                 self.__process_multiple_lines(line, next_line)
+            logger.debug("Detected substitute section")
             return
 
         if _has_trash_text(line):
@@ -266,19 +270,6 @@ class TextElectionParser:
             self.pending_order = None
             return
 
-        # If we caught an isolated number on the previous line, this line is the name
-        if self.pending_order is not None:
-            logger.debug(
-                f"Detected isolated number on previous line. Using pending order {self.pending_order} for current line: {line}"
-            )
-            if self.pending_order[1]:
-                # It is a candidacy, so we set the candidacy with the pending order and current line
-                self.__set_candidacy(self.pending_order[0], line)
-            else:
-                self.__handle_numbered_item(self.pending_order[0], line, next_line)
-            self.pending_order = None
-            return
-
         # Numbered items (split-line format)
         isolated_match = self.ISOLATED_CANDIDACY_RE.match(line)
         if not isolated_match:
@@ -292,6 +283,20 @@ class TextElectionParser:
                 f"Detected isolated number {expected_order} on line: {line}. Marked as {'candidacy' if is_candidacy else 'unknown'}."
             )
             return
+
+        # If we caught an isolated number on the previous line, this line is the name
+        if self.pending_order is not None and len(line) > 2:
+            logger.debug(
+                f"Detected isolated number on previous line. Using pending order {self.pending_order} for current line: {line}"
+            )
+            if self.pending_order[1]:
+                # It is a candidacy, so we set the candidacy with the pending order and current line
+                self.__set_candidacy(self.pending_order[0], line)
+            else:
+                self.__handle_numbered_item(self.pending_order[0], line, next_line)
+            self.pending_order = None
+            return
+
 
         if self.NO_SUBSTITUTES_RE.match(line):
             if not self.is_substitute:

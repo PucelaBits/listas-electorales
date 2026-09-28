@@ -34,6 +34,17 @@ def fix_galicia_1997_10(text: str) -> str:
     text = text.replace("2.– Cándido González Herrero", "2.– Cándido Gonzálvez Herrero")
     return text
 
+@register_fixer("galicia", 2001, 10)
+def fix_galicia_2001_10(text: str) -> str:
+    # Remove preamble
+    if "PROVINCIA DE A CORUÑA" in text:
+        text = text.split("PROVINCIA DE A CORUÑA")[-1]
+    # Remove footer
+    if "CONSELLERÍA DE JUSTICIA," in text:
+        text = text.split("CONSELLERÍA DE JUSTICIA,")[0]
+    # Facilitate parsing
+    text = text.replace("PROFESIO-\n", "PROFESIO")
+    return text
 
 @register_fixer("galicia", 2005, 6)
 def fix_galicia_2005_06(text: str) -> str:

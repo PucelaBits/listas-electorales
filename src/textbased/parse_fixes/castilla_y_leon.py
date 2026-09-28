@@ -7,128 +7,156 @@ from ._common import (
     register_fixer,
 )
 
-P_CYL_1983_05 = re.compile(r"^COALICION PCOE-PCEU", flags=re.MULTILINE)
-
 
 @register_fixer("castilla_y_leon", 1983, 5)
 def fix_castilla_y_leon_1983_05(text: str) -> str:
-    return P_CYL_1983_05.sub("3. COALICION PCOE-PCEU", text)
-
-
-# Boletín Oficial de Castilla y León n.º 86 (08-05-1991), "Corrección de
-# errores a las Candidaturas proclamadas ... convocadas por Decreto 60/1991,
-# de 1 de abril", que rectifican la publicación de B.O.C.yL. n.º 81 (30-abr).
-# 31 rectificaciones repartidas por provincia; se aplica solo la que el
-# archivo candidaturas.pdf contiene. Las líneas de candidatos del archivo
-# llevan punto final y acentos irregulares; cada patrón se ancla al número de
-# candidato y se verifica que sea UNIFICADO en todo el documento antes de
-# sustituir. Los dos casos ambigüos (Burgos "8.- Los Verdes" y Soria
-# "2.- Coalición Izquierda Unida", que se repiten en otra provincia) se
-# desambiguan anclando también la línea del candidato 1 de esa candidatura.
-# Se OMITEN (no expresables como find/replace, requieren revisión manual):
-#   - Zamora, cand. 2 (P.S.O.E.): el erratum dice que "se ha incluido
-#     «Partido Socialista de Castilla y León (P.S.C.L.)»" que "no consta en el
-#     edicto" -> es una corrección del ENUNCIADO/cabecera (no de un nombre),
-#     y la cabecera del archivo dice "...Obrero Español (P.S.C.L-P.S.O.E.)",
-#     de modo que no hay un único string que sustituir.
-#   - err_2.pdf (B.O.C.yL. n.º 92, 16-05-1991): "debe incluirse el siguiente
-#     titular:" (una INSERCIÓN de un titular antes del párrafo del P.P.) que
-#     aplica sobre el propio err_1, no sobre candidaturas.pdf; no hay texto a
-#     sustituir en el archivo.
-# (castilla_y_leon usa el prefijo "cyl")
-CASTILLA_Y_LEON_1991_05_REPLACEMENTS = {
-    "5. Maria Cruz Rodriguez Saldaña.": "5. M.ª Cruz Rodríguez Saldaña.",
-    "8.- Los Verdes (L.V.)\n1. Raquel Plasencia Diez.": "8.- Partido Político Los Verdes (L.V.)\n1. Raquel Plasencia Diez.",
-    "2. José María Arribas Moral.": "2. José M.ª Arribas Moral.",
-    "10.- Centro Democrático y Social (C.D.S.)": "10.- Partido Centro Democrático y Social (C.D.S.)",
-    "9. Benito de la torre Vega.": "9. Benito de la Torre Vega.",
-    "3. Dolores Otero Rodríguez de las Heras.": "3. M.ª Dolores Otero Rodríguez de las Heras.",
-    "10. Fernando Arvizu y Galarraga.": "10. Fernando de Arvizu y Galarraga.",
-    "15. Natividad Cordero Monrroy.": "15. Natividad Cordero Monroy.",
-    "10. Maria-Montserrat Alvarez Velasco.": "10. María Monserrat Alvarez Velasco.",
-    "15. Maria Inmaculada Fuente Villaba.": "15. María Inmaculada Fuente Villalba.",
-    "5. Antonio de San Mateo Gil.": "5. Antonio de Sanmateo Gil.",
-    "12. Maria Teresa González Alonso.": "12. Teresa González Alonso.",
-    "5. Maria Luisa Gavela Ordoñez.": "5. María Luisa Gabela Ordóñez.",
-    "9. Heliberto López López.": "9. Eliberto López López.",
-    "1. Carmen Elena Varges López.": "1. Carmen Elena Vargues López.",
-    "3. Eliseo Garcia Guitiérrez.": "3.Eliseo García Gutiérrez.",
-    "2.- Partido Politico los Verdes (P.V.)": "2.- Partido Politico los Verdes (L.V.)",
-    "4. Jacinda Lorenzo Pascua.": "4. Jacinta Lorenzo Pascua.",
-    "9. Luis Enriquez Espinoza Cuerra.": "9. Luis Enrique Espinoza Guerra.",
-    "1. Miguel Angel de Diego Nuñez.": "1. Miguel Ángel Diego Núñez.",
-    "5. Pedro Carlos Acevedo y González.": "5. Pedro Carlos Acevedo González.",
-    "7. Rafael Vargas Ribera.": "7. Rafael Vargas Rivera.",
-    "9. Rafael de Diego Nuñez.": "9. Rafael Diego Núñez.",
-    "2. Maria del Carmen Garcia Rosado y Garcia.": "2. María del Carmen García Rosado García.",
-    "9. Luis Filguerina Canal.": "9. Luis Filgueira Canal.",
-    "3. Beatriz Saa y de Corral.": "3. Beatriz de Saa Corral.",
-    "3.- Unión Castellana (U.C.)": "3.- Unión Castellanista (U.C.)",
-    "2.- Coalición Izquierda Unida (I.U.)\n1. Alejandro Abad Gil.": "2.- Izquierda Unidad (I.U.)\n1. Alejandro Abad Gil.",
-    "1. José Oliver Alvarez Seco.": "1. José Olivier Álvarez Seco.",
-    "4. Maria Isabel Blanca T. Fernández Marassa.": "4. M.ª Isabel Blanca T. Fernández Marassa.",
-    "6. Javier del Riego Celada.": "6. Javier Riego Celada.",
-}
-P_CYL_1991_05_LITERALS = re.compile(
-    "|".join(map(re.escape, CASTILLA_Y_LEON_1991_05_REPLACEMENTS.keys()))
-)
+    # Errata (err.pdf)
+    return text.replace("COALICION PCOE-PCEU", "3. COALICION PCOE-PCEU")
 
 
 @register_fixer("castilla_y_leon", 1991, 5)
 def fix_castilla_y_leon_1991_05(text: str) -> str:
-    return P_CYL_1991_05_LITERALS.sub(
-        lambda m: CASTILLA_Y_LEON_1991_05_REPLACEMENTS[m.group(0)], text
+    # Errata (err.pdf)
+    text = text.replace(
+        "5. Maria Cruz Rodriguez Saldaña.",
+        "5. M.ª Cruz Rodríguez Saldaña.",
     )
-
-
-# Boletín Oficial de Castilla y León n.º 98 (25-05-1999), "Corrección de errores
-# a las candidatura(s) proclamadas ... Cortes de Castilla y León, convocadas por
-# Decreto 66/1999 de 19-04-1999", que rectifica la publicación de B.O.C.yL.
-# n.º 93 (18-05-1999). 11 rectificaciones:
-#   PALENCIA: la cand. 3 "IZQUIERDA UNIDA DE CASTILLA Y LEÓN" lleva la sigla
-#     "(I.U.-CL)" y debe ser "(IU-CyL)". El error está solo en el paréntesis,
-#     y el token "(I.U.-CL)" es único en todo el documento (el archivo la
-#     escribe como "LEÓN", aunque el erratum lo escribe "LEON"); por eso
-#     basta con sustituir el paréntesis y no el nombre del partido.
-#   ZAMORA: el erratum expande la abreviatura "Mª" en cada nombre ("D. M.ª X" ->
-#     "D. María X") y corrige un apellido ("Allosa" -> "Alloza"). El erratum usa
-#     "Dª" para las mujeres; en el archivo se conserva lo que hay.
-#   NOTA: no se toca la cabecera "1.– IZQUIERDA UNIDA DE CASTILLA Y LEON (IU)"
-#     de Zamora, porque el erratum solo cita los nombres de candidatos de esa
-#     candidatura y no su sigla.  El "–" es un guion de interlínea y el "ª" el
-#     ordinal de título, ambos literal en el archivo.
-# (castilla_y_leon usa el prefijo "cyl")
-CASTILLA_Y_LEON_1999_06_REPLACEMENTS = {
-    "(I.U.-CL)": "(IU-CyL)",
-    "1. D. Gabriel Guijosa Allosa.": "1. D. Gabriel Guijosa Alloza.",
-    "2. Dª Mª del Carmen Luis Heras.": "2. Dª María del Carmen Luis Heras.",
-    "3. Dª Mª Teresa García López.": "3. Dª María Teresa García López.",
-    "5. Dª Mª Elena García Rodríguez.": "5. Dª María Elena García Rodríguez.",
-    "3. Dª Mª Isabel Blanca Teresa Fernández Marassa.": "3. Dª María Isabel Blanca Teresa Fernández Marassa.",
-    "6. Dª Mª Inmaculada García Rioja.": "6. Dª María Inmaculada García Rioja.",
-    "7. Dª Mª Isabel Perero Llamas.": "7. Dª María Isabel Perero Llamas.",
-    "7. Dª Mª Begoña Mateos Lorenzo.": "7. Dª María Begoña Mateos Lorenzo.",
-    "8. Dª Mª Teresa Regueras Bermejo.": "8. Dª María Teresa Regueras Bermejo.",
-    "3. Dª Mª Jesús Piorno Hernández.": "3. Dª María Jesús Piorno Hernández.",
-    "2. Dª Mª Julia Arias Rodríguez.": "2. Dª María Julia Arias Rodríguez.",
-    "3. Dª Mª Luisa Arias Maneiro.": "3. Dª María Luisa Arias Maneiro.",
-    "1. Dª Mª Teresa Rubio Herrero.": "1. Dª María Teresa Rubio Herrero.",
-    "4. Dª Mª del Carmen Campos Pérez.": "4. Dª María del Carmen Campos Pérez.",
-    "1. Dª Mª del Pilar Calvo Fernández.": "1. Dª María del Pilar Calvo Fernández.",
-    "2. Dª Mª Elisa del Pino Mañanes.": "2. Dª María Elisa del Pino Mañanes.",
-    "5. Dª Mª del Carmen Barrio Sánchez.": "5. Dª María del Carmen Barrio Sánchez.",
-    "8. Dª Mª Mercedes Corral Velasco.": "8. Dª María Mercedes Corral Velasco.",
-}
-P_CYL_1999_06_LITERALS = re.compile(
-    "|".join(map(re.escape, CASTILLA_Y_LEON_1999_06_REPLACEMENTS.keys()))
-)
+    text = text.replace(
+        "8.- Los Verdes (L.V.)\n1. Raquel Plasencia Diez.",
+        "8.- Partido Político Los Verdes (L.V.)\n1. Raquel Plasencia Diez.",
+    )
+    text = text.replace(
+        "2. José María Arribas Moral.",
+        "2. José M.ª Arribas Moral.",
+    )
+    text = text.replace(
+        "10.- Centro Democrático y Social (C.D.S.)",
+        "10.- Partido Centro Democrático y Social (C.D.S.)",
+    )
+    text = text.replace(
+        "9. Benito de la torre Vega.",
+        "9. Benito de la Torre Vega.",
+    )
+    text = text.replace(
+        "3. Dolores Otero Rodríguez de las Heras.",
+        "3. M.ª Dolores Otero Rodríguez de las Heras.",
+    )
+    text = text.replace(
+        "10. Fernando Arvizu y Galarraga.",
+        "10. Fernando de Arvizu y Galarraga.",
+    )
+    text = text.replace(
+        "15. Natividad Cordero Monrroy.",
+        "15. Natividad Cordero Monroy.",
+    )
+    text = text.replace(
+        "10. Maria-Montserrat Alvarez Velasco.",
+        "10. María Monserrat Alvarez Velasco.",
+    )
+    text = text.replace(
+        "15. Maria Inmaculada Fuente Villaba.",
+        "15. María Inmaculada Fuente Villalba.",
+    )
+    text = text.replace(
+        "5. Antonio de San Mateo Gil.",
+        "5. Antonio de Sanmateo Gil.",
+    )
+    text = text.replace(
+        "12. Maria Teresa González Alonso.",
+        "12. Teresa González Alonso.",
+    )
+    text = text.replace(
+        "5. Maria Luisa Gavela Ordoñez.",
+        "5. María Luisa Gabela Ordóñez.",
+    )
+    text = text.replace(
+        "9. Heliberto López López.",
+        "9. Eliberto López López.",
+    )
+    text = text.replace(
+        "1. Carmen Elena Varges López.",
+        "1. Carmen Elena Vargues López.",
+    )
+    text = text.replace(
+        "3. Eliseo Garcia Guitiérrez.",
+        "3.Eliseo García Gutiérrez.",
+    )
+    text = text.replace(
+        "2.- Partido Politico los Verdes (P.V.)",
+        "2.- Partido Politico los Verdes (L.V.)",
+    )
+    text = text.replace(
+        "4. Jacinda Lorenzo Pascua.",
+        "4. Jacinta Lorenzo Pascua.",
+    )
+    text = text.replace(
+        "9. Luis Enriquez Espinoza Cuerra.",
+        "9. Luis Enrique Espinoza Guerra.",
+    )
+    text = text.replace(
+        "1. Miguel Angel de Diego Nuñez.",
+        "1. Miguel Ángel Diego Núñez.",
+    )
+    text = text.replace(
+        "5. Pedro Carlos Acevedo y González.",
+        "5. Pedro Carlos Acevedo González.",
+    )
+    text = text.replace(
+        "7. Rafael Vargas Ribera.",
+        "7. Rafael Vargas Rivera.",
+    )
+    text = text.replace(
+        "9. Rafael de Diego Nuñez.",
+        "9. Rafael Diego Núñez.",
+    )
+    text = text.replace(
+        "2. Maria del Carmen Garcia Rosado y Garcia.",
+        "2. María del Carmen García Rosado García.",
+    )
+    text = text.replace(
+        "9. Luis Filguerina Canal.",
+        "9. Luis Filgueira Canal.",
+    )
+    text = text.replace(
+        "3. Beatriz Saa y de Corral.",
+        "3. Beatriz de Saa Corral.",
+    )
+    text = text.replace(
+        "3.- Unión Castellana (U.C.)",
+        "3.- Unión Castellanista (U.C.)",
+    )
+    text = text.replace(
+        "2.- Coalición Izquierda Unida (I.U.)\n1. Alejandro Abad Gil.",
+        "2.- Izquierda Unidad (I.U.)\n1. Alejandro Abad Gil.",
+    )
+    text = text.replace(
+        "1. José Oliver Alvarez Seco.",
+        "1. José Olivier Álvarez Seco.",
+    )
+    text = text.replace(
+        "4. Maria Isabel Blanca T. Fernández Marassa.",
+        "4. M.ª Isabel Blanca T. Fernández Marassa.",
+    )
+    text = text.replace(
+        "6. Javier del Riego Celada.",
+        "6. Javier Riego Celada.",
+    )
+    return text
 
 
 @register_fixer("castilla_y_leon", 1999, 6)
 def fix_castilla_y_leon_1999_06(text: str) -> str:
-    return P_CYL_1999_06_LITERALS.sub(
-        lambda m: CASTILLA_Y_LEON_1999_06_REPLACEMENTS[m.group(0)], text
+    # Errata (err.pdf)
+    text = text.replace("(I.U.-CL)", "(IU-CyL)")
+    text = text.replace(
+        "1. D. Gabriel Guijosa Allosa.",
+        "1. D. Gabriel Guijosa Alloza.",
     )
+    text = text.replace("Mª", "María")
+    # Facilitate parsing
+    text = text.replace("AVILA", "ÁVILA")
+    text = text.replace("4.–", "Candidatura núm.: 4.")
+    return text
 
 
 _CYL_2003_05_LAST_NUMBER = 1
@@ -151,7 +179,10 @@ def fix_castilla_y_leon_2003_05(text: str) -> str:
     text = text.replace("PARTIDO\n", "PARTIDO ")
     text = re.sub(r"(\d+)\.–", r"Candidatura núm.: \1.", text)
     text = fix_maria_ocr(text, upper=True)
-    text = text.replace("J U N TA ELECTORAL PROVINCIAL DE VA L L A D O L I D", "JUNTA ELECTORAL PROVINCIAL DE VALLADOLID")
+    text = text.replace(
+        "J U N TA ELECTORAL PROVINCIAL DE VA L L A D O L I D",
+        "JUNTA ELECTORAL PROVINCIAL DE VALLADOLID",
+    )
     global _CYL_2003_05_LAST_NUMBER
     text, _CYL_2003_05_LAST_NUMBER = number_candidates(
         text,

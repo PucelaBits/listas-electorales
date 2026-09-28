@@ -1,8 +1,12 @@
 import re
 
-from ._common import LOWER_CANDIDATE_REGEX, fix_missing_substitute_numbers, register_fixer
+from ._common import (
+    LOWER_CANDIDATE_NAME_REGEX,
+    fix_missing_substitute_numbers,
+    register_fixer,
+)
 
-_BOIB_REGEX = re.compile(r"^.*BOIB.*$", re.MULTILINE)
+_BOIB_REGEX = re.compile(r"^.*(?:BOIB|BOCAIB).*$", re.MULTILINE)
 
 
 def _baleares_province_fix(text: str) -> str:
@@ -109,10 +113,43 @@ def fix_baleares_1995_05(text: str) -> str:
     return text
 
 
+_BALEARES_1999_06_CANDIDACY_REGEX = re.compile(r"^(.+)[\r\n]Núm\.? Nom", re.MULTILINE)
+_BALEARES_1999_06_CANDIDACY_INDEX = 1
+
+
 @register_fixer("baleares", 1999, 6)
 def fix_baleares_1999_06(text: str) -> str:
     text = _baleares_province_fix(text)
-    # TODO: Missing candidacies numbers
+    # Remove lines that contain BOIB
+    text = _BOIB_REGEX.sub("", text)
+    # Fix missing candidacy numbers
+    text = text.replace(" de\n", " de ")
+    global _BALEARES_1999_06_CANDIDACY_INDEX
+    prev_line = None
+    for line in text.splitlines():
+        if prev_line is None:
+            prev_line = line
+            continue
+        if "CIRCUNSCRIPCIÓN" in prev_line:
+            _BALEARES_1999_06_CANDIDACY_INDEX = 1
+            prev_line = line
+            continue
+        match = _BALEARES_1999_06_CANDIDACY_REGEX.match(prev_line + "\n" + line)
+        if match:
+            candidacy_name = match.group(1).strip()
+            text = text.replace(
+                match.group(0),
+                f"Candidatura núm. {_BALEARES_1999_06_CANDIDACY_INDEX}: {candidacy_name}",
+            )
+            _BALEARES_1999_06_CANDIDACY_INDEX += 1
+        prev_line = line
+    # Fix missing substitute mark
+    text = text.replace("34 Delfín Juan Motos Moens", "SUPLENTES\n34 Delfín Juan Motos Moens")
+    text = text.replace("34 José Belmonte Servera", "SUPLENTES\n34 José Belmonte Servera")
+    text = text.replace("34 Sebastián Amengual Cañellas", "SUPLENTES\n34 Sebastián Amengual Cañellas")
+    text = text.replace("14 Ramón Orfila Pons", "SUPLENTES\n14 Ramón Orfila Pons")
+    text = text.replace("14 Francisco Serra Tur", "SUPLENTES\n14 Francisco Serra Tur")
+    text = text.replace("14 Antoni Gómez Arbona", "SUPLENTES\n14 Antoni Gómez Arbona")
     return text
 
 
@@ -134,7 +171,7 @@ def fix_baleares_2003_05(text: str) -> str:
     )
     text = text.replace("14 Miquel Pons Victori", "Suplentes\n14 Miquel Pons Victori")
     text = text.replace("5 Eduvigis Sánchez Meroño", "3 Eduvigis Sánchez Meroño")
-    text = fix_missing_substitute_numbers(text, LOWER_CANDIDATE_REGEX)
+    text = fix_missing_substitute_numbers(text, LOWER_CANDIDATE_NAME_REGEX)
     return text
 
 

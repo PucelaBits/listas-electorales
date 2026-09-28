@@ -10,12 +10,46 @@ def _fix_substitutes_declaration(text: str) -> str:
     return text
 
 
+@register_fixer("pais_vasco", 1986, 11)
+def fix_pais_vasco_1986_11(text: str) -> str:
+    text = _fix_substitutes_declaration(text)
+    return text
+
+
+@register_fixer("pais_vasco", 1994, 10)
+def fix_pais_vasco_1994_10(text: str) -> str:
+    text = _fix_substitutes_declaration(text)
+    return text
+
+
+@register_fixer("pais_vasco", 1998, 10)
+def fix_pais_vasco_1998_10(text: str) -> str:
+    text = _fix_substitutes_declaration(text)
+    return text
+
+
+@register_fixer("pais_vasco", 2001, 5)
+def fix_pais_vasco_2001_05(text: str) -> str:
+    text = _fix_substitutes_declaration(text)
+    text = text.replace("\n(", " (")
+    # Add missing candidacy
+    text = text.replace("2001\n7.– ASKATASUNA", "2001\nCandidatura núm. 6: RELLENO\nNO PROCLAMADA\n7.– ASKATASUNA")
+    text = text.replace("8.– PARTIDO DEL KARMA DEMOCRATICO (PKD)", "Candidatura núm. 7: RELLENO\nNO PROCLAMADA\n8.– PARTIDO DEL KARMA DEMOCRATICO (PKD)")
+    return text
+
+
 @register_fixer("pais_vasco", 2005, 4)
 def fix_pais_vasco_2005_04(text: str) -> str:
     text = _fix_substitutes_declaration(text)
     # Facilitate parsing
-    text = text.replace("BIZKAIKO LURRALDE HISTORIKOKO JUNTA ELECTORAL DEL TERRITORIO", "JUNTA ELECTORAL DEL TERRITORIO HISTÓRICO DE BIZKAIA")
-    text = text.replace("GIPUZKOAKO KONDAIRA-LURRALDEKO JUNTA ELECTORAL DEL TERRITORIO", "JUNTA ELECTORAL DEL TERRITORIO HISTÓRICO DE GIPUZKOA")
+    text = text.replace(
+        "BIZKAIKO LURRALDE HISTORIKOKO JUNTA ELECTORAL DEL TERRITORIO",
+        "JUNTA ELECTORAL DEL TERRITORIO HISTÓRICO DE BIZKAIA",
+    )
+    text = text.replace(
+        "GIPUZKOAKO KONDAIRA-LURRALDEKO JUNTA ELECTORAL DEL TERRITORIO",
+        "JUNTA ELECTORAL DEL TERRITORIO HISTÓRICO DE GIPUZKOA",
+    )
     return text
 
 

@@ -1,10 +1,14 @@
 import re
 
 from ._common import (
+    LOWER_CANDIDATE_NAME_REGEX,
     LOWER_DON_CANDIDATE_NAME_REGEX,
-    UPPER_CANDIDATE_REGEX,
+    NUMBER_MAP,
+    UPPER_CANDIDATE_NAME_REGEX,
+    clean_ocr_numbers,
     fix_maria_ocr,
     fix_multiline_candidacy_naming,
+    fix_single_inverse_candidacy_fix,
     number_candidates,
     register_fixer,
 )
@@ -55,15 +59,69 @@ def fix_canarias_1995_05(text: str) -> str:
     return text
 
 
+_CANARIAS_1999_06_LAST_NUMBER = 1
+_CANARIAS_1999_06_GOMERA_LAST_NUMBER = 1
+
+
 @register_fixer("canarias", 1999, 6)
 def fix_canarias_1999_06(text: str) -> str:
+    # Remove preamble
+    text = text.replace("El Presidente José Antonio González González", "")
+    if "RAQUEL MARTÍNEZ MAZÓN SECRETARIA DE LA" in text:
+        text = text.split("RAQUEL MARTÍNEZ MAZÓN SECRETARIA DE LA")[-1]
+    text = text.replace(
+        "CIRCUNSCRIPCIÓN DE LA GOMERA PARA LAS", "CIRCUNSCRIPCIÓN DE LA GOMERA\n"
+    )
+    text = text.replace(
+        "CIRCUNSCRIPCIÓN DE EL HIERRO PARA LAS", "CIRCUNSCRIPCIÓN DE EL HIERRO\n"
+    )
+    text = text.replace(
+        "CIRCUNSCRIPCIÓN DE LA PALMA PARA LAS", "CIRCUNSCRIPCIÓN DE LA PALMA\n"
+    )
+    text = text.replace(
+        "CIRCUNSCRIPCIÓN DE TENERIFE PARA LAS", "CIRCUNSCRIPCIÓN DE TENERIFE\n"
+    )
     text = _canarias_province_fix(text)
+    text = text.replace("N2 NOM", "NOM")
+    text = text.replace("CANDIDATURA NY ", "CANDIDATURA N ")
+    text = text.replace("CANDIDATURA N9 ", "CANDIDATURA N ")
+    text = text.replace("CANDIDATURA Nf ", "CANDIDATURA N ")
+    text = text.replace("CANDIDATURA N2 ", "CANDIDATURA N ")
+    text = text.replace("PARTFEDER JAGRUP", "PART/FEDER/AGRUP")
+    text = text.replace("PART.FEDER JAGRUP", "PART/FEDER/AGRUP")
+    text = text.replace("PART.FEDER.JAGRUP", "PART/FEDER/AGRUP")
+    for number_text, number in NUMBER_MAP.items():
+        text = text.replace(
+            f"CANDIDATURA N {number_text}\n", f"CANDIDATURA N {number}\n"
+        )
+    text = fix_multiline_candidacy_naming(text)
+    # Fix OCR
+    text = text.replace(". Independiente", "")
+    text = text.replace("Y ánez", "Yánez")
+    text = text.replace("Díia.", "Dña.")
+    text = text.replace("Día.", "Dña.")
+    text = text.replace("J2 .- D.\n", "J2.- D. ")
+    text = text.replace("UNIÓN CENTRISTA-CENTRO DEMOCRÁTICO Y SO-\n", "UNIÓN CENTRISTA-CENTRO DEMOCRÁTICO Y SO")
+    text = clean_ocr_numbers(text)
+    text = fix_single_inverse_candidacy_fix(text)
+    global _CANARIAS_1999_06_LAST_NUMBER
+    text, _CANARIAS_1999_06_LAST_NUMBER = number_candidates(
+        text,
+        LOWER_DON_CANDIDATE_NAME_REGEX,
+        last_number=_CANARIAS_1999_06_LAST_NUMBER,
+    )
+    global _CANARIAS_1999_06_GOMERA_LAST_NUMBER
+    text, _CANARIAS_1999_06_GOMERA_LAST_NUMBER = number_candidates(
+        text,
+        LOWER_CANDIDATE_NAME_REGEX,
+        last_number=_CANARIAS_1999_06_GOMERA_LAST_NUMBER,
+    )
     return text
 
 
 @register_fixer("canarias", 2003, 5)
 def fix_canarias_2003_05(text: str) -> str:
-    # TODO: Errata (err.pdf) and "Errores cometidos por esta Junta en la publicación"
+    # TODO: Errata (err.pdf)
     # Remove preamble
     if "que no trasciendan del ámbito de este Centro" in text:
         return ""
@@ -74,7 +132,10 @@ def fix_canarias_2003_05(text: str) -> str:
     # Fixes for parsing
     text = fix_multiline_candidacy_naming(text)
     # Fix missing candidacy
-    text = text.replace("Candidatura núm. 11: PARTIDO", "Candidatura núm. 10: RELLENO\nNO PROCLAMADA\nCandidatura núm. 11: PARTIDO")
+    text = text.replace(
+        "Candidatura núm. 11: PARTIDO",
+        "Candidatura núm. 10: RELLENO\nNO PROCLAMADA\nCandidatura núm. 11: PARTIDO",
+    )
     return text
 
 
@@ -219,7 +280,7 @@ def fix_canarias_2015_05(text: str) -> str:
     global _CANARIAS_2015_05_LAST_NUMBER
     text, last_number = number_candidates(
         text,
-        UPPER_CANDIDATE_REGEX,
+        UPPER_CANDIDATE_NAME_REGEX,
         last_number=_CANARIAS_2015_05_LAST_NUMBER,
     )
     _CANARIAS_2015_05_LAST_NUMBER = last_number
@@ -256,7 +317,7 @@ def fix_canarias_2019_05(text: str) -> str:
     global _CANARIAS_2019_05_LAST_NUMBER
     text, last_number = number_candidates(
         text,
-        UPPER_CANDIDATE_REGEX,
+        UPPER_CANDIDATE_NAME_REGEX,
         last_number=_CANARIAS_2019_05_LAST_NUMBER,
     )
     _CANARIAS_2019_05_LAST_NUMBER = last_number
@@ -285,7 +346,7 @@ def fix_canarias_2023_05(text: str) -> str:
     global _CANARIAS_2023_05_LAST_NUMBER
     text, last_number = number_candidates(
         text,
-        UPPER_CANDIDATE_REGEX,
+        UPPER_CANDIDATE_NAME_REGEX,
         last_number=_CANARIAS_2023_05_LAST_NUMBER,
     )
     _CANARIAS_2023_05_LAST_NUMBER = last_number

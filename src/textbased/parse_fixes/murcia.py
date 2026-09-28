@@ -48,6 +48,9 @@ def fix_murcia_1995_05(text: str) -> str:
 @register_fixer("murcia", 1999, 6)
 def fix_murcia_1999_06(text: str) -> str:
     text = _murcia_province_fix(text)
+    # Facilitate parsing
+    text = text.replace("4.º-", "Candidatura número 4.")
+    text = text.replace("4º.", "Candidatura número 4.")
     return text
 
 
