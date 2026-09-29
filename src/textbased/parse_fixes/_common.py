@@ -25,12 +25,13 @@ _TITLES_ALL = r"(?:DON|DOÑA|Don|Doña|D\.|Dª|Dña\.)"
 _TITLES_LOWER = r"(?:Don|Doña|D\.|Dª|Dña\.)"
 _CONN_UPPER = r"(?:DE +|LOS +|DEL +|LA +|LAS +|Y +|I +|D\')"
 _CONN_LOWER = r"(?:de +|los +|del +|la +|las +|y +|i +|d\')"
+_PARTY_SUFFIX = rf"(?:\([{NAME_WHITELIST_CHARS_UPPER}]+\)|\([Ii]ndep(?:endi?ente?|\.?)\))"
 
 _NAME_UPPER = rf"(?:[{NAME_WHITELIST_CHARS_UPPER}]+|[{NAME_WHITELIST_CHARS_UPPER}]\'[{NAME_WHITELIST_CHARS_UPPER}]+|(?!{_TITLES_ALL})[{NAME_WHITELIST_CHARS_UPPER}]\.|FCO\.)"
 _NAME_LOWER_CAPITALIZED = rf"(?:[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|[{NAME_WHITELIST_CHARS_UPPER}]\'[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|(?!{_TITLES_LOWER})[{NAME_WHITELIST_CHARS_UPPER}]\.|[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+\-[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+|Fco\.)"
 
-_FULL_UPPER_NAME = rf"(?:{_NAME_UPPER} +{_CONN_UPPER}*)(?:{_NAME_UPPER} +{_CONN_UPPER}*|\({_NAME_UPPER} +{_CONN_UPPER}*\))*{_NAME_UPPER} *\.?$"
-_FULL_LOWER_NAME = rf"(?:{_NAME_LOWER_CAPITALIZED} +{_CONN_LOWER}*)(?:{_NAME_LOWER_CAPITALIZED} +{_CONN_LOWER}*|\({_NAME_LOWER_CAPITALIZED} +{_CONN_LOWER}*\))*{_NAME_LOWER_CAPITALIZED} *\.?$"
+_FULL_UPPER_NAME = rf"(?:{_NAME_UPPER} +{_CONN_UPPER}*)(?:{_NAME_UPPER} +{_CONN_UPPER}*|\({_NAME_UPPER} +{_CONN_UPPER}*\))*{_NAME_UPPER} *{_PARTY_SUFFIX}? *\.?$"
+_FULL_LOWER_NAME = rf"(?:{_NAME_LOWER_CAPITALIZED} +{_CONN_LOWER}*)(?:{_NAME_LOWER_CAPITALIZED} +{_CONN_LOWER}*|\({_NAME_LOWER_CAPITALIZED} +{_CONN_LOWER}*\))*{_NAME_LOWER_CAPITALIZED} *{_PARTY_SUFFIX}? *\.?$"
 
 UPPER_CANDIDATE_NAME_REGEX = re.compile(rf"^(?!NO PROCLAMADA){_FULL_UPPER_NAME}")
 LOWER_CANDIDATE_NAME_REGEX = re.compile(rf"^(?!NO PROCLAMADA){_FULL_LOWER_NAME}")
@@ -55,6 +56,7 @@ def fix_maria_ocr(text: str, upper: bool = False) -> str:
     text = text.replace("M1. ", f"{replace_text} ")
     text = text.replace("M1 ", f"{replace_text} ")
     text = text.replace("M2. ", f"{replace_text} ")
+    text = text.replace("Ma. ", f"{replace_text} ")
     text = text.replace("M2 ", f"{replace_text} ")
     text = text.replace("Mª.", f"{replace_text}")
     text = text.replace("M.ª", f"{replace_text}")
@@ -63,6 +65,8 @@ def fix_maria_ocr(text: str, upper: bool = False) -> str:
     text = text.replace(" M ", f" {replace_text} ")
     text = text.replace("-M ", f"-{replace_text} ")
     text = text.replace("\nM ", f"\n{replace_text} ")
+    text = text.replace("\nMP ", f"\n{replace_text} ")
+    text = text.replace(" MP ", f" {replace_text} ")
     text = text.replace(" M' ", f" {replace_text} ")
     text = text.replace(" M. ", f" {replace_text} ")
     text = text.replace(" MI ", f" {replace_text} ")
@@ -173,7 +177,7 @@ def clean_ocr_numbers(text: str) -> str:
     return text
 
 
-_HAS_NUMBER_RE = re.compile(r"^(\d+)[\. -]*")
+_HAS_NUMBER_RE = re.compile(r"^-?(\d+)[\. -]*")
 
 
 def autofill_intermediate_numbers(text: str) -> str:
@@ -278,7 +282,9 @@ def fix_missing_substitute_numbers(text: str, name_regex: re.Pattern) -> str:
     return "\n".join(fixed_lines)
 
 
-_HAS_OCR_QUASI_NUMBER = re.compile(r"^((?!D\.)[a-záéíóú0-9\(\)]{1,2}[\.: -]* +|\.\.?\-? |\d+)[\.: -]*", re.IGNORECASE)
+_HAS_OCR_QUASI_NUMBER = re.compile(
+    r"^((?!D\.)[a-záéíóúñ0-9\(\)]{1,2}[\.: -]* +|\.\.?\-? |\d+)[\.: -]*", re.IGNORECASE
+)
 
 
 def number_candidates(
@@ -299,7 +305,7 @@ def number_candidates(
         # Reset the counter if we hit a new list header or the "SUPLENTES" section
         if (
             "CANDIDATURA NÚM" in upper_line
-            or "SUPLENTES" in upper_line
+            or "SUPLENT" in upper_line
             or "ELECTORAL" in upper_line
             or "SECRETARIO " in upper_line
         ):
@@ -311,6 +317,27 @@ def number_candidates(
         if number_match and counter is not None:
             # Override the number with the current counter if the line is a candidate name
             candidate_name = stripped_line[number_match.end() :].lstrip()
+            if candidate_name.upper().startswith(
+                (
+                    "PARTIT",
+                    "PARTIDO",
+                    "PLATAFORMA",
+                    "FALANGE",
+                    "ALTERNATIVA",
+                    "IZQUIERDA",
+                    "ESQUERRA",
+                    "INICIATIVA",
+                    "COALICIÓN",
+                    "CONVERGENCIA",
+                    "FEDERACIÓN",
+                    "MOVIMIENTO",
+                    "AGRUPACIÓN",
+                )
+            ):
+                # This is a party name, not a candidate name; reset the counter and keep the line as is
+                counter = 1
+                result.append(line)
+                continue
             if candidate_regex.match(candidate_name):
                 result.append(
                     f"{counter}. {stripped_line[number_match.end() :].lstrip()}"

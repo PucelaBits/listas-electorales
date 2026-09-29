@@ -104,15 +104,18 @@ def fix_aragon_1995_05(text: str) -> str:
     text = text.replace(
         "FEDERACION DE LA PLATAFORMA.\n", "FEDERACION DE LA PLATAFORMA "
     )
+    text = text.replace("du)\ny", "(IU)")
     text = text.replace("l ISIDORO ESTEBAN IZQUIERDO", "1. ISIDORO ESTEBAN IZQUIERDO")
     text = text.replace("E-MARÍA ANTONIA ROCA MUÑOZ", "14. MARÍA ANTONIA ROCA MUÑOZ")
     text = text.replace("'RICARDO SESE GINE", "15. RICARDO SESE GINE")
     text = text.replace("ROSA MARIA AGUILERA RUIZ", "4. ROSA MARIA AGUILERA RUIZ")
     text = text.replace("DOPEDDIAZ", "LÓPEZ DÍAZ")
     text = text.replace("1.SANTIAGO MONZON FLETA", "11. SANTIAGO MONZON FLETA")
+    text = text.replace("\n1.DON JOSE JAVIER BARRAU PALLARUELO", "\n11. DON JOSE JAVIER BARRAU PALLARUELO")
     text = text.replace("DON FERNANDO LABENA GALLIZO", "4. DON FERNANDO LABENA GALLIZO")
     text = text.replace("DON CHESUS YUSTE CABELLO", "2. DON CHESUS YUSTE CABELLO")
     text = text.replace("MARCOS.RUBIO SAHUN", "MARCOS RUBIO SAHUN")
+    text = text.replace("4ANTONIO", "4. ANTONIO")
     text = clean_ocr_numbers(text)
     text = autofill_intermediate_numbers(text)
     text = fix_missing_substitute_numbers(text, UPPER_DON_CANDIDATE_NAME_REGEX)

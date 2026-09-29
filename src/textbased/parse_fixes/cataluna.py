@@ -1,6 +1,6 @@
 import re
 
-from common import NAME_WHITELIST_CHARS_UPPER
+from common import NAME_WHITELIST_CHARS_LOWER, NAME_WHITELIST_CHARS_UPPER
 
 from ._common import (
     LOWER_CANDIDATE_NAME_REGEX,
@@ -12,16 +12,69 @@ from ._common import (
 )
 
 _CATALUNA_1995_11_LAST_NUMBER = 1
-
+_CATALUNA_1995_11_CANDIDATE_OCR_I_RE = re.compile(rf"([{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+)1 ")
+_CATALUNA_1996_11_CANDIDACY_RE = re.compile(r"^Candidatura registrada amb el número (\d+)\n", re.MULTILINE | re.IGNORECASE)
 
 @register_fixer("cataluna", 1995, 11)
 def fix_cataluna_1995_11(text: str) -> str:
-    print(text)
     # TODO: Errata (err.pdf)
+    # Facilitate parsing
+    text = text.replace("Junta Electoral Provincial\n", "Junta Electoral Provincial ")
+    text = text.replace("\nParrit: ", ".")
+    text = text.replace("\nPartit: ", ".")
+    text = text.replace("\nPartir ", ".")
+    text = _CATALUNA_1996_11_CANDIDACY_RE.sub(lambda m: f"Candidatura núm. {m.group(1)}.", text)
+    text = text.replace("Candidatura núm. 3.Esquerra", "Candidatura núm. 5.Esquerra")
+    text = text.replace("\nCatalunya-Federación", " Catalunya-Federación")
+    text = text.replace("\nAlternativa Ecologista de Catalunya (adherits a", "\nCandidatura núm. 1. Alternativa Ecologista de Catalunya (adherits a")
+    text = text.replace("\nFalange Española de las Jons (FE-J ONS)", "\nCandidatura núm. 2. Falange Española de las Jons (FE-JONS)")
+    text = text.replace("\nEsquerra Republicana de Catalunya (ERC)", "\nCandidatura núm. 3. Esquerra Republicana de Catalunya (ERC)")
+    text = text.replace("\nIniciativa per Catalunva-Els Verds (1C-EV)", "\nCandidatura núm. 4. Iniciativa per Catalunva-Els Verds (1C-EV)")
+    text = text.replace("\nPartido Obrero Revolucionario (POR)", "\nCandidatura núm. 5. Partido Obrero Revolucionario (POR)")
+    text = text.replace("\nPartido Popular (PP)", "\nCandidatura núm. 6. Partido Popular (PP)")
+    text = text.replace("\nPartit dels Socialistes de Catalunya", "\nCandidatura núm. 7. Partit dels Socialistes de Catalunya")
+    text = text.replace("\nConlició Convergencia i Unió (CIU)", "\nCandidatura núm. 8. Coalició Convergencia i Unió (CIU)")
     # Fix OCR
     text = text.replace("lldefonso", "Ildefonso")
+    text = text.replace("Candidanira", "Candidatura")
+    text = text.replace("Ss4", "84")
+    text = text.replace("xSs", "38")
+    text = text.replace("Je)", "22")
+    text = text.replace("704 e", "72")
+    text = text.replace("5d)", "35")
+    text = text.replace("\npa2", "\n2")
+    text = text.replace("pda2", "2")
     text = text.replace("d' ", "d'")
     text = text.replace(" 1 ", " i ")
+    text = text.replace(" : ", " i ")
+    text = _CATALUNA_1995_11_CANDIDATE_OCR_I_RE.sub(lambda m: m.group(1) + " i ", text)
+    text = text.replace("L0pez", "López")
+    text = text.replace("GuerreroiMonterrubio", "Guerrero i Monterrubio")
+    text = text.replace("SabanzaiMarch", "Sabanza i March")
+    text = text.replace("Anton:", "Antoni")
+    text = text.replace("Manue:", "Manuel")
+    text = text.replace("Gomez.", "Gómez")
+    text = text.replace("i ida", "i Serra")
+    text = text.replace("Jl", "ll")
+    text = text.replace("CGuiu", "Guiu")
+    text = text.replace("(Raimón)", "")
+    text = text.replace("(PIE\n", "(PIE)\n")
+    text = text.replace("(CDC\n", "(CDC)\n")
+    text = text.replace("(1ND)", "(IND)")
+    text = text.replace("icenc Amat", "Vincenç Amat")
+    text = text.replace("Viceng lla", "Vicenç Illa")
+    text = text.replace("GarciaEnriquez", "García Enriquez")
+    text = text.replace("Ball-lHosera", "Ball-Llosera")
+    text = text.replace("Eduard E Ena Forné", "Eduard F. Ena Forné")
+    text = text.replace("dela Oliva", "de la Oliva")
+    text = text.replace("Dian Oficial\n", "")
+    text = text.replace("\nla Generalitat de Catalunya", "\n")
+    text = text.replace("(Partido obrero\nrevolucionario)", "")
+    text = text.replace("(Partido\nObrero revolucionario)", "")
+    text = text.replace(" '\n", "\n")
+    text = text.replace(" :\n", "\n")
+    text = text.replace(" - PSC", "")
+    text = text.replace("-PSC", "")
     text = fix_maria_ocr(text)
     global _CATALUNA_1995_11_LAST_NUMBER
     text, _CATALUNA_1995_11_LAST_NUMBER = number_candidates(
