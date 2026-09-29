@@ -32,6 +32,8 @@ def fix_galicia_1997_10(text: str) -> str:
         "11.– María del Carmen Soliño Castro", "11.– Mª del Carmen Soliño Castro"
     )
     text = text.replace("2.– Cándido González Herrero", "2.– Cándido Gonzálvez Herrero")
+    # Facilitate parsing
+    text = text.replace("Candidatos:\n", "")
     return text
 
 @register_fixer("galicia", 2001, 10)

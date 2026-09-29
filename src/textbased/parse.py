@@ -221,7 +221,6 @@ class TextElectionParser:
             return
 
         if self.NOT_PROCLAMATED_RE.match(line):
-            print(self.current_candidacy)
             if self.current_candidacy is None:
                 raise ValueError(
                     "Found 'NO PROCLAMADA' line while parsing, but no current candidacy is set."

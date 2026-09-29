@@ -1,12 +1,33 @@
 import re
 
-from common import NAME_WHITELIST_CHARS_LOWER, NAME_WHITELIST_CHARS_UPPER
+from common import NAME_WHITELIST_CHARS_UPPER
 
 from ._common import (
+    LOWER_CANDIDATE_NAME_REGEX,
+    fix_maria_ocr,
     fix_missing_substitute_numbers,
     fix_multiline_candidacy_naming,
+    number_candidates,
     register_fixer,
 )
+
+_CATALUNA_1995_11_LAST_NUMBER = 1
+
+
+@register_fixer("cataluna", 1995, 11)
+def fix_cataluna_1995_11(text: str) -> str:
+    print(text)
+    # TODO: Errata (err.pdf)
+    # Fix OCR
+    text = text.replace("lldefonso", "Ildefonso")
+    text = text.replace("d' ", "d'")
+    text = text.replace(" 1 ", " i ")
+    text = fix_maria_ocr(text)
+    global _CATALUNA_1995_11_LAST_NUMBER
+    text, _CATALUNA_1995_11_LAST_NUMBER = number_candidates(
+        text, LOWER_CANDIDATE_NAME_REGEX, _CATALUNA_1995_11_LAST_NUMBER
+    )
+    return text
 
 
 @register_fixer("cataluna", 1999, 10)
@@ -38,7 +59,10 @@ def fix_cataluna_1999_10(text: str) -> str:
         "Candidatura núm. 7\nPartit dels Socialistes",
         "Candidatura núm. 6. RELLENO\nNO PROCLAMADA\nCandidatura núm. 7\nPartit dels Socialistes",
     )
-    text = text.replace("—7 L luita Internacionalista: L I (L IT-CI)", "Candidatura núm. 6. RELLENO\nNO PROCLAMADA\n—7 Lluita Internacionalista: LI (LIT-CI)")
+    text = text.replace(
+        "—7 L luita Internacionalista: L I (L IT-CI)",
+        "Candidatura núm. 6. RELLENO\nNO PROCLAMADA\n—7 Lluita Internacionalista: LI (LIT-CI)",
+    )
     return text
 
 
@@ -170,10 +194,6 @@ def fix_cataluna_2010_11(text: str) -> str:
     return text
 
 
-_CATALUNA_2015_09_CANDIDATE_RE = re.compile(
-    rf"(?:[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+ )+[{NAME_WHITELIST_CHARS_UPPER}][{NAME_WHITELIST_CHARS_LOWER}]+$"
-)
-
 _CATALUNA_2015_09_LLEIDA_CANDIDACY_RE = re.compile(
     rf"^(?:[{NAME_WHITELIST_CHARS_UPPER}]+[ ,]+)+.+[\r?\n]TITULARES", re.MULTILINE
 )
@@ -183,7 +203,7 @@ _CATALUNA_2015_09_LLEIDA_CANDIDACY_INDEX = 0
 
 @register_fixer("cataluna", 2015, 9)
 def fix_cataluna_2015_09(text: str) -> str:
-    text = fix_missing_substitute_numbers(text, _CATALUNA_2015_09_CANDIDATE_RE)
+    text = fix_missing_substitute_numbers(text, LOWER_CANDIDATE_NAME_REGEX)
     text = fix_multiline_candidacy_naming(text)
     text = text.replace(
         "NÚM. DE ORDEN\n9\nFORMACIÓN POLÍTICA:\nCATALUNYA SÍ QUE ES POT",

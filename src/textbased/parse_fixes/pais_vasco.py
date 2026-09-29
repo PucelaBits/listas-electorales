@@ -7,6 +7,7 @@ def _fix_substitutes_declaration(text: str) -> str:
     text = text.replace("ORDEZKOAK/ SUPLENTES", "SUPLENTES")
     text = text.replace("ORDEZKOAK / SUPLENTES", "SUPLENTES")
     text = text.replace("ORDEZKOAK /SUPLENTES", "SUPLENTES")
+    text = text.replace("Ordezkoak / Suplentes", "SUPLENTES")
     return text
 
 
@@ -24,7 +25,20 @@ def fix_pais_vasco_1994_10(text: str) -> str:
 
 @register_fixer("pais_vasco", 1998, 10)
 def fix_pais_vasco_1998_10(text: str) -> str:
+    # Remove preamble
+    if "en su reunión del día de la fecha de" in text:
+        return "JUNTA ELECTORAL DEL TERRITORIO HISTÓRICO DE ÁLAVA"
+    if "tagaiak honako hauek direla:" in text:
+        text = "JUNTA ELECTORAL DEL TERRITORIO HISTÓRICO DE BIZKAIA" + text.split("tagaiak honako hauek direla:")[-1]
+    text = text.replace("Junta Electoral del Territorio\n", "Junta Electoral del Territorio de ")
+    text = text.replace("de la Junta Electoral del Territorio de Álava.\na 28 de septiembre 1998.", "")
+    text = text.replace("N.º 185 ZK", "")
+    text = text.replace("5.– 1.– CARLOS", "1.- CARLOS")
     text = _fix_substitutes_declaration(text)
+    # Facilitate parsing
+    text = text.replace("4.– IZQUIERDA UNIDA", "Candidatura núm. 4: IZQUIERDA UNIDA")
+    text = text.replace("6.– PARTIDO HUMANISTA", "Candidatura núm. 6: PARTIDO HUMANISTA")
+    text = text.replace("TERESA\n", "TERESA ")
     return text
 
 
